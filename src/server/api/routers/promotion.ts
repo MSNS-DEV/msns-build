@@ -2,6 +2,8 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, managementProcedure, officeProcedure, teacherProcedure } from "../trpc";
 import { z } from "zod";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { assertNoPaidVouchers } from "~/server/utils/financial-guards";
 
 const promoteStudentSchema = z.object({
   studentId: z.string().cuid(),
@@ -19,6 +21,25 @@ const batchPromoteSchema = z.object({
   toClassId: z.string().cuid(),
   examIdForFinalCheck: z.string().cuid(),
 });
+
+type Db = PrismaClient | Prisma.TransactionClient;
+
+/**
+ * Enrols a promoted student in the target session's class. The previous session's
+ * enrolment is kept (it owns that year's fee vouchers, attendance and results; deleting
+ * it erased history and failed outright once vouchers existed). Within one session the
+ * enrolment's class is changed in place. Idempotent on the unique (student, session) key.
+ */
+async function enrolPromotedStudent(
+  db: Db,
+  a: { studentId: string; toClassId: string; toSessionId: string },
+) {
+  await db.studentClass.upsert({
+    where: { studentId_sessionId: { studentId: a.studentId, sessionId: a.toSessionId } },
+    update: { classId: a.toClassId },
+    create: { studentId: a.studentId, classId: a.toClassId, sessionId: a.toSessionId },
+  });
+}
 
 export const promotionRouter = createTRPCRouter({
   promoteStudent: managementProcedure
@@ -80,21 +101,10 @@ export const promotionRouter = createTRPCRouter({
           });
         }
 
-        // Remove student from current class
-        await ctx.db.studentClass.deleteMany({
-          where: {
-            studentId: input.studentId,
-            classId: input.fromClassId,
-          },
-        });
-
-        // Add student to new class
-        await ctx.db.studentClass.create({
-          data: {
-            studentId: input.studentId,
-            classId: input.toClassId,
-            sessionId: input.toSessionId,
-          },
+        await enrolPromotedStudent(ctx.db, {
+          studentId: input.studentId,
+          toClassId: input.toClassId,
+          toSessionId: input.toSessionId,
         });
 
         // Create promotion history
@@ -183,21 +193,10 @@ export const promotionRouter = createTRPCRouter({
 
         // Promote passed students
         for (const student of studentsToPromote) {
-          // Remove from current class
-          await ctx.db.studentClass.deleteMany({
-            where: {
-              studentId: student.studentId,
-              classId: input.fromClassId,
-            },
-          });
-
-          // Add to new class
-          await ctx.db.studentClass.create({
-            data: {
-              studentId: student.studentId,
-              classId: input.toClassId,
-              sessionId: input.toSessionId,
-            },
+          await enrolPromotedStudent(ctx.db, {
+            studentId: student.studentId,
+            toClassId: input.toClassId,
+            toSessionId: input.toSessionId,
           });
 
           // Create promotion history
@@ -653,18 +652,10 @@ export const promotionRouter = createTRPCRouter({
           });
 
           if (s.action === "Promote") {
-            // Remove from current class (update enrollment status)
-            await tx.studentClass.deleteMany({
-              where: { studentId: s.studentId, classId: input.fromClassId },
-            });
-
-            // Add to new class
-            await tx.studentClass.create({
-              data: {
-                studentId: s.studentId,
-                classId: input.toClassId,
-                sessionId: input.toSessionId,
-              },
+            await enrolPromotedStudent(tx, {
+              studentId: s.studentId,
+              toClassId: input.toClassId,
+              toSessionId: input.toSessionId,
             });
 
             // Create promotion history
@@ -774,19 +765,34 @@ export const promotionRouter = createTRPCRouter({
       if (!initiatorEmployee) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
 
       await ctx.db.$transaction(async (tx) => {
-        // Remove from current (promoted-to) class
-        await tx.studentClass.deleteMany({
-          where: { studentId: input.studentId, classId: promotionRecord.toClassId },
-        });
-
-        // Restore in original class
-        await tx.studentClass.create({
-          data: {
+        if (promotionRecord.fromSessionId === promotionRecord.toSessionId) {
+          // Same-session promotion changed the class in place: change it back.
+          await enrolPromotedStudent(tx, {
             studentId: input.studentId,
-            classId: promotionRecord.fromClassId,
-            sessionId: promotionRecord.fromSessionId,
-          },
-        });
+            toClassId: promotionRecord.fromClassId,
+            toSessionId: promotionRecord.fromSessionId,
+          });
+        } else {
+          // Drop the promoted-to enrolment (refused if it already has payments) and make
+          // sure the original enrolment exists.
+          const promoted = await tx.studentClass.findMany({
+            where: {
+              studentId: input.studentId,
+              classId: promotionRecord.toClassId,
+              sessionId: promotionRecord.toSessionId,
+            },
+            select: { scId: true },
+          });
+          const scIds = promoted.map((p) => p.scId);
+          await assertNoPaidVouchers(tx, { studentClassId: { in: scIds } }, "reverse this promotion");
+          await tx.feeStudentClass.deleteMany({ where: { studentClassId: { in: scIds } } });
+          await tx.studentClass.deleteMany({ where: { scId: { in: scIds } } });
+          await enrolPromotedStudent(tx, {
+            studentId: input.studentId,
+            toClassId: promotionRecord.fromClassId,
+            toSessionId: promotionRecord.fromSessionId,
+          });
+        }
 
         // Create reversal record in promotion history
         await tx.promotionHistory.create({
