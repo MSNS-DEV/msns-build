@@ -23,6 +23,10 @@ model User {
   profileVisibility  Boolean     @default(true)
   pushNotifications  Boolean     @default(false)
   twoFactorAuth      Boolean     @default(false)
+  /// Set when the account still has a generated default password.
+  mustChangePassword Boolean     @default(false)
+  /// Bumped to invalidate existing sessions (password change, role change, removal).
+  tokenVersion       Int         @default(0)
   EventAttendee      Attendee[]
   Event              Event[]     @relation("EventCreator")
   DeviceRegistration DeviceRegistration[]
@@ -1611,9 +1615,33 @@ model Notification {
   updatedAt  DateTime             @updatedAt
 
   User       User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Receipts   NotificationReceipt[]
 
   @@index([userId, read])
   @@index([targetRole])
   @@index([createdAt])
+}
+
+/// Per-user read/dismiss state for shared (role-targeted or global) notifications.
+/// userId is a User.id or a ParentGuardian.guardentId, so it has no foreign key.
+model NotificationReceipt {
+  notificationId String
+  userId         String
+  readAt         DateTime?
+  dismissedAt    DateTime?
+
+  Notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  @@id([notificationId, userId])
+  @@index([userId])
+}
+
+/// Failed-login counters for brute-force throttling (works across serverless instances).
+model LoginAttempt {
+  key         String    @id
+  failures    Int       @default(0)
+  windowStart DateTime  @default(now())
+  lockedUntil DateTime?
+  updatedAt   DateTime  @updatedAt
 }
 
