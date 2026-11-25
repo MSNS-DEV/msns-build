@@ -70,7 +70,7 @@ export default function RapidAttendancePage() {
       await markAttendanceMutation.mutateAsync({
         classId: activeClassId,
         sessionId: activeSessionId,
-        date: new Date().toISOString().split("T")[0]!,
+        date: new Date().toLocaleDateString("en-CA"),
         records: formattedRecords,
       });
 

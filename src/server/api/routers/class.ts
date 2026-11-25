@@ -1,10 +1,10 @@
 import { createTRPCRouter, protectedProcedure, managementProcedure, officeProcedure } from "../trpc";
+import { pkYmd } from "~/server/utils/pk-time";
 import { assertNoPaidVouchers } from "~/server/utils/financial-guards";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { ClassCategory, type Grades } from "@prisma/client";
 import { generatePdf } from "~/lib/pdf-reports";
-import dayjs from "dayjs";
 import { assignDefaultSubjectsToClass } from "~/lib/constants/default-subjects";
 
 export type ClassProps = Grades & {
@@ -55,7 +55,7 @@ export const ClassRouter = createTRPCRouter({
         const countMap = new Map(counts.map((c) => [c.classId, c._count.studentId]));
 
         // Get today's attendance summary for each class
-        const todayStr = dayjs().format("YYYY-MM-DD");
+        const todayStr = pkYmd();
         const attendance = await ctx.db.studentAttendance.findMany({
           where: {
             sessionId: input.sessionId,

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, officeProcedure, teacherProcedure, protectedProcedure } from "../trpc";
-import dayjs from "dayjs";
+import { after } from "next/server";
+import { pkYmd } from "~/server/utils/pk-time";
 import { TRPCError } from "@trpc/server";
 import { assertCanTeachClass, getOwnStudentIds } from "~/server/api/access";
 
@@ -17,13 +18,15 @@ export const attendanceRouter = createTRPCRouter({
         await ctx.db.employeeAttendance.upsert({
           where: {
             employeeId_date: {
-              date: dayjs().format("YYYY-MM-DD"),
+              // School-time date: the server clock is UTC, so before 05:00 PKT dayjs()
+              // gave yesterday's date.
+              date: pkYmd(),
               employeeId: input.employeeId,
             },
           },
           create: {
             employeeId: input.employeeId,
-            date: dayjs().format("YYYY-MM-DD"),
+            date: pkYmd(),
             morning: input.timeSlot === "first" ? "P" : "A",
             afternoon: input.timeSlot === "second" ? "P" : "A",
           },
@@ -52,7 +55,7 @@ export const attendanceRouter = createTRPCRouter({
       z.object({
         classId: z.string(),
         sessionId: z.string(),
-        date: z.string(), // YYYY-MM-DD
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
         records: z.array(
           z.object({
             studentId: z.string(),
@@ -78,56 +81,69 @@ export const attendanceRouter = createTRPCRouter({
         });
       }
       try {
-        const upsertPromises = input.records.map((record) =>
-          ctx.db.studentAttendance.upsert({
-            where: {
-              studentId_classId_sessionId_date: {
+        // One transaction: a pool timeout part-way no longer leaves half the class marked.
+        await ctx.db.$transaction(
+          input.records.map((record) =>
+            ctx.db.studentAttendance.upsert({
+              where: {
+                studentId_classId_sessionId_date: {
+                  studentId: record.studentId,
+                  classId: input.classId,
+                  sessionId: input.sessionId,
+                  date: input.date,
+                },
+              },
+              update: {
+                status: record.status,
+                remarks: record.remarks,
+              },
+              create: {
                 studentId: record.studentId,
                 classId: input.classId,
                 sessionId: input.sessionId,
                 date: input.date,
+                status: record.status,
+                remarks: record.remarks,
               },
-            },
-            update: {
-              status: record.status,
-              remarks: record.remarks,
-            },
-            create: {
-              studentId: record.studentId,
-              classId: input.classId,
-              sessionId: input.sessionId,
-              date: input.date,
-              status: record.status,
-              remarks: record.remarks,
-            },
-          }),
+            }),
+          ),
         );
-        await Promise.all(upsertPromises);
 
-        // Run FCM alerts asynchronously
-        void (async () => {
-          try {
-            const absentRecords = input.records.filter((r) => r.status === "A");
-            for (const record of absentRecords) {
-              const student = await ctx.db.students.findUnique({
-                where: { studentId: record.studentId },
-                select: { studentName: true },
-              });
-              const name = student?.studentName ?? "Student";
-              const parents = await ctx.db.parentGuardian.findMany({
-                where: { linkedStudentIds: { has: record.studentId } },
-                select: { guardentId: true },
-              });
-              const parentIds = parents.map((p) => p.guardentId);
-              if (parentIds.length > 0) {
-                const { sendPushNotification } = await import("~/server/mobile/fcm");
-                await sendPushNotification([], parentIds, "Attendance Alert", `${name} was marked ABSENT today (${input.date}).`);
+        // Absence alerts after the response, so they are not dropped when the function freezes.
+        const absentIds = input.records.filter((r) => r.status === "A").map((r) => r.studentId);
+        if (absentIds.length > 0) {
+          const db = ctx.db;
+          after(async () => {
+            try {
+              const [students, parents] = await Promise.all([
+                db.students.findMany({
+                  where: { studentId: { in: absentIds } },
+                  select: { studentId: true, studentName: true },
+                }),
+                db.parentGuardian.findMany({
+                  where: { linkedStudentIds: { hasSome: absentIds } },
+                  select: { guardentId: true, linkedStudentIds: true },
+                }),
+              ]);
+              const { sendPushNotification } = await import("~/server/mobile/fcm");
+              for (const st of students) {
+                const parentIds = parents
+                  .filter((p) => p.linkedStudentIds.includes(st.studentId))
+                  .map((p) => p.guardentId);
+                if (parentIds.length > 0) {
+                  await sendPushNotification(
+                    [],
+                    parentIds,
+                    "Attendance Alert",
+                    `${st.studentName ?? "Student"} was marked ABSENT on ${input.date}.`,
+                  );
+                }
               }
+            } catch (err) {
+              console.error("Failed to send student attendance push notification:", err);
             }
-          } catch (err) {
-            console.error("Failed to send student attendance push notification:", err);
-          }
-        })();
+          });
+        }
 
         return { success: true };
       } catch (error) {
@@ -141,7 +157,7 @@ export const attendanceRouter = createTRPCRouter({
       z.object({
         classId: z.string(),
         sessionId: z.string(),
-        date: z.string(), // YYYY-MM-DD
+        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
       }),
     )
     .query(async ({ ctx, input }) => {

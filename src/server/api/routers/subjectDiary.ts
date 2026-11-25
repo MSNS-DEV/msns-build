@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { pkDayEnd, pkDayStart } from "~/server/utils/pk-time";
 import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure, teacherProcedure } from "../trpc";
 import {
@@ -146,10 +147,9 @@ export const subjectDiaryRouter = createTRPCRouter({
 
         // If date is provided, match exactly by day
         if (input.date) {
-          const startDate = new Date(input.date);
-          startDate.setHours(0, 0, 0, 0);
-          const endDate = new Date(input.date);
-          endDate.setHours(23, 59, 59, 999);
+          // School-time day (the server runs in UTC).
+          const startDate = pkDayStart(input.date);
+          const endDate = pkDayEnd(input.date);
 
           whereClause.date = {
             gte: startDate,
@@ -193,10 +193,9 @@ export const subjectDiaryRouter = createTRPCRouter({
         };
 
         if (input.date) {
-          const startDate = new Date(input.date);
-          startDate.setHours(0, 0, 0, 0);
-          const endDate = new Date(input.date);
-          endDate.setHours(23, 59, 59, 999);
+          // School-time day (the server runs in UTC).
+          const startDate = pkDayStart(input.date);
+          const endDate = pkDayEnd(input.date);
 
           whereClause.date = {
             gte: startDate,

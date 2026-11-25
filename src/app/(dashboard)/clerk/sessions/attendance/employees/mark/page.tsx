@@ -45,7 +45,7 @@ type Designation =
 export default function MarkEmployeeAttendancePage() {
   const [selectedDesignation, setSelectedDesignation] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0] ?? "",
+    new Date().toLocaleDateString("en-CA"),
   );
   const [searchTerm, setSearchTerm] = useState("");
   const [attendanceData, setAttendanceData] = useState<
