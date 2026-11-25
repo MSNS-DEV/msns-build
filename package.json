@@ -26,7 +26,8 @@
     "cap:sync": "node node_modules/@capacitor/cli/bin/capacitor sync android",
     "android:build": "node node_modules/@capacitor/cli/bin/capacitor sync android && cd android && ./gradlew bundleRelease",
     "android:keystore": "./generate-release-keystore.sh",
-    "media:avif": "node scripts/convert-to-avif.js"
+    "media:avif": "node scripts/convert-to-avif.js",
+    "test": "tsx tests/fee-voucher-system-e2e.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1046.0",

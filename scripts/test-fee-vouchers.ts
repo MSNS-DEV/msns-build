@@ -16,7 +16,29 @@ interface TestResult {
 }
 
 const results: TestResult[] = [];
-const prisma = new PrismaClient();
+
+// This suite creates and deletes real rows. Refuse to run against anything but
+// a local database, unless a dedicated TEST_DATABASE_URL is given explicitly.
+function resolveTestDatabaseUrl(): string {
+  const explicit = process.env.TEST_DATABASE_URL;
+  if (explicit) return explicit;
+  const url = process.env.DATABASE_URL;
+  if (!url) throw new Error("Set TEST_DATABASE_URL (or a local DATABASE_URL) to run this suite.");
+  let host = "";
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    throw new Error("DATABASE_URL is not a valid URL.");
+  }
+  if (!["localhost", "127.0.0.1", "::1", "[::1]"].includes(host)) {
+    throw new Error(
+      "Refusing to run: DATABASE_URL is not a local database. Point TEST_DATABASE_URL at a throwaway test database.",
+    );
+  }
+  return url;
+}
+
+const prisma = new PrismaClient({ datasources: { db: { url: resolveTestDatabaseUrl() } } });
 
 function recordResult(tier: string, testId: string, title: string, passed: boolean, message: string, durationMs: number) {
   results.push({ tier, testId, title, passed, message, durationMs });
@@ -128,7 +150,7 @@ async function setupFixtures() {
         admissionNumber: `ADM_EMP_${RUN_ID}`,
         employeeName: "Principal Test Approver",
         fatherName: "Audit Father",
-        gender: "Male",
+        gender: "MALE",
         maritalStatus: "Married",
         residentialAddress: "MSNS Head Office",
         designation: "PRINCIPAL",
@@ -189,7 +211,7 @@ async function setupFixtures() {
         registrationNumber: `REG_S1_${RUN_ID}`,
         admissionNumber: `ADM_S1_${RUN_ID}`,
         studentName: "Regular Student One",
-        gender: "Male",
+        gender: "MALE",
       },
     });
     await prisma.students.upsert({
@@ -200,7 +222,7 @@ async function setupFixtures() {
         registrationNumber: `REG_S2_${RUN_ID}`,
         admissionNumber: `ADM_S2_${RUN_ID}`,
         studentName: "Hardship Student Two",
-        gender: "Female",
+        gender: "FEMALE",
       },
     });
     await prisma.students.upsert({
@@ -211,7 +233,7 @@ async function setupFixtures() {
         registrationNumber: `REG_S3_${RUN_ID}`,
         admissionNumber: `ADM_S3_${RUN_ID}`,
         studentName: "Transfer Defaulter Student Three",
-        gender: "Male",
+        gender: "MALE",
       },
     });
 
@@ -1283,7 +1305,8 @@ async function runTestSuite() {
       const studentArrears = 8500;
       const hasArrears = studentArrears > 0;
 
-      const blockDefaulter = hasArrears && !null;
+      const bypassCode: string | null = null;
+      const blockDefaulter = hasArrears && !bypassCode;
       if (!blockDefaulter) throw new Error("Defaulter without bypass must be blocked.");
 
       const authorizedBypassCode = "PRIN_HARDSHIP_OVERRIDE_2026";
