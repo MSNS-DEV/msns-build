@@ -62,7 +62,13 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { DatesheetsViewerTab } from "~/components/blocks/exam/DatesheetsViewerTab";
-import { ExamResultsAnalyticsTab } from "~/components/blocks/exam/ExamResultsAnalyticsTab";
+import nextDynamic from "next/dynamic";
+
+// Chart code (recharts) is loaded on demand to keep the page bundle small.
+const ExamResultsAnalyticsTab = nextDynamic(
+  () => import("~/components/blocks/exam/ExamResultsAnalyticsTab").then((m) => m.ExamResultsAnalyticsTab),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted/40" /> },
+);
 
 // --- Interfaces ---
 interface Session {

@@ -23,11 +23,12 @@ import {
 import { Loader2, DollarSign, TrendingUp, Activity } from "lucide-react";
 
 export function SalaryAnalytics({ year }: { year: number }) {
-  // Enable polling to fetch updates at runtime (every 5 seconds)
+  // Payroll totals change rarely; refresh every 5 minutes instead of every
+  // 5 seconds (each poll re-aggregates the whole year's salary rows).
   const { data, isLoading } = api.salary.getMonthlyPayouts.useQuery(
     { year },
     {
-      refetchInterval: 5000,
+      refetchInterval: 5 * 60_000,
       refetchOnWindowFocus: true,
     },
   );

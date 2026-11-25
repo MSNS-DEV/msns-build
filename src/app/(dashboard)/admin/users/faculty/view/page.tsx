@@ -3,8 +3,10 @@
 import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import { EmployeeTable } from "~/components/tables/EmployeeTable";
-import { SalaryContent } from "../../../erp/revenue/salary/SalaryContent";
-import { EmployeeAttendanceContent } from "../../../sessions/attendance/employees/EmployeeAttendanceContent";
+import {
+  LazySalaryContent as SalaryContent,
+  LazyEmployeeAttendanceContent as EmployeeAttendanceContent,
+} from "~/components/shared/lazy-staff-panels";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Users, UserCog, DollarSign, CheckCircle2Icon, ShieldCheck, Calendar, BookOpen } from "lucide-react";
 import { api } from "~/trpc/react";

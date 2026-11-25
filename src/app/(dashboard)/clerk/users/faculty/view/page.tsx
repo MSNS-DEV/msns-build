@@ -2,8 +2,10 @@ import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import { EmployeeTable } from "~/components/tables/EmployeeTable";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Users, UserCog, DollarSign, CheckCircle2Icon } from "lucide-react";
-import SalaryPage from "~/app/(dashboard)/admin/erp/revenue/salary/page";
-import AttendancePage from "~/app/(dashboard)/admin/attendance/page";
+import {
+  LazySalaryContent,
+  LazyAttendancePage,
+} from "~/components/shared/lazy-staff-panels";
 
 export default function EmployeesDashboard() {
   const breadcrumbs = [
@@ -88,7 +90,7 @@ export default function EmployeesDashboard() {
               >
                 {/* Wrap external page content in glass container for consistency if needed */}
                 <div className="rounded-xl border border-emerald-500/20 bg-card p-4 shadow-xl backdrop-blur-md sm:p-6">
-                  <SalaryPage />
+                  <LazySalaryContent />
                 </div>
               </TabsContent>
 
@@ -97,7 +99,7 @@ export default function EmployeesDashboard() {
                 className="mt-0 duration-500 animate-in fade-in slide-in-from-bottom-4 focus-visible:outline-none"
               >
                 <div className="rounded-xl border border-emerald-500/20 bg-card p-4 shadow-xl backdrop-blur-md sm:p-6">
-                  <AttendancePage />
+                  <LazyAttendancePage />
                 </div>
               </TabsContent>
             </div>

@@ -6,12 +6,18 @@ import { BarChart3, Settings, Calendar, Plus } from "lucide-react";
 
 import { WelcomeSection } from "~/components/blocks/dashboard/welcome";
 import { StatsCards } from "~/components/cards/StatCard";
-import { RevenueAnalyticsChart } from "~/components/blocks/dashboard/AnalyticsCharts";
+import nextDynamic from "next/dynamic";
 import { ActivityFeed } from "~/components/blocks/dashboard/ActivityFeed";
 import { BroadcastBoard } from "~/components/blocks/dashboard/BroadcastBoard";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Button } from "~/components/ui/button";
+
+// Chart code (recharts) is loaded on demand to keep the page bundle small.
+const RevenueAnalyticsChart = nextDynamic(
+  () => import("~/components/blocks/dashboard/AnalyticsCharts").then((m) => m.RevenueAnalyticsChart),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted/40" /> },
+);
 
 const EventsTable = lazy(() => import("~/components/tables/EventsTable"));
 

@@ -40,7 +40,13 @@ import { SalaryAssignmentForm } from "~/components/forms/employee/SalaryAllotmen
 import { SalaryTable } from "~/components/tables/SalaryTable";
 import { PayrollTable } from "~/components/tables/PayrollTable";
 import { IncrementDialog } from "~/components/forms/employee/IncrementDialog";
-import { SalaryAnalytics } from "~/components/blocks/salary/SalaryAnalytics";
+import nextDynamic from "next/dynamic";
+
+// Chart code (recharts) is loaded on demand to keep the page bundle small.
+const SalaryAnalytics = nextDynamic(
+  () => import("~/components/blocks/salary/SalaryAnalytics").then((m) => m.SalaryAnalytics),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted/40" /> },
+);
 
 const MONTHS = [
   { value: "1", label: "January" },

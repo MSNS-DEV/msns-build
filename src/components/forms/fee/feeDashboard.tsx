@@ -36,8 +36,14 @@ import { ClassFeeCards } from "./class-fee-cards";
 import { MonthlyFeeSummary } from "./monthly-fee-summary";
 import { FeeTable } from "~/components/tables/FeeTable";
 import { DefaultersList } from "./defaulters-list";
-import { FeeAnalyticsDashboard } from "./fee-analytics-dashboard";
+import nextDynamic from "next/dynamic";
 import { StudentFeeLedger } from "./student-fee-ledger";
+
+// Chart code (recharts) is loaded on demand to keep the page bundle small.
+const FeeAnalyticsDashboard = nextDynamic(
+  () => import("./fee-analytics-dashboard").then((m) => m.FeeAnalyticsDashboard),
+  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted/40" /> },
+);
 
 const currentYear = new Date().getFullYear();
 const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);

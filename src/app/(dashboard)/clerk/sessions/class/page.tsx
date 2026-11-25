@@ -1,10 +1,6 @@
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
+import { ClassTimetableTab, ClassAttendanceTab, ClassExamsTab, ClassDiariesTab, ClassSubjectsTab } from "~/components/blocks/class/lazy-tabs";
 import { ClassAllotmentTable } from "~/components/tables/ClassAlotment";
-import { ClassSubjectsTab } from "~/components/blocks/class/ClassSubjectsTab";
-import { ClassTimetableTab } from "~/components/blocks/class/ClassTimetableTab";
-import { ClassExamsTab } from "~/components/blocks/class/ClassExamsTab";
-import { ClassDiariesTab } from "~/components/blocks/class/ClassDiariesTab";
-import { ClassAttendanceTab } from "~/components/blocks/class/ClassAttendanceTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Users, Library, Clock, FileText, BookOpen, ClipboardCheck } from "lucide-react";
 
