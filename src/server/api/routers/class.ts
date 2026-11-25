@@ -1,4 +1,5 @@
 import { createTRPCRouter, protectedProcedure, managementProcedure, officeProcedure } from "../trpc";
+import { assertNoPaidVouchers } from "~/server/utils/financial-guards";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { ClassCategory, type Grades } from "@prisma/client";
@@ -218,6 +219,12 @@ export const ClassRouter = createTRPCRouter({
           where: { classId: { in: input.classIds } },
         });
 
+        await assertNoPaidVouchers(
+          ctx.db,
+          { StudentClass: { classId: { in: input.classIds } } },
+          "delete this class",
+        );
+
         let deletedCount = 0;
 
         await ctx.db.$transaction(async (tx) => {
@@ -306,6 +313,7 @@ export const ClassRouter = createTRPCRouter({
 
         return { count: deletedCount };
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error("Error in deleteClassesByIds:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

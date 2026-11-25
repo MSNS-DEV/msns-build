@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { assertNoPaidSalaries } from "~/server/utils/financial-guards";
 import { assertCanReadEmployee, isOffice } from "~/server/api/access";
 import { createTRPCRouter, managementProcedure, employeeProcedure, financeProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
@@ -154,6 +155,7 @@ export const salaryRouter = createTRPCRouter({
   delete: managementProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      await assertNoPaidSalaries(ctx.db, { id: input.id }, "delete this salary");
       return ctx.db.salary.delete({ where: { id: input.id } });
     }),
 
@@ -161,6 +163,7 @@ export const salaryRouter = createTRPCRouter({
   bulkDelete: managementProcedure
     .input(bulkDeleteSchema)
     .mutation(async ({ ctx, input }) => {
+      await assertNoPaidSalaries(ctx.db, { id: { in: input.ids } }, "delete these salaries");
       return ctx.db.salary.deleteMany({
         where: {
           id: { in: input.ids },

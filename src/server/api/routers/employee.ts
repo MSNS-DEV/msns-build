@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { assertNoPaidSalaries } from "~/server/utils/financial-guards";
 import { createTRPCRouter, protectedProcedure, clerkProcedure, officeProcedure, teacherProcedure, leadershipProcedure } from "../trpc";
 import { z } from "zod";
 import { assertCanAssignRole, type AccessCtx } from "~/server/api/access";
@@ -465,6 +466,12 @@ export const EmployeeRouter = createTRPCRouter({
         });
         const regNumbers = employeesToDelete.map((e) => e.registrationNumber);
 
+        await assertNoPaidSalaries(
+          ctx.db,
+          { employeeId: { in: input.employeeIds } },
+          "delete these employees",
+        );
+
         const classSubjectsToDelete = await ctx.db.classSubject.findMany({
           where: { employeeId: { in: input.employeeIds } },
           select: { csId: true },
@@ -713,6 +720,7 @@ export const EmployeeRouter = createTRPCRouter({
           ]
         };
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error(error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

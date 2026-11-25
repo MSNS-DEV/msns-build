@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { assertNoPaidVouchers } from "~/server/utils/financial-guards";
 import { getOwnStudentIds } from "~/server/api/access";
 import { createTRPCRouter, protectedProcedure, officeProcedure, teacherProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
@@ -34,7 +35,10 @@ export const AllotmentRouter = createTRPCRouter({
           if (existingAssignment) {
             throw new TRPCError({
               code: "CONFLICT",
-              message: "Student already assigned to a class in this session",
+              message:
+                existingAssignment.classId === input.classId
+                  ? "Student is already in this class for this session"
+                  : "Student is already in another class this session. Use Move to change class so fee history is kept.",
             });
           }
 
@@ -68,6 +72,36 @@ export const AllotmentRouter = createTRPCRouter({
           message: "Failed to add student to class",
         });
       }
+    }),
+
+  /**
+   * Moves a student to another class within the same session. The enrolment (and its fee
+   * vouchers, attendance links and payments) is kept; only the class changes.
+   */
+  moveStudentToClass: officeProcedure
+    .input(
+      z.object({
+        studentId: z.string().cuid(),
+        sessionId: z.string().cuid(),
+        toClassId: z.string().cuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const enrolment = await ctx.db.studentClass.findFirst({
+        where: { studentId: input.studentId, sessionId: input.sessionId },
+      });
+      if (!enrolment) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Student is not enrolled in a class this session",
+        });
+      }
+      if (enrolment.classId === input.toClassId) return enrolment;
+      return ctx.db.studentClass.update({
+        where: { scId: enrolment.scId },
+        data: { classId: input.toClassId },
+        include: { Grades: true, Students: true, Sessions: true },
+      });
     }),
 
   getStudentsInClass: teacherProcedure
@@ -194,6 +228,11 @@ export const AllotmentRouter = createTRPCRouter({
           }
 
           const studentClassIds = studentClasses.map((sc) => sc.scId);
+          await assertNoPaidVouchers(
+            tx,
+            { studentClassId: { in: studentClassIds } },
+            "remove these students from the class",
+          );
           const uniqueStudentIds = [
             ...new Set(studentClasses.map((sc) => sc.studentId)),
           ];

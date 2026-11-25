@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { assertNoPaidVouchers } from "~/server/utils/financial-guards";
 import { createTRPCRouter, protectedProcedure, clerkProcedure, officeProcedure, teacherProcedure } from "../trpc";
 import { z } from "zod";
 import { generatePdf } from "~/lib/pdf-reports";
@@ -455,6 +456,12 @@ export const StudentRouter = createTRPCRouter({
         });
         const scIds = studentClasses.map((sc) => sc.scId);
 
+        await assertNoPaidVouchers(
+          ctx.db,
+          { studentClassId: { in: scIds } },
+          "delete these students",
+        );
+
         const reportCards = await ctx.db.reportCard.findMany({
           where: { studentId: { in: input.studentIds } },
           select: { reportCardId: true },
@@ -510,6 +517,7 @@ export const StudentRouter = createTRPCRouter({
           ]
         };
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error("Error deleting students:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",

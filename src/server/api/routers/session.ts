@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { assertNoPaidSalaries, assertNoPaidVouchers } from "~/server/utils/financial-guards";
 import { createTRPCRouter, protectedProcedure, managementProcedure, officeProcedure } from "../trpc";
 import { z } from "zod";
 
@@ -195,6 +196,18 @@ export const SessionRouter = createTRPCRouter({
             message: "Cannot delete active session",
           });
         }
+
+        // Never erase collected fees or paid payroll with a session.
+        await assertNoPaidVouchers(
+          ctx.db,
+          { StudentClass: { sessionId: { in: input.sessionIds } } },
+          "delete this session",
+        );
+        await assertNoPaidSalaries(
+          ctx.db,
+          { sessionId: { in: input.sessionIds } },
+          "delete this session",
+        );
 
         let deletedCount = 0;
 
