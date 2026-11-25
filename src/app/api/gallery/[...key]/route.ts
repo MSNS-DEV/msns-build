@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { deleteFromS3 } from "~/lib/s3";
 import { auth } from "~/server/auth";
+import { isGalleryKey, isSafeKey } from "~/server/storage-access";
 
 const DELETE_ALLOWED_ROLES = ["ADMIN", "PRINCIPAL", "HEAD", "CLERK"];
 
@@ -27,9 +28,9 @@ export async function DELETE(
     const p = await params;
     const key = p.key.join("/");
 
-    if (!key) {
+    if (!key || !isGalleryKey(key)) {
       return NextResponse.json(
-        { error: "Image key is required" },
+        { error: "A valid gallery image key is required" },
         { status: 400 }
       );
     }

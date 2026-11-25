@@ -3,6 +3,8 @@ import { getFromS3 } from "~/lib/s3";
 import { readFileSync, existsSync } from "fs";
 import path from "path";
 import { Readable } from "stream";
+import { auth } from "~/server/auth";
+import { isSafeKey } from "~/server/storage-access";
 
 export async function GET(
   request: Request,
@@ -12,12 +14,18 @@ export async function GET(
     const { filename } = await params;
     const file = filename.join("/");
 
-    if (!file) {
-      return new NextResponse("Filename is required", { status: 400 });
+    if (!file || !isSafeKey(file)) {
+      return new NextResponse("Invalid filename", { status: 400 });
     }
 
-    // 1. Try fetching from Cloudflare R2 bucket
-    const r2Keys = [`uploads/${file}`, file];
+    // Uploaded files (profile photos, CVs, documents) are private.
+    const session = await auth();
+    if (!session?.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+
+    // 1. Try fetching from Cloudflare R2 bucket (only under uploads/)
+    const r2Keys = file.startsWith("uploads/") ? [file] : [`uploads/${file}`];
     for (const key of r2Keys) {
       try {
         const response = await getFromS3(key);
@@ -27,7 +35,7 @@ export async function GET(
           if (response.ContentType) headers.set("Content-Type", response.ContentType);
           if (response.ContentLength)
             headers.set("Content-Length", response.ContentLength.toString());
-          headers.set("Cache-Control", "public, max-age=31536000, immutable");
+          headers.set("Cache-Control", "private, no-store");
           return new NextResponse(stream, { headers });
         }
       } catch {
@@ -52,7 +60,7 @@ export async function GET(
 
       const headers = new Headers();
       headers.set("Content-Type", contentType);
-      headers.set("Cache-Control", "public, max-age=31536000, immutable");
+      headers.set("Cache-Control", "private, no-store");
       return new NextResponse(fileBuffer, { headers });
     }
 

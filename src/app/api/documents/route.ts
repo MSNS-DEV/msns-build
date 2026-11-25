@@ -6,6 +6,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getS3Client, getBucket } from "~/lib/s3";
 import { auth } from "~/server/auth";
+import { isSafeKey } from "~/server/storage-access";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +101,10 @@ export interface DocumentResponseItem {
 
 // 1. GET: List all documents from Cloudflare R2 (Prefix: "documents/")
 export async function GET() {
+  const session = await auth();
+  if (!session?.user) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   try {
     const s3 = getS3Client();
     const bucket = getBucket();
@@ -229,7 +234,7 @@ export async function POST(request: NextRequest) {
 
     if (file.size > MAX_DOCUMENT_SIZE) {
       return NextResponse.json(
-        { error: "File exceeds 50MB size limit" },
+        { error: "File exceeds 250MB size limit" },
         { status: 400 }
       );
     }
@@ -321,7 +326,7 @@ export async function DELETE(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const key = (typeof body?.key === "string" ? body.key : undefined) ?? searchParams.get("key");
 
-    if (!key?.startsWith("documents/")) {
+    if (!key?.startsWith("documents/") || !isSafeKey(key)) {
       return NextResponse.json(
         { error: "Valid document key starting with 'documents/' is required" },
         { status: 400 }

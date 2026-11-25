@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { moveS3Object } from "~/lib/s3";
 import { auth } from "~/server/auth";
+import { isGalleryKey, isSafeKey } from "~/server/storage-access";
 
 const ALLOWED_ROLES = ["ADMIN", "PRINCIPAL", "HEAD", "CLERK", "TEACHER"];
 
@@ -30,6 +31,10 @@ export async function POST(request: NextRequest) {
         { error: "Original key and new name are required" },
         { status: 400 }
       );
+    }
+
+    if (!isGalleryKey(key)) {
+      return NextResponse.json({ error: "Only gallery items can be renamed here" }, { status: 400 });
     }
 
     // Split folder structure and filename

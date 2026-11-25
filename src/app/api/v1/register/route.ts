@@ -23,7 +23,7 @@ const registerSchema = z.object({
     "NONE",
     "ALL",
   ]),
-  password: z.string().min(6).max(100),
+  password: z.string().min(8).max(100),
 });
 
 export async function POST(request: NextRequest) {
@@ -57,6 +57,17 @@ export async function POST(request: NextRequest) {
     }
 
     const input = parseResult.data;
+
+    // Only ADMIN/PRINCIPAL may create leadership accounts.
+    if (
+      ["ADMIN", "PRINCIPAL", "HEAD"].includes(input.accountType) &&
+      !["ADMIN", "PRINCIPAL"].includes(userRole)
+    ) {
+      return NextResponse.json(
+        { message: "Forbidden — only an ADMIN or PRINCIPAL can create ADMIN, PRINCIPAL or HEAD accounts" },
+        { status: 403 },
+      );
+    }
     const password = await hash(input.password, 10);
     const account = await db.$transaction(async (tx) => {
       const userInfo = await generateUniqueUserCredentials(tx, input.accountType);
@@ -90,7 +101,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: error.message }, { status: 400 });
     } else if (error instanceof SyntaxError) {
       console.error(error.message);
-      return NextResponse.json({ message: error.message }, { status: 400 });
+      return NextResponse.json({ message: "Invalid JSON body" }, { status: 400 });
     }
     console.error(error);
     return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { copyS3Object } from "~/lib/s3";
 import { auth } from "~/server/auth";
+import { isGalleryKey, isSafeKey } from "~/server/storage-access";
 
 const ALLOWED_ROLES = ["ADMIN", "PRINCIPAL", "HEAD", "CLERK", "TEACHER"];
 
@@ -27,6 +28,14 @@ export async function POST(req: Request) {
 
     if (!keys || !Array.isArray(keys) || keys.length === 0) {
       return NextResponse.json({ error: "Keys are required" }, { status: 400 });
+    }
+
+    // Only gallery/video objects may be moved or copied, and only within them.
+    if (!keys.every((k) => typeof k === "string" && isGalleryKey(k))) {
+      return NextResponse.json({ error: "Only gallery items can be changed here" }, { status: 400 });
+    }
+    if (targetFolder && !isSafeKey(targetFolder)) {
+      return NextResponse.json({ error: "Invalid target folder" }, { status: 400 });
     }
 
     // targetFolder can be empty for copying to root

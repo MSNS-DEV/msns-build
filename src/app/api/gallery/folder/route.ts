@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createS3Folder, deleteS3Folder, renameS3Folder } from "~/lib/s3";
 import { auth } from "~/server/auth";
+import { isSafeKey } from "~/server/storage-access";
 
 const ALLOWED_ROLES = ["ADMIN", "PRINCIPAL", "HEAD", "CLERK", "TEACHER"];
 const DELETE_ALLOWED_ROLES = ["ADMIN", "PRINCIPAL", "HEAD", "CLERK"];
@@ -25,8 +26,8 @@ export async function POST(req: Request) {
     const body = (await req.json()) as { folderName?: string };
     const folderName = body.folderName;
 
-    if (!folderName) {
-      return NextResponse.json({ error: "Folder name is required" }, { status: 400 });
+    if (!folderName || !isSafeKey(folderName)) {
+      return NextResponse.json({ error: "A valid folder name is required" }, { status: 400 });
     }
 
     await createS3Folder(folderName);
@@ -58,6 +59,9 @@ export async function DELETE(req: Request) {
 
     if (!folders || !Array.isArray(folders) || folders.length === 0) {
       return NextResponse.json({ error: "Folders array is required" }, { status: 400 });
+    }
+    if (!folders.every((f) => typeof f === "string" && isSafeKey(f))) {
+      return NextResponse.json({ error: "Invalid folder name" }, { status: 400 });
     }
 
     for (const folder of folders) {
@@ -95,6 +99,9 @@ export async function PATCH(req: Request) {
         { error: "folderPath and newFolderPath are required" },
         { status: 400 },
       );
+    }
+    if (!isSafeKey(folderPath) || !isSafeKey(newFolderPath)) {
+      return NextResponse.json({ error: "Invalid folder path" }, { status: 400 });
     }
 
     await renameS3Folder(folderPath, newFolderPath);
