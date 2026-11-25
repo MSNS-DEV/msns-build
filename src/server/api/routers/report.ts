@@ -7,7 +7,9 @@ import {
   type ReportColumn,
 } from "~/lib/report-types";
 import { exportReportBuffer, type ExportReportOptions } from "~/lib/report-exporters";
-import { type PrismaClient } from "@prisma/client";
+import { type PrismaClient, type Prisma } from "@prisma/client";
+import { computeFeeRows, sumAmounts } from "~/lib/fee-calc";
+import { pkDayEnd, pkDayStart, pkYmd, sessionWindow } from "~/server/utils/pk-time";
 
 // Legacy schemas for backward compatibility
 export const reportTypeSchema = z.enum([
@@ -87,7 +89,32 @@ export interface ReportDataResult {
   totalPages: number;
   currentPage: number;
   summaryMetrics: { label: string; value: string | number; change?: string }[];
+  /** True when the row limit cut the result short. */
+  truncated: boolean;
 }
+
+/** Upper bound on rows a single report loads (previous per-report caps of 150-500 silently cut totals). */
+export const REPORT_ROW_LIMIT = 5000;
+
+/** Reports whose database query already applies `search`. */
+const DB_SEARCH_REPORTS = new Set([
+  "enrolled-students",
+  "enrolled-students-ref-no",
+  "enrolled-students-board",
+  "enrolled-students-religion",
+  "enrolled-students-marks",
+  "student-marks-percentage",
+  "enrolled-student-contact",
+  "student-contact-address",
+  "student-credentials",
+  "struck-off-students",
+  "admission-withdrawal-register",
+  "mailing-labels",
+  "form-collection-address",
+  "admission-report",
+  "fee-collection",
+  "fee-defaulters",
+]);
 
 /**
  * Decoupled standalone report execution engine.
@@ -113,20 +140,14 @@ export async function fetchReportData(
     activeSessionId = active?.sessionId;
   }
 
-  // Common Date Filter
+  // Common Date Filter (school-time day boundaries)
   const dateFilter: { gte?: Date; lte?: Date } = {};
-  if (input.startDate) dateFilter.gte = new Date(input.startDate);
+  if (input.startDate) dateFilter.gte = pkDayStart(input.startDate);
   if (input.endDate) {
-    const end = new Date(input.endDate);
-    end.setHours(23, 59, 59, 999);
-    dateFilter.lte = end;
+    dateFilter.lte = pkDayEnd(input.endDate);
   } else if (input.date) {
-    const start = new Date(input.date);
-    start.setHours(0, 0, 0, 0);
-    const end = new Date(input.date);
-    end.setHours(23, 59, 59, 999);
-    dateFilter.gte = start;
-    dateFilter.lte = end;
+    dateFilter.gte = pkDayStart(input.date);
+    dateFilter.lte = pkDayEnd(input.date);
   }
 
   const genderFilter =
@@ -174,8 +195,28 @@ export async function fetchReportData(
     };
   }
 
+  // Fee reports: gender and search both filter Students, so combine them (a second
+  // `Students:` key used to overwrite the first and silently drop the gender filter).
+  const feeStudentConditions: Prisma.StudentsWhereInput[] = [];
+  if (genderFilter) feeStudentConditions.push({ gender: genderFilter });
+  if (input.search) {
+    feeStudentConditions.push({
+      OR: [
+        { studentName: { contains: input.search, mode: "insensitive" } },
+        { registrationNumber: { contains: input.search, mode: "insensitive" } },
+      ],
+    });
+  }
+  const feeStudentFilter: Prisma.StudentsWhereInput | undefined =
+    feeStudentConditions.length > 0 ? { AND: feeStudentConditions } : undefined;
+
   let allRows: Record<string, unknown>[] = [];
   let summaryMetrics: { label: string; value: string | number; change?: string }[] = [];
+  let truncated = false;
+  const notTracked = (what: string) => {
+    allRows = [];
+    summaryMetrics = [{ label: "Data not tracked yet", value: what }];
+  };
 
   // ================= DISPATCH PER REPORT TYPE =================
   switch (input.reportType) {
@@ -402,7 +443,7 @@ export async function fetchReportData(
         const enrollments = await db.studentClass.findMany({
           where: studentClassWhere,
           include: { Students: true, Grades: true },
-          take: 200,
+          take: REPORT_ROW_LIMIT,
         });
 
         allRows = enrollments
@@ -649,7 +690,7 @@ export async function fetchReportData(
           ...directStudentWhere,
         },
         include: { StudentClass: { include: { Grades: true }, take: 1 } },
-        take: 200,
+        take: REPORT_ROW_LIMIT,
         orderBy: { updatedAt: "desc" },
       });
 
@@ -696,7 +737,7 @@ export async function fetchReportData(
           },
         },
         orderBy: { createdAt: "asc" },
-        take: 500,
+        take: REPORT_ROW_LIMIT,
       });
 
       allRows = students.map((s, idx) => {
@@ -734,7 +775,7 @@ export async function fetchReportData(
       const enrollments = await db.studentClass.findMany({
         where: studentClassWhere,
         include: { Students: true, Grades: true },
-        take: 500,
+        take: REPORT_ROW_LIMIT,
       });
 
       allRows = enrollments
@@ -763,198 +804,50 @@ export async function fetchReportData(
 
     // ---------------- 13. SMS SUMMARY REPORT ----------------
     case "sms-summary": {
+      // The LMS sends in-app/push notifications; there is no SMS gateway or delivery receipts.
       const notifications = await db.notification.findMany({
         where: {
           ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
         },
-        take: 150,
+        include: { User: { select: { username: true } } },
+        take: REPORT_ROW_LIMIT,
         orderBy: { createdAt: "desc" },
       });
 
-      if (notifications.length > 0) {
-        allRows = notifications.map((n, idx) => ({
-          srNo: idx + 1,
-          timestamp: n.createdAt.toLocaleDateString("en-PK"),
-          recipientName: "Parent / Student Guardian",
-          recipientRole: n.targetRole ?? "STUDENT",
-          phoneNumber: "+92 318 7625415",
-          category: n.category,
-          messageSnippet: n.title + ": " + n.body.slice(0, 80),
-          deliveryStatus: "Delivered",
-        }));
-      } else {
-        const mockBroadcasts = [
-          {
-            cat: "FEE",
-            title: "Monthly Fee Challan Generated",
-            msg: "Fee for current month has been issued. Last date to pay is 10th.",
-          },
-          {
-            cat: "ATTENDANCE",
-            title: "Daily Absence Notification",
-            msg: "Student was recorded absent today during morning roll call.",
-          },
-          {
-            cat: "EXAM",
-            title: "Datesheet Published",
-            msg: "Final Examination schedule is published on LMS student portal.",
-          },
-          {
-            cat: "BROADCAST",
-            title: "School Holiday Announcement",
-            msg: "School will remain closed tomorrow on account of public holiday.",
-          },
-        ];
-
-        allRows = Array.from({ length: 40 }).map((_, idx) => {
-          const b = mockBroadcasts[idx % mockBroadcasts.length]!;
-          return {
-            srNo: idx + 1,
-            timestamp: new Date(Date.now() - idx * 3600000 * 12).toLocaleString("en-PK"),
-            recipientName: "Registered Parent / Guardian",
-            recipientRole: "PARENT",
-            phoneNumber: `+92 300 ${1000000 + idx * 77}`,
-            category: b.cat,
-            messageSnippet: `${b.title} - ${b.msg}`,
-            deliveryStatus: "Delivered",
-          };
-        });
-      }
+      allRows = notifications.map((n, idx) => ({
+        srNo: idx + 1,
+        timestamp: n.createdAt.toLocaleString("en-PK", { timeZone: "Asia/Karachi" }),
+        recipientName: n.User?.username ?? (n.targetRole ? `All ${n.targetRole}` : "Everyone"),
+        recipientRole: n.targetRole ?? (n.userId ? "USER" : "ALL"),
+        phoneNumber: "-",
+        category: n.category,
+        messageSnippet: `${n.title}: ${n.body.slice(0, 80)}`,
+        deliveryStatus: "In-app",
+      }));
 
       summaryMetrics = [
-        { label: "Total SMS Dispatches", value: allRows.length },
-        { label: "Delivery Success Rate", value: "99.4%" },
-        { label: "Gateway Status", value: "Active (Telco Gateway)" },
+        { label: "Notifications Sent", value: allRows.length },
+        { label: "Broadcasts (role or school-wide)", value: notifications.filter((n) => !n.userId).length },
+        { label: "SMS Delivery Tracking", value: "Not available (no SMS gateway)" },
       ];
       break;
     }
 
     // ---------------- 14. FORM COLLECTION CHECKLIST ----------------
     case "form-collection-checklist": {
-      const students = await db.students.findMany({
-        where: directStudentWhere,
-        include: { StudentClass: { include: { Grades: true } } },
-        take: 200,
-        orderBy: { createdAt: "desc" },
-      });
-
-      allRows = students.map((s, idx) => {
-        const bFormOk = Boolean(s.studentCNIC && s.studentCNIC !== "0000-0000000-0");
-        const parentCnicOk = Boolean(s.fatherCNIC && s.fatherCNIC !== "0000-0000000-0");
-        const photosOk = true;
-        const slcOk = idx % 5 !== 0;
-        const resultCardOk = true;
-        const medOk = !s.medicalProblem;
-        const complete = bFormOk && parentCnicOk && slcOk;
-
-        return {
-          formNumber: `MSN-2026-${1000 + idx}`,
-          applicantName: s.studentName,
-          gradeApplying: s.StudentClass[0]?.Grades?.grade ?? "Grade 1",
-          bFormStatus: bFormOk ? "Verified" : "Pending",
-          parentCnicStatus: parentCnicOk ? "Verified" : "Pending",
-          photosStatus: photosOk ? "Received (4)" : "Pending",
-          slcStatus: slcOk ? "Received" : "Awaited",
-          resultCardStatus: resultCardOk ? "Verified" : "Pending",
-          medicalCertStatus: medOk ? "Clear" : "Note Attached",
-          overallStatus: complete ? "Complete" : "Incomplete",
-        };
-      });
-
-      const completeCount = allRows.filter((r) => r.overallStatus === "Complete").length;
-
-      summaryMetrics = [
-        { label: "Forms Checked", value: allRows.length },
-        { label: "Dossiers Complete", value: completeCount },
-        { label: "Pending Documents", value: allRows.length - completeCount },
-      ];
+      notTracked("Admission form checklists (SLC, photos, result cards) are not recorded in the LMS.");
       break;
     }
 
     // ---------------- 15. FORM COLLECTION BOARD WISE ----------------
     case "form-collection-board": {
-      const students = await db.students.findMany({
-        where: directStudentWhere,
-        include: { StudentClass: { include: { Grades: true } } },
-        take: 200,
-      });
-
-      allRows = students.map((s, idx) => {
-        const boards = [
-          "BISE Gujranwala",
-          "BISE Lahore",
-          "Federal Board (FBISE)",
-          "Punjab Examination Commission",
-        ];
-        const boardName = boards[idx % boards.length]!;
-
-        return {
-          srNo: idx + 1,
-          boardName,
-          formNumber: `MSN-2026-${1000 + idx}`,
-          applicantName: s.studentName,
-          fatherName: s.fatherName,
-          gradeApplying: s.StudentClass[0]?.Grades?.grade ?? "Grade 9",
-          previousSchool:
-            idx % 2 === 0
-              ? "Government High School, Wazirabad"
-              : "City Model School, Ghakhar",
-          submissionDate: s.createdAt.toLocaleDateString("en-PK"),
-        };
-      });
-
-      summaryMetrics = [
-        { label: "Total Applications", value: allRows.length },
-        {
-          label: "BISE Gujranwala Stream",
-          value: allRows.filter((r) => r.boardName === "BISE Gujranwala").length,
-        },
-        {
-          label: "Other Affiliated Boards",
-          value: allRows.filter((r) => r.boardName !== "BISE Gujranwala").length,
-        },
-      ];
+      notTracked("Applicants' previous examination boards are not recorded in the LMS.");
       break;
     }
 
     // ---------------- 16. FORM COLLECTION PASSING YEAR WISE ----------------
     case "form-collection-passing-year": {
-      const students = await db.students.findMany({
-        where: directStudentWhere,
-        include: { StudentClass: { include: { Grades: true } } },
-        take: 200,
-      });
-
-      allRows = students
-        .map((s, idx) => {
-          const years = [2026, 2025, 2024, 2023];
-          const passingYear = years[idx % years.length]!;
-          const marks = 450 + ((idx * 17) % 150);
-
-          return {
-            passingYear,
-            formNumber: `MSN-2026-${1000 + idx}`,
-            applicantName: s.studentName,
-            fatherName: s.fatherName,
-            previousClass: "Grade 8 / Middle",
-            obtainedMarks: `${marks} / 550`,
-            gradeApplying: s.StudentClass[0]?.Grades?.grade ?? "Matric Part-I",
-            stream: idx % 2 === 0 ? "Science (Biology)" : "Computer Science",
-          };
-        })
-        .filter((r) => !input.year || r.passingYear === input.year);
-
-      summaryMetrics = [
-        { label: "Total Forms Audited", value: allRows.length },
-        {
-          label: "Current Year (2026)",
-          value: allRows.filter((r) => r.passingYear === 2026).length,
-        },
-        {
-          label: "Previous Years (Gap Cases)",
-          value: allRows.filter((r) => r.passingYear !== 2026).length,
-        },
-      ];
+      notTracked("Applicants' passing years and previous marks are not recorded in the LMS.");
       break;
     }
 
@@ -963,32 +856,36 @@ export async function fetchReportData(
       const students = await db.students.findMany({
         where: directStudentWhere,
         include: { StudentClass: { include: { Grades: true } } },
-        take: 200,
+        take: REPORT_ROW_LIMIT,
       });
 
       allRows = students
-        .map((s, idx) => {
+        .map((s) => {
           const town = extractCity(s.currentAddress);
           return {
-            srNo: idx + 1,
             townOrCity: town,
-            formNumber: `MSN-2026-${1000 + idx}`,
+            formNumber: s.admissionNumber,
             applicantName: s.studentName,
             fatherName: s.fatherName,
-            gradeApplying: s.StudentClass[0]?.Grades?.grade ?? "Grade 1",
-            residentialAddress: s.currentAddress || "Main Bazaar, Wazirabad",
+            gradeApplying: s.StudentClass[0]?.Grades?.grade ?? "-",
+            residentialAddress: s.currentAddress || "-",
             contactNo: s.studentMobile || s.fatherMobile || "-",
           };
         })
-        .filter((r) => !input.city || r.townOrCity.toLowerCase() === input.city.toLowerCase());
+        .filter((r) => !input.city || r.townOrCity.toLowerCase() === input.city.toLowerCase())
+        .map((r, idx) => ({ srNo: idx + 1, ...r }));
+
+      const townCounts = new Map<string, number>();
+      for (const r of allRows) {
+        const t = String(r.townOrCity);
+        townCounts.set(t, (townCounts.get(t) ?? 0) + 1);
+      }
+      const topTown = [...townCounts.entries()].sort((x, y) => y[1] - x[1])[0];
 
       summaryMetrics = [
-        { label: "Forms Mapped", value: allRows.length },
-        { label: "Core Catchment Hub", value: "Wazirabad" },
-        {
-          label: "Outstation Applicants",
-          value: allRows.filter((r) => r.townOrCity !== "Wazirabad").length,
-        },
+        { label: "Students Mapped", value: allRows.length },
+        { label: "Largest Catchment", value: topTown ? `${topTown[0]} (${topTown[1]})` : "-" },
+        { label: "Towns Represented", value: townCounts.size },
       ];
       break;
     }
@@ -996,215 +893,31 @@ export async function fetchReportData(
     // ---------------- 18. ADMISSION STATICS CITY WISE & 19. FORM REPORT SUMMARY CITY WISE ----------------
     case "admission-statics-city":
     case "form-report-summary-city": {
-      const cityData = [
-        { city: "Wazirabad", forms: 185, boys: 98, girls: 87, cleared: 172, enrolled: 160, unitFee: 500 },
-        { city: "Ghakhar Mandi", forms: 94, boys: 51, girls: 43, cleared: 88, enrolled: 82, unitFee: 500 },
-        { city: "Nizamabad", forms: 68, boys: 36, girls: 32, cleared: 64, enrolled: 59, unitFee: 500 },
-        { city: "Alipur Chatha", forms: 52, boys: 28, girls: 24, cleared: 48, enrolled: 44, unitFee: 500 },
-        { city: "Sohdra", forms: 41, boys: 22, girls: 19, cleared: 38, enrolled: 35, unitFee: 500 },
-        { city: "Gujranwala", forms: 38, boys: 20, girls: 18, cleared: 35, enrolled: 31, unitFee: 500 },
-        { city: "Sialkot", forms: 26, boys: 14, girls: 12, cleared: 24, enrolled: 20, unitFee: 500 },
-      ];
-
-      allRows = cityData
-        .filter((c) => !input.city || c.city.toLowerCase() === input.city.toLowerCase())
-        .map((c) => ({
-          cityName: c.city,
-          totalForms: c.forms,
-          formsIssued: c.forms,
-          submittedCount: c.forms - 4,
-          boysCount: c.boys,
-          girlsCount: c.girls,
-          testsPassed: c.cleared,
-          formsProcessed: c.cleared,
-          enrolledCount: c.enrolled,
-          seatsAllotted: c.enrolled,
-          conversionRate: (c.enrolled / c.forms) * 100,
-          formFeeUnit: c.unitFee,
-          totalRevenue: c.forms * c.unitFee,
-        }));
-
-      const totalRev = allRows.reduce((acc, r) => acc + (r.totalRevenue as number), 0);
-      const totalForms = allRows.reduce((acc, r) => acc + (r.formsIssued as number), 0);
-      const totalEnrolled = allRows.reduce((acc, r) => acc + (r.enrolledCount as number), 0);
-
-      summaryMetrics = [
-        { label: "Total Forms Distributed", value: totalForms },
-        { label: "Total Prospectus Revenue", value: `Rs. ${totalRev.toLocaleString()}` },
-        { label: "Enrolled Across Cities", value: totalEnrolled },
-        {
-          label: "Average Conversion",
-          value: totalForms > 0 ? `${((totalEnrolled / totalForms) * 100).toFixed(1)}%` : "0%",
-        },
-      ];
+      notTracked("Admission forms by city are not recorded in the LMS. Use Student Contact & Address for enrolled students by town.");
       break;
     }
 
     // ---------------- 20. STEP FORM COLLECTION SUMMARY ----------------
     case "step-form-collection-summary": {
-      const steps = [
-        {
-          num: 1,
-          title: "Step 1: Registration & Application Submission",
-          desc: "Obtain prospectus, submit offline form or digital application",
-          boys: 269,
-          girls: 235,
-          total: 504,
-          pct: 100,
-          status: "Active Intake",
-        },
-        {
-          num: 2,
-          title: "Step 2: Admission Assessment / Written Test",
-          desc: "Evaluate aptitude in English, Mathematics, and Urdu (75 Marks)",
-          boys: 248,
-          girls: 221,
-          total: 469,
-          pct: 93.1,
-          status: "Marking Done",
-        },
-        {
-          num: 3,
-          title: "Step 3: Principal & Committee Interview",
-          desc: "Student and parent interaction with Academic Head / Principal",
-          boys: 234,
-          girls: 210,
-          total: 444,
-          pct: 88.1,
-          status: "Evaluated",
-        },
-        {
-          num: 4,
-          title: "Step 4: Merit Offer & Fee Challan Clearance",
-          desc: "Official admission offer, bank fee receipt submission, roll # allotment",
-          boys: 225,
-          girls: 206,
-          total: 431,
-          pct: 85.5,
-          status: "Finalized",
-        },
-      ];
-
-      allRows = steps.map((s) => ({
-        stepNumber: s.num,
-        stepTitle: s.title,
-        stageDescription: s.desc,
-        boysCount: s.boys,
-        girlsCount: s.girls,
-        totalCount: s.total,
-        funnelPercentage: s.pct,
-        actionStatus: s.status,
-      }));
-
-      summaryMetrics = [
-        { label: "Initial Registrations", value: 504 },
-        { label: "Admissions Confirmed", value: 431 },
-        { label: "Pipeline Conversion", value: "85.5%" },
-      ];
+      notTracked("Admission funnel stages (registration, test, interview) are not recorded in the LMS.");
       break;
     }
 
     // ---------------- 21. ADMISSION STATUS REPORT ----------------
     case "admission-status": {
-      const students = await db.students.findMany({
-        where: directStudentWhere,
-        include: { StudentClass: { include: { Grades: true } } },
-        take: 200,
-        orderBy: { createdAt: "desc" },
-      });
-
-      const statuses = ["Enrolled", "Offered", "Interview Scheduled", "Under Review", "Test Cleared"];
-
-      allRows = students.map((s, idx) => ({
-        formNumber: `MSN-2026-${1000 + idx}`,
-        applicantName: s.studentName,
-        fatherName: s.fatherName,
-        gradeApplying: s.StudentClass[0]?.Grades?.grade ?? "Grade 1",
-        submissionDate: s.createdAt.toLocaleDateString("en-PK"),
-        testScore: `${55 + ((idx * 3) % 20)} / 75`,
-        interviewResult: "Recommended",
-        currentStatus: statuses[idx % statuses.length],
-        feeChallanStatus: idx % 2 === 0 ? "Paid" : "Pending Bank Verification",
-      }));
-
-      summaryMetrics = [
-        { label: "Applications Tracked", value: allRows.length },
-        {
-          label: "Enrolled & Seats Cleared",
-          value: allRows.filter((r) => r.currentStatus === "Enrolled").length,
-        },
-        {
-          label: "Awaiting Fee Clearance",
-          value: allRows.filter((r) => r.feeChallanStatus !== "Paid").length,
-        },
-      ];
+      notTracked("Admission test scores and application statuses are not recorded in the LMS.");
       break;
     }
 
     // ---------------- 22. ADMISSION AGING REPORT ----------------
     case "admission-aging": {
-      const brackets = [
-        { bracket: "0 - 7 Days (Fresh Intake)", apps: 54, boys: 29, girls: 25, action: "Schedule Assessment Test", maxDays: 6 },
-        { bracket: "8 - 15 Days (Under Evaluation)", apps: 28, boys: 15, girls: 13, action: "Conduct Principal Interview", maxDays: 14 },
-        { bracket: "16 - 30 Days (Challan Pending)", apps: 16, boys: 9, girls: 7, action: "Send Fee Reminder SMS", maxDays: 27 },
-        { bracket: "> 30 Days (Overdue / Review)", apps: 8, boys: 4, girls: 4, action: "Final Notice or Seat Release", maxDays: 42 },
-      ];
-
-      allRows = brackets.map((b) => ({
-        agingBracket: b.bracket,
-        applicationsCount: b.apps,
-        boysCount: b.boys,
-        girlsCount: b.girls,
-        actionRequired: b.action,
-        oldestApplicationDays: `${b.maxDays} Days`,
-      }));
-
-      const totalPending = allRows.reduce((acc, r) => acc + (r.applicationsCount as number), 0);
-
-      summaryMetrics = [
-        { label: "Total Pending in Pipeline", value: totalPending },
-        { label: "Fresh Inquiries (<7d)", value: brackets[0]?.apps ?? 0 },
-        { label: "Overdue Actions (>30d)", value: brackets[3]?.apps ?? 0 },
-      ];
+      notTracked("Application dates and pipeline ages are not recorded in the LMS.");
       break;
     }
 
     // ---------------- 23. SOURCE OF INFORMATION REPORT ----------------
     case "source-of-information": {
-      const channels = [
-        { source: "Word of Mouth / Alumni Parents", inquiries: 215, forms: 178, enrolled: 162, spend: 0 },
-        { source: "Social Media (Facebook / Instagram)", inquiries: 164, forms: 122, enrolled: 104, spend: 25000 },
-        { source: "Campus Walk-in / In-Person Visit", inquiries: 98, forms: 89, enrolled: 81, spend: 5000 },
-        { source: "School Official Website & LMS", inquiries: 84, forms: 68, enrolled: 56, spend: 12000 },
-        { source: "Main Road Banners & Standees", inquiries: 45, forms: 32, enrolled: 26, spend: 18000 },
-        { source: "Sibling / Family Reference", inquiries: 42, forms: 40, enrolled: 38, spend: 0 },
-      ];
-
-      allRows = channels.map((c) => {
-        const conv = (c.enrolled / c.inquiries) * 100;
-        const cac = c.enrolled > 0 ? c.spend / c.enrolled : 0;
-        return {
-          sourceName: c.source,
-          inquiriesCount: c.inquiries,
-          formsTaken: c.forms,
-          admissionsConfirmed: c.enrolled,
-          conversionRate: conv,
-          marketingBudgetPk: c.spend,
-          cac,
-        };
-      });
-
-      const totalEnrolled = allRows.reduce((acc, r) => acc + (r.admissionsConfirmed as number), 0);
-      const totalSpend = allRows.reduce((acc, r) => acc + (r.marketingBudgetPk as number), 0);
-
-      summaryMetrics = [
-        { label: "Total Attributed Admissions", value: totalEnrolled },
-        { label: "Top Channel", value: "Word of Mouth (162)" },
-        {
-          label: "Avg Cost Per Student",
-          value: totalEnrolled > 0 ? `Rs. ${Math.round(totalSpend / totalEnrolled)}` : "Rs. 0",
-        },
-      ];
+      notTracked("How applicants heard about the school is not recorded in the LMS.");
       break;
     }
 
@@ -1212,175 +925,119 @@ export async function fetchReportData(
     case "admission-report": {
       const enrollments = await db.studentClass.findMany({
         where: studentClassWhere,
-        include: { Students: true, Grades: true },
+        include: {
+          Students: true,
+          Grades: true,
+          Sessions: { select: { sessionName: true } },
+          FeeStudentClass: {
+            where: { fees: { type: "AnnualFee" } },
+            select: { admissionFeePaid: true, fees: { select: { admissionFee: true } } },
+          },
+        },
         orderBy: { Students: { createdAt: "desc" } },
+        take: REPORT_ROW_LIMIT,
       });
 
-      allRows = enrollments.map((sc, idx) => ({
-        srNo: idx + 1,
-        admissionDate: sc.Students.createdAt.toLocaleDateString("en-PK"),
-        registrationNumber: sc.Students.registrationNumber,
-        admissionNumber: sc.Students.admissionNumber,
-        studentName: sc.Students.studentName,
-        fatherName: sc.Students.fatherName,
-        grade: sc.Grades.grade,
-        section: sc.Grades.section,
-        gender: sc.Students.gender,
-        studentMobile: sc.Students.studentMobile,
-        admissionFee: 5000,
-        feeStatus: "Paid",
-      }));
+      allRows = enrollments.map((sc, idx) => {
+        const annual = sc.FeeStudentClass[0];
+        return {
+          srNo: idx + 1,
+          admissionDate: sc.Students.createdAt.toLocaleDateString("en-PK", { timeZone: "Asia/Karachi" }),
+          registrationNumber: sc.Students.registrationNumber,
+          admissionNumber: sc.Students.admissionNumber,
+          studentName: sc.Students.studentName,
+          fatherName: sc.Students.fatherName,
+          grade: sc.Grades.grade,
+          section: sc.Grades.section,
+          gender: sc.Students.gender,
+          studentMobile: sc.Students.studentMobile,
+          admissionFee: annual?.fees.admissionFee ?? 0,
+          feeStatus: !annual ? "No Annual Voucher" : annual.admissionFeePaid ? "Paid" : "Pending",
+        };
+      });
+
+      const admissionDue = allRows.reduce((acc, r) => acc + (r.admissionFee as number), 0);
+      const admissionPaid = allRows
+        .filter((r) => r.feeStatus === "Paid")
+        .reduce((acc, r) => acc + (r.admissionFee as number), 0);
 
       summaryMetrics = [
-        { label: "Admissions Confirmed", value: allRows.length },
-        { label: "Admission Dues Total", value: `Rs. ${(allRows.length * 5000).toLocaleString()}` },
-        { label: "Intake Session", value: "2026-2027" },
+        { label: "Admissions Listed", value: allRows.length },
+        { label: "Admission Fees Billed", value: `Rs. ${admissionDue.toLocaleString()}` },
+        { label: "Admission Fees Received", value: `Rs. ${admissionPaid.toLocaleString()}` },
+        { label: "Session", value: enrollments[0]?.Sessions.sessionName ?? "-" },
       ];
       break;
     }
 
     // ---------------- 25. FORM COLLECTIONS FEE PAID REPORT ----------------
     case "form-collection-fee-paid": {
-      const students = await db.students.findMany({
-        where: directStudentWhere,
-        include: { StudentClass: { include: { Grades: true } } },
-        take: 200,
-      });
-
-      allRows = students.map((s, idx) => ({
-        receiptNumber: `RCP-ADM-${202600 + idx}`,
-        formNumber: `MSN-2026-${1000 + idx}`,
-        applicantName: s.studentName,
-        gradeApplying: s.StudentClass[0]?.Grades?.grade ?? "Grade 1",
-        feeAmount: 500,
-        paymentMode: idx % 3 === 0 ? "Bank Challan (BOP)" : "Cash at Desk",
-        paymentDate: s.createdAt.toLocaleDateString("en-PK"),
-        receivedBy: "Admissions Clerk Desk",
-        paymentStatus: "Paid",
-      }));
-
-      const total = allRows.reduce((acc, r) => acc + (r.feeAmount as number), 0);
-
-      summaryMetrics = [
-        { label: "Fee Receipts Issued", value: allRows.length },
-        { label: "Total Form Fees Collected", value: `Rs. ${total.toLocaleString()}` },
-        { label: "Bank Reconciliation", value: "100% Cleared" },
-      ];
+      notTracked("Admission form (prospectus) fees are not recorded in the LMS.");
       break;
     }
 
     // ---------------- 26. FORM COLLECTION SUMMARY ----------------
     case "form-collection-summary": {
-      const grades = await db.grades.findMany({
-        where: {
-          ...(input.classId ? { classId: input.classId } : {}),
-          ...(input.section ? { section: input.section } : {}),
-        },
-        include: { StudentClass: true },
-        orderBy: [{ grade: "asc" }, { section: "asc" }],
-      });
-
-      allRows = grades.map((g, idx) => {
-        const formsIssued = 35 + ((idx * 7) % 30);
-        const formsReceived = Math.round(formsIssued * 0.92);
-        const boys = Math.round(formsReceived * 0.52);
-        const girls = formsReceived - boys;
-        const unitFee = 500;
-        const fee = formsIssued * unitFee;
-        const enrolled = g.StudentClass.length;
-
-        return {
-          gradeName: `${g.grade} (${g.section})`,
-          formsIssued,
-          formsReceived,
-          boysCount: boys,
-          girlsCount: girls,
-          feeCollected: fee,
-          seatsAvailable: 40,
-          finalEnrolled: enrolled,
-        };
-      });
-
-      const totalIssued = allRows.reduce((acc, r) => acc + (r.formsIssued as number), 0);
-      const totalFee = allRows.reduce((acc, r) => acc + (r.feeCollected as number), 0);
-      const totalEnrolled = allRows.reduce((acc, r) => acc + (r.finalEnrolled as number), 0);
-
-      summaryMetrics = [
-        { label: "Total Forms Issued", value: totalIssued },
-        { label: "Total Form Revenue", value: `Rs. ${totalFee.toLocaleString()}` },
-        { label: "Total Class Enrolment", value: totalEnrolled },
-      ];
+      notTracked("Admission forms issued and returned are not recorded in the LMS.");
       break;
     }
 
     // ---------------- 27. FEE COLLECTION REPORT ----------------
     case "fee-collection": {
-      const feeRecords = await db.feeStudentClass.findMany({
+      // Whole student-years are loaded so annual components are counted once.
+      const vouchers = await db.feeStudentClass.findMany({
         where: {
-          ...(input.month ? { month: input.month } : {}),
           ...(input.year ? { year: input.year } : {}),
-          ...(Object.keys(dateFilter).length > 0 ? { paidAt: dateFilter } : {}),
           StudentClass: {
             ...(activeSessionId ? { sessionId: activeSessionId } : {}),
             ...(input.classId ? { classId: input.classId } : {}),
             ...(input.section ? { Grades: { section: input.section } } : {}),
-            ...(genderFilter ? { Students: { gender: genderFilter } } : {}),
-            ...(input.search
-              ? {
-                  Students: {
-                    OR: [
-                      { studentName: { contains: input.search, mode: "insensitive" } },
-                      { registrationNumber: { contains: input.search, mode: "insensitive" } },
-                    ],
-                  },
-                }
-              : {}),
+            ...(feeStudentFilter ? { Students: feeStudentFilter } : {}),
           },
         },
         include: {
           fees: true,
-          StudentClass: {
-            include: {
-              Students: true,
-              Grades: true,
-            },
-          },
+          StudentClass: { include: { Students: true, Grades: true } },
         },
-        take: 500,
         orderBy: [{ year: "desc" }, { month: "desc" }],
       });
+      const amounts = computeFeeRows(vouchers);
 
-      allRows = feeRecords.map((f) => {
-        const tuition = f.fees?.tuitionFee ?? 3000;
-        const examFund = f.fees?.examFund ?? 500;
-        const other = (f.fees?.computerLabFund ?? 0) + (f.fees?.studentIdCardFee ?? 0);
-        const discount = f.discount ?? 0;
-        const net = tuition + examFund + other - discount;
+      const rows = vouchers
+        .filter((f) => !input.month || f.month === input.month)
+        .filter((f) => Object.keys(dateFilter).length === 0 || (f.paidAt && (!dateFilter.gte || f.paidAt >= dateFilter.gte) && (!dateFilter.lte || f.paidAt <= dateFilter.lte)))
+        .map((f) => ({ f, a: amounts.get(f.sfcId)! }))
+        .filter(({ a }) => !a.excluded);
+      truncated = rows.length > REPORT_ROW_LIMIT;
 
+      allRows = rows.slice(0, REPORT_ROW_LIMIT).map(({ f, a }) => {
+        const c = a.components;
         return {
           period: `${f.month}/${f.year}`,
-          registrationNumber: f.StudentClass?.Students?.registrationNumber ?? "-",
-          studentName: f.StudentClass?.Students?.studentName ?? "-",
-          gradeSection: `${f.StudentClass?.Grades?.grade ?? ""} ${f.StudentClass?.Grades?.section ?? ""}`.trim(),
-          tuitionFee: tuition,
-          examFund,
-          otherCharges: other,
-          discount,
-          netPaid: f.tuitionPaid ? net : 0,
-          paymentStatus: f.tuitionPaid ? "Paid" : "Pending",
-          paidAt: f.paidAt ? f.paidAt.toLocaleDateString("en-PK") : "-",
+          registrationNumber: f.StudentClass.Students.registrationNumber,
+          studentName: f.StudentClass.Students.studentName,
+          gradeSection: `${f.StudentClass.Grades.grade} ${f.StudentClass.Grades.section}`.trim(),
+          tuitionFee: c.tuition ?? 0,
+          examFund: c.examFund ?? 0,
+          otherCharges:
+            (c.computerLab ?? 0) + (c.studentIdCard ?? 0) + (c.infoAndCalls ?? 0) + (c.admission ?? 0) + a.lateFee,
+          discount: a.discount,
+          netPaid: a.paid,
+          paymentStatus: a.isPaid ? "Paid" : a.paid > 0 ? "Partial" : "Pending",
+          paidAt: f.paidAt ? f.paidAt.toLocaleDateString("en-PK", { timeZone: "Asia/Karachi" }) : "-",
         };
       });
 
-      const totalPaid = allRows.reduce((acc, r) => acc + (r.netPaid as number), 0);
-      const paidCount = allRows.filter((r) => r.paymentStatus === "Paid").length;
+      const totals = sumAmounts(rows.map((r) => r.a));
+      const paidCount = rows.filter((r) => r.a.isPaid).length;
 
       summaryMetrics = [
-        { label: "Total Invoices Audited", value: allRows.length },
-        { label: "Total Realized Collections", value: `Rs. ${totalPaid.toLocaleString()}` },
+        { label: "Vouchers", value: rows.length },
+        { label: "Collected", value: `Rs. ${totals.paid.toLocaleString()}` },
+        { label: "Outstanding", value: `Rs. ${totals.outstanding.toLocaleString()}` },
         {
           label: "Settlement Rate",
-          value: `${allRows.length > 0 ? ((paidCount / allRows.length) * 100).toFixed(1) : 0}%`,
+          value: `${rows.length > 0 ? ((paidCount / rows.length) * 100).toFixed(1) : 0}%`,
         },
       ];
       break;
@@ -1388,73 +1045,71 @@ export async function fetchReportData(
 
     // ---------------- 28. FEE DEFAULTERS & OUTSTANDING REPORT ----------------
     case "fee-defaulters": {
-      const defaulters = await db.feeStudentClass.findMany({
+      // Whole student-years are loaded so annual components are counted once.
+      const vouchers = await db.feeStudentClass.findMany({
         where: {
-          tuitionPaid: false,
-          ...(input.month ? { month: input.month } : {}),
           ...(input.year ? { year: input.year } : {}),
           StudentClass: {
             ...(activeSessionId ? { sessionId: activeSessionId } : {}),
             ...(input.classId ? { classId: input.classId } : {}),
             ...(input.section ? { Grades: { section: input.section } } : {}),
-            ...(genderFilter ? { Students: { gender: genderFilter } } : {}),
-            ...(input.search
-              ? {
-                  Students: {
-                    OR: [
-                      { studentName: { contains: input.search, mode: "insensitive" } },
-                      { registrationNumber: { contains: input.search, mode: "insensitive" } },
-                    ],
-                  },
-                }
-              : {}),
+            ...(feeStudentFilter ? { Students: feeStudentFilter } : {}),
           },
         },
         include: {
           fees: true,
-          StudentClass: {
-            include: {
-              Students: true,
-              Grades: true,
-            },
-          },
+          StudentClass: { include: { Students: true, Grades: true } },
         },
-        take: 500,
+        orderBy: [{ year: "desc" }, { month: "desc" }],
       });
+      const amounts = computeFeeRows(vouchers);
 
-      allRows = defaulters.map((f, idx) => {
-        const tuitionDue = f.fees?.tuitionFee ?? 3500;
-        const lateFee = f.lateFee ?? 200;
-        const total = tuitionDue + lateFee;
+      type Defaulter = {
+        f: (typeof vouchers)[number];
+        months: Set<string>;
+        outstanding: number;
+        lateFee: number;
+      };
+      const byStudent = new Map<string, Defaulter>();
+      for (const f of vouchers) {
+        if (input.month && f.month !== input.month) continue;
+        const a = amounts.get(f.sfcId);
+        if (!a || a.excluded || a.outstanding <= 0) continue;
+        const key = f.StudentClass.studentId;
+        const d = byStudent.get(key) ?? { f, months: new Set<string>(), outstanding: 0, lateFee: 0 };
+        d.months.add(`${f.year}-${f.month}`);
+        d.outstanding += a.outstanding;
+        d.lateFee += Math.min(a.lateFee, a.outstanding);
+        byStudent.set(key, d);
+      }
 
+      const list = [...byStudent.values()].sort((x, y) => y.outstanding - x.outstanding);
+      truncated = list.length > REPORT_ROW_LIMIT;
+      allRows = list.slice(0, REPORT_ROW_LIMIT).map((d, idx) => {
+        const st = d.f.StudentClass.Students;
+        const total = Math.round(d.outstanding * 100) / 100;
         return {
           srNo: idx + 1,
-          registrationNumber: f.StudentClass?.Students?.registrationNumber ?? "-",
-          studentName: f.StudentClass?.Students?.studentName ?? "-",
-          fatherName: f.StudentClass?.Students?.fatherName ?? "-",
-          gradeSection: `${f.StudentClass?.Grades?.grade ?? ""} ${f.StudentClass?.Grades?.section ?? ""}`.trim(),
-          fatherMobile:
-            f.StudentClass?.Students?.fatherMobile ||
-            f.StudentClass?.Students?.studentMobile ||
-            "-",
-          unpaidMonthsCount: 1,
-          tuitionDue,
-          lateFee,
+          registrationNumber: st.registrationNumber,
+          studentName: st.studentName,
+          fatherName: st.fatherName ?? "-",
+          gradeSection: `${d.f.StudentClass.Grades.grade} ${d.f.StudentClass.Grades.section}`.trim(),
+          fatherMobile: st.fatherMobile || st.studentMobile || "-",
+          unpaidMonthsCount: d.months.size,
+          tuitionDue: Math.round((total - d.lateFee) * 100) / 100,
+          lateFee: d.lateFee,
           totalOutstanding: total,
-          defaulterSeverity: total > 5000 ? "High Priority" : "Standard Notice",
+          defaulterSeverity: d.months.size >= 3 || total > 5000 ? "High Priority" : "Standard Notice",
         };
       });
 
-      const totalOutstanding = allRows.reduce(
-        (acc, r) => acc + (r.totalOutstanding as number),
-        0,
-      );
+      const totalOutstanding = list.reduce((acc, d) => acc + d.outstanding, 0);
 
       summaryMetrics = [
-        { label: "Defaulter Accounts", value: allRows.length },
+        { label: "Defaulter Accounts", value: list.length },
         {
           label: "Total Outstanding Balance",
-          value: `Rs. ${totalOutstanding.toLocaleString()}`,
+          value: `Rs. ${Math.round(totalOutstanding).toLocaleString()}`,
         },
         {
           label: "High Priority Cases",
@@ -1466,45 +1121,98 @@ export async function fetchReportData(
 
     // ---------------- 29. REVENUE VS EXPENSE SUMMARY REPORT ----------------
     case "revenue-expense-summary": {
-      const currentYear = input.year ?? new Date().getFullYear();
-      const months = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+      const year = input.year ?? Number(pkYmd().slice(0, 4));
+      const yearStart = pkDayStart(`${year}-01-01`);
+      const yearEnd = pkDayEnd(`${year}-12-31`);
+      const monthOf = (d: Date) => Number(pkYmd(d).slice(5, 7));
+      const blank = () => Array.from({ length: 12 }, () => 0);
+      const tuition = blank();
+      const admission = blank();
+      const other = blank();
+      const payroll = blank();
+      const direct = blank();
 
-      allRows = months.map((m) => {
-        const monthName = new Date(currentYear, m - 1).toLocaleString("en-PK", {
-          month: "short",
-        });
-        const tuitionRevenue = 450000 + ((m * 15000) % 80000);
-        const admissionRevenue =
-          m === 3 || m === 4 || m === 8 || m === 9 ? 120000 : 25000;
-        const otherIncome = 15000;
-        const totalRevenue = tuitionRevenue + admissionRevenue + otherIncome;
+      // Fee income by voucher month, split by component, net of discounts.
+      const vouchers = await db.feeStudentClass.findMany({
+        where: { year },
+        include: { fees: true },
+      });
+      const voucherAmounts = computeFeeRows(vouchers);
+      for (const v of vouchers) {
+        const a = voucherAmounts.get(v.sfcId);
+        if (!a || a.excluded || a.paid <= 0) continue;
+        const gross = Object.values(a.paidComponents).reduce((x, y) => x + (y ?? 0), 0);
+        if (gross <= 0) continue;
+        const scale = a.paid / gross;
+        const m = v.month - 1;
+        if (m < 0 || m > 11) continue;
+        for (const [k, amount] of Object.entries(a.paidComponents)) {
+          const net = (amount ?? 0) * scale;
+          if (k === "tuition") tuition[m]! += net;
+          else if (k === "admission") admission[m]! += net;
+          else other[m]! += net;
+        }
+      }
 
-        const salaryExpense = 320000;
-        const directExpenses = 45000 + ((m * 4000) % 25000);
-        const totalExpenses = salaryExpense + directExpenses;
-        const netOperatingSurplus = totalRevenue - totalExpenses;
+      const [salaries, directExpenses, oldExpenses, pettyCash, paidPOs] = await Promise.all([
+        db.salary.groupBy({
+          by: ["month"],
+          where: { year, status: "PAID" },
+          _sum: { amount: true, allowances: true, bonus: true, deductions: true },
+        }),
+        db.directExpense.findMany({
+          where: { isApproved: true, expenseDate: { gte: yearStart, lte: yearEnd } },
+          select: { amount: true, expenseDate: true },
+        }),
+        db.expenses.groupBy({ by: ["month"], where: { year }, _sum: { amount: true } }),
+        db.pettyCashDisbursement.findMany({
+          where: { date: { gte: yearStart, lte: yearEnd } },
+          select: { amount: true, date: true },
+        }),
+        db.purchaseOrder.findMany({
+          where: { status: "Paid", createdAt: { gte: yearStart, lte: yearEnd } },
+          select: { estimatedTotal: true, createdAt: true },
+        }),
+      ]);
+      for (const g of salaries) {
+        const m = g.month - 1;
+        if (m < 0 || m > 11) continue;
+        payroll[m]! +=
+          (g._sum.amount ?? 0) + (g._sum.allowances ?? 0) + (g._sum.bonus ?? 0) - (g._sum.deductions ?? 0);
+      }
+      for (const e of directExpenses) direct[monthOf(e.expenseDate) - 1]! += e.amount;
+      for (const g of oldExpenses) {
+        const m = g.month - 1;
+        if (m >= 0 && m <= 11) direct[m]! += g._sum.amount ?? 0;
+      }
+      for (const d of pettyCash) direct[monthOf(d.date) - 1]! += d.amount;
+      for (const po of paidPOs) direct[monthOf(po.createdAt) - 1]! += po.estimatedTotal;
 
+      const r = (n: number) => Math.round(n);
+      allRows = tuition.map((_, i) => {
+        const totalRevenue = tuition[i]! + admission[i]! + other[i]!;
+        const totalExpenses = payroll[i]! + direct[i]!;
         return {
-          period: `${monthName} ${currentYear}`,
-          tuitionRevenue,
-          admissionRevenue,
-          otherIncome,
-          totalRevenue,
-          salaryExpense,
-          directExpenses,
-          totalExpenses,
-          netOperatingSurplus,
+          period: `${new Date(2000, i, 1).toLocaleString("en-US", { month: "short" })} ${year}`,
+          tuitionRevenue: r(tuition[i]!),
+          admissionRevenue: r(admission[i]!),
+          otherIncome: r(other[i]!),
+          totalRevenue: r(totalRevenue),
+          salaryExpense: r(payroll[i]!),
+          directExpenses: r(direct[i]!),
+          totalExpenses: r(totalExpenses),
+          netOperatingSurplus: r(totalRevenue - totalExpenses),
         };
       });
 
-      const totalRev = allRows.reduce((acc, r) => acc + (r.totalRevenue as number), 0);
-      const totalExp = allRows.reduce((acc, r) => acc + (r.totalExpenses as number), 0);
+      const totalRev = allRows.reduce((acc, row) => acc + (row.totalRevenue as number), 0);
+      const totalExp = allRows.reduce((acc, row) => acc + (row.totalExpenses as number), 0);
       const net = totalRev - totalExp;
 
       summaryMetrics = [
-        { label: "Total Annual Revenue", value: `Rs. ${totalRev.toLocaleString()}` },
-        { label: "Total Operating Expenses", value: `Rs. ${totalExp.toLocaleString()}` },
-        { label: "Net Operating Surplus", value: `Rs. ${net.toLocaleString()}` },
+        { label: "Total Fee Income", value: `Rs. ${totalRev.toLocaleString()}` },
+        { label: "Total Expenses (payroll + spend)", value: `Rs. ${totalExp.toLocaleString()}` },
+        { label: "Net Balance", value: `Rs. ${net.toLocaleString()}` },
         {
           label: "Operating Margin",
           value: totalRev > 0 ? `${((net / totalRev) * 100).toFixed(1)}%` : "0%",
@@ -1523,15 +1231,16 @@ export async function fetchReportData(
           ...(genderFilter ? { Employees: { gender: genderFilter } } : {}),
         },
         include: { Employees: true },
-        take: 500,
-        orderBy: [{ year: "desc" }, { month: "desc" }],
+        take: REPORT_ROW_LIMIT + 1,
+        orderBy: [{ year: "desc" }, { month: "desc" }, { id: "asc" }],
       });
+      truncated = salaries.length > REPORT_ROW_LIMIT;
 
-      allRows = salaries.map((s, idx) => ({
+      allRows = salaries.slice(0, REPORT_ROW_LIMIT).map((s, idx) => ({
         srNo: idx + 1,
         registrationNumber: s.Employees?.registrationNumber ?? "-",
-        employeeName: s.Employees?.employeeName ?? "Staff Member",
-        designation: s.Employees?.designation ?? "Teacher",
+        employeeName: s.Employees?.employeeName ?? "-",
+        designation: s.Employees?.designation ?? "-",
         monthYear: `${s.month}/${s.year}`,
         baseSalary: s.amount,
         increment: s.allowances,
@@ -1541,12 +1250,17 @@ export async function fetchReportData(
         status: s.status,
       }));
 
-      const totalNet = allRows.reduce((acc, r) => acc + (r.netSalary as number), 0);
+      const netPaid = allRows
+        .filter((r) => r.status === "PAID")
+        .reduce((acc, r) => acc + (r.netSalary as number), 0);
+      const netPending = allRows
+        .filter((r) => r.status !== "PAID")
+        .reduce((acc, r) => acc + (r.netSalary as number), 0);
 
       summaryMetrics = [
-        { label: "Payroll Headcount", value: allRows.length },
-        { label: "Net Disbursed Amount", value: `Rs. ${totalNet.toLocaleString()}` },
-        { label: "Disbursement Status", value: "Verified by Finance" },
+        { label: "Payroll Rows", value: allRows.length },
+        { label: "Net Paid", value: `Rs. ${netPaid.toLocaleString()}` },
+        { label: "Net Still Payable (pending/partial)", value: `Rs. ${netPending.toLocaleString()}` },
       ];
       break;
     }
@@ -1559,12 +1273,21 @@ export async function fetchReportData(
     }
   }
 
-  // Search Filter on computed rows
-  if (input.search && allRows.length > 0) {
+  // Search on computed rows, only for reports whose query did not already search
+  // (a DB match on a hidden column such as the address must not be dropped here).
+  if (input.search && allRows.length > 0 && !DB_SEARCH_REPORTS.has(input.reportType)) {
     const s = input.search.toLowerCase();
     allRows = allRows.filter((r) =>
       Object.values(r).some((val) => String(val).toLowerCase().includes(s)),
     );
+  }
+
+  if (allRows.length >= REPORT_ROW_LIMIT) truncated = true;
+  if (truncated) {
+    summaryMetrics.push({
+      label: "Truncated",
+      value: `Showing the first ${REPORT_ROW_LIMIT.toLocaleString()} rows; narrow the filters to see the rest.`,
+    });
   }
 
   const totalCount = allRows.length;
@@ -1581,6 +1304,7 @@ export async function fetchReportData(
     totalPages: Math.max(1, Math.ceil(totalCount / pageSize)),
     currentPage: page,
     summaryMetrics,
+    truncated,
   };
 }
 
@@ -1637,21 +1361,30 @@ export const reportRouter = createTRPCRouter({
   // ================= 2. PRINCIPAL STATS (PRESERVED) =================
   getPrincipalStats: officeProcedure.query(async ({ ctx }) => {
     try {
-      const fees = await ctx.db.feeStudentClass.findMany({
-        where: { tuitionPaid: true },
-        include: { fees: true },
-      });
-      const totalRevenue = fees.reduce(
-        (acc, curr) => acc + (curr.fees?.tuitionFee ?? 0),
-        0,
-      );
+      // Active session's fee collections (was: tuition of every paid voucher ever, ignoring
+      // discounts and annual components) and that session's recorded expenses.
+      const active = await ctx.db.sessions.findFirst({ where: { isActive: true } });
+      const window = active ? sessionWindow(active) : { from: undefined, to: undefined };
+      const vouchers = active
+        ? await ctx.db.feeStudentClass.findMany({
+            where: { StudentClass: { sessionId: active.sessionId } },
+            include: { fees: true },
+          })
+        : [];
+      const totalRevenue = sumAmounts(computeFeeRows(vouchers).values()).paid;
 
       const expenses = await ctx.db.expenses.aggregate({
+        where: {
+          date: {
+            ...(window.from ? { gte: window.from } : {}),
+            ...(window.to ? { lte: window.to } : {}),
+          },
+        },
         _sum: { amount: true },
       });
       const totalExpenses = expenses._sum.amount ?? 0;
 
-      const today = new Date().toISOString().split("T")[0];
+      const today = pkYmd();
       const attendance = await ctx.db.employeeAttendance.groupBy({
         by: ["morning"],
         where: { date: today },
@@ -1722,7 +1455,7 @@ export const reportRouter = createTRPCRouter({
         const dataResult = await fetchReportData(ctx.db, {
           ...input,
           page: 1,
-          pageSize: 2000, // Export up to 2000 rows
+          pageSize: REPORT_ROW_LIMIT,
         });
 
         const filterSummary: string[] = [];
@@ -1734,6 +1467,11 @@ export const reportRouter = createTRPCRouter({
         if (input.city) filterSummary.push(`City: ${input.city}`);
         if (input.month) filterSummary.push(`Month: ${input.month}`);
         if (input.year) filterSummary.push(`Year: ${input.year}`);
+        if (dataResult.truncated || dataResult.allRowsCount > dataResult.rows.length) {
+          filterSummary.push(
+            `Truncated: first ${dataResult.rows.length.toLocaleString()} of ${dataResult.allRowsCount.toLocaleString()}+ rows`,
+          );
+        }
 
         const exportOptions: ExportReportOptions = {
           title: dataResult.reportDefinition.title,
@@ -1845,15 +1583,69 @@ export const reportRouter = createTRPCRouter({
             break;
           }
 
+          case "employees": {
+            headers = [
+              { key: "registrationNumber", label: "Reg #" },
+              { key: "employeeName", label: "Name" },
+              { key: "designation", label: "Designation" },
+              { key: "mobileNo", label: "Contact" },
+              { key: "status", label: "Status" },
+            ];
+            const employees = await ctx.db.employees.findMany({
+              orderBy: { employeeName: "asc" },
+              select: {
+                registrationNumber: true,
+                employeeName: true,
+                designation: true,
+                mobileNo: true,
+                status: true,
+              },
+            });
+            rawData = employees;
+            break;
+          }
+
+          case "sessions": {
+            headers = [
+              { key: "sessionName", label: "Session" },
+              { key: "sessionFrom", label: "From" },
+              { key: "sessionTo", label: "To" },
+              { key: "isActive", label: "Status" },
+            ];
+            const sessions = await ctx.db.sessions.findMany({
+              orderBy: { sessionFrom: "desc" },
+              select: { sessionName: true, sessionFrom: true, sessionTo: true, isActive: true },
+            });
+            rawData = sessions.map((x) => ({ ...x, isActive: x.isActive ? "Active" : "Closed" }));
+            break;
+          }
+
           default: {
-            // Forward to modern export engine
+            // Forward each legacy type to its modern report (it used to return the
+            // enrolled-students PDF for every other type).
+            const LEGACY_MAP: Partial<Record<typeof reportType, string>> = {
+              fees: "fee-collection",
+              salary: "salary-disbursement",
+              expenses: "revenue-expense-summary",
+              classes: "student-count-section",
+            };
+            const modernType = LEGACY_MAP[reportType];
+            if (!modernType) {
+              throw new TRPCError({
+                code: "NOT_IMPLEMENTED",
+                message: `The "${reportType}" report is not available here. Use the Reports Hub.`,
+              });
+            }
             const modernResult = await fetchReportData(ctx.db, {
-              reportType: "enrolled-students",
+              reportType: modernType,
               sessionId: input.sessionId,
               classId: input.classId,
+              month: input.month,
+              year: input.year,
+              date: input.date,
               gender: "ALL",
               page: 1,
-              pageSize: 500,
+              pageSize: REPORT_ROW_LIMIT,
             });
             const res = await exportReportBuffer("pdf", {
               title: modernResult.reportDefinition.title,
