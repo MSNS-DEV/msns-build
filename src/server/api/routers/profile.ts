@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { z } from "zod";
 import { hash, compare } from "bcryptjs";
+import { revokeSessions } from "~/server/security/sessions";
 
 const updateProfileSchema = z.object({
   username: z.string().min(2).max(100),
@@ -19,7 +20,6 @@ const updateBioSchema = z.object({
 const updateSettingsSchema = z.object({
   emailNotifications: z.boolean().optional(),
   profileVisibility: z.boolean().optional(),
-  twoFactorAuth: z.boolean().optional(),
   marketingEmails: z.boolean().optional(),
   pushNotifications: z.boolean().optional(),
 });
@@ -134,7 +134,7 @@ export const ProfileRouter = createTRPCRouter({
             });
           }
 
-          updateData.password = await hash(newPassword, 10);
+          updateData.password = await hash(newPassword, 12);
           updateData.mustChangePassword = false;
         }
 
@@ -151,6 +151,14 @@ export const ProfileRouter = createTRPCRouter({
             profilePic: true,
           },
         });
+
+        if (newPassword) {
+          // Same rules as security.changePassword: other devices sign in again.
+          await revokeSessions(
+            { id: ctx.session.user.id, type: "USER" },
+            { exceptId: ctx.session.sessionId },
+          );
+        }
 
         // Sync profilePic to linked Employee or Student record
         if (profilePic && (updatedUser.accountId || ctx.session.user.id)) {

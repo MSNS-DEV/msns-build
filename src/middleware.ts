@@ -34,6 +34,8 @@ const ROUTE_ROLES: [prefix: string, roles: string[] | "any"][] = [
   ["/worker", ["WORKER", "ADMIN"]],
   ["/parent", ["PARENT"]],
   ["/documents", "any"],
+  // Account setup pages (change password, 2FA enrolment): any signed-in role.
+  ["/account", "any"],
 ];
 
 /** Where each role lands (mirrors RedirectMap in src/constants). */
@@ -82,16 +84,35 @@ export async function middleware(request: NextRequest) {
     return withHeaders(NextResponse.redirect(url));
   }
 
+  const redirectTo = (pathname: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname;
+    url.search = "";
+    return withHeaders(NextResponse.redirect(url));
+  };
+  const path = request.nextUrl.pathname;
+
+  // Password accepted but the second factor isn't verified yet.
+  if (token.mfaPending === true) return redirectTo("/sign-in/verify");
+
+  // Account setup pages stay reachable while setup is outstanding.
+  if (path === "/account" || path.startsWith("/account/")) {
+    return withHeaders(NextResponse.next());
+  }
+  if (token.mustChangePassword === true) {
+    return redirectTo("/account/change-password");
+  }
+  if (token.enrollRequired === true) {
+    return redirectTo("/account/security-setup");
+  }
+
   const role =
     typeof token.accountType === "string"
       ? token.accountType.toUpperCase()
       : "";
   const allowed = route[1];
   if (allowed !== "any" && !allowed.includes(role)) {
-    const url = request.nextUrl.clone();
-    url.pathname = HOME_BY_ROLE[role] ?? "/sign-in";
-    url.search = "";
-    return withHeaders(NextResponse.redirect(url));
+    return redirectTo(HOME_BY_ROLE[role] ?? "/sign-in");
   }
 
   return withHeaders(NextResponse.next());

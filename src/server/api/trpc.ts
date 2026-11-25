@@ -51,9 +51,29 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 
 export const publicProcedure = t.procedure.use(timingMiddleware);
 
-/** Mutations still allowed while an account must replace its default password. */
-const ALLOWED_WHILE_PASSWORD_CHANGE_REQUIRED =
-  /^(profile|notification|mobile)\./;
+/**
+ * Mutations still allowed while an account must replace its default password
+ * or enrol a second factor (both are done from Profile → Security).
+ */
+const ALLOWED_WHILE_ACCOUNT_SETUP_REQUIRED =
+  /^(profile|security|notification|mobile)\./;
+
+/**
+ * Signed in, possibly still waiting for the second factor. Only the
+ * two-factor verification procedures should use this.
+ */
+export const pendingSessionProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(async ({ ctx, next }) => {
+    if (!ctx.session?.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    });
+  });
 
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
@@ -61,22 +81,46 @@ export const protectedProcedure = t.procedure
     if (!ctx.session?.user) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
-    if (
-      ctx.session.user.mustChangePassword &&
-      type === "mutation" &&
-      !ALLOWED_WHILE_PASSWORD_CHANGE_REQUIRED.test(path)
-    ) {
-      // The token can lag behind a password change; confirm against the DB.
-      const user = await ctx.db.user.findUnique({
-        where: { id: ctx.session.user.id },
-        select: { mustChangePassword: true },
+    if (ctx.session.user.twoFactorPending) {
+      throw new TRPCError({
+        code: "UNAUTHORIZED",
+        message: "Two-factor verification required.",
       });
-      if (user?.mustChangePassword) {
+    }
+    if (
+      type === "mutation" &&
+      !ALLOWED_WHILE_ACCOUNT_SETUP_REQUIRED.test(path)
+    ) {
+      if (ctx.session.user.twoFactorEnrollRequired) {
         throw new TRPCError({
           code: "FORBIDDEN",
           message:
-            "Please change your default password (Profile → Security) before making changes.",
+            "Your role requires two-factor authentication. Set it up in Profile → Security first.",
         });
+      }
+      if (ctx.session.user.mustChangePassword) {
+        // The token can lag behind a password change; confirm against the DB.
+        const isParent = ctx.session.user.accountType === "PARENT";
+        const pending = isParent
+          ? (
+              await ctx.db.parentGuardian.findUnique({
+                where: { guardentId: ctx.session.user.id },
+                select: { mustChangePassword: true },
+              })
+            )?.mustChangePassword
+          : (
+              await ctx.db.user.findUnique({
+                where: { id: ctx.session.user.id },
+                select: { mustChangePassword: true },
+              })
+            )?.mustChangePassword;
+        if (pending) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message:
+              "Please change your default password (Profile → Security) before making changes.",
+          });
+        }
       }
     }
     return next({
@@ -123,6 +167,16 @@ export const ROLE_GROUPS = {
 /** Leadership only: approvals, privileged account management, school-wide settings. */
 export const leadershipProcedure = protectedProcedure.use(
   enforceRoles([...ROLE_GROUPS.LEADERSHIP]),
+);
+
+/**
+ * Account administration (roles, suspension, 2FA resets, security policy).
+ * ADMIN and PRINCIPAL only: resetting someone's 2FA or password is a takeover
+ * path, so it is narrower than the LEADERSHIP group (which includes HEAD).
+ */
+export const ACCOUNT_ADMIN_ROLES = ["ADMIN", "PRINCIPAL"] as const;
+export const accountAdminProcedure = protectedProcedure.use(
+  enforceRoles([...ACCOUNT_ADMIN_ROLES]),
 );
 
 /** Leadership + clerks: day-to-day administration. */
