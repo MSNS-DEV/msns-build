@@ -10,7 +10,6 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { exportToCSV, type ExportData } from "~/lib/export-utils";
-import { exportToPDF } from "~/lib/pdf-reports";
 import { DownloadPdfButton, type ReportType } from "~/components/ui/DownloadPdfButton";
 import { toast } from "sonner";
 
@@ -48,6 +47,7 @@ export function PageExportButton({
       return;
     }
     try {
+      const { exportToPDF } = await import("~/lib/pdf-reports");
       await exportToPDF(exportData);
       toast.success("PDF exported successfully");
     } catch (err) {

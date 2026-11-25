@@ -5,8 +5,6 @@ import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { Printer, Download, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import * as jsPDF from "jspdf";
-import * as html2canvas from "html2canvas-pro";
 import { getParentagePrefix } from "~/lib/utils";
 
 interface FeeReceiptProps {
@@ -100,6 +98,11 @@ export function FeeReceipt({
       setIsGenerating(true);
       const element = receiptRef.current;
 
+      // Loaded on demand so PDF libraries stay out of the page bundle.
+      const [jsPDF, html2canvas] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas-pro"),
+      ]);
       const canvas = await html2canvas.default(element, {
         scale: 2,
         useCORS: true,

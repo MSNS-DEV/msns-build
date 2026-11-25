@@ -10,8 +10,6 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Download, Loader2, FileText, Printer, Building2, Phone, Mail, Globe } from "lucide-react";
-import * as jsPDF from "jspdf";
-import * as html2canvas from "html2canvas-pro";
 
 type SalaryData = {
   id: string;
@@ -83,6 +81,11 @@ export function SalarySlip({ salary, trigger, open, onOpenChange }: SalarySlipPr
       setIsGenerating(true);
       const element = slipRef.current;
 
+      // Loaded on demand so PDF libraries stay out of the page bundle.
+      const [jsPDF, html2canvas] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas-pro"),
+      ]);
       const canvas = await html2canvas.default(element, {
         scale: 2,
         useCORS: true,

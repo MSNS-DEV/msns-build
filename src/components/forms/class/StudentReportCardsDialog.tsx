@@ -15,8 +15,6 @@ import { Button } from "~/components/ui/button";
 import { FileText, Loader2, Edit, Save, X, Download } from "lucide-react";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
-import * as jsPDF from "jspdf";
-import * as html2canvas from "html2canvas-pro";
 import { toast } from "sonner";
 
 export function StudentReportCardsDialog({
@@ -103,6 +101,11 @@ export function StudentReportCardsDialog({
     toast.info("Generating report card PDF...");
 
     try {
+      // Loaded on demand so PDF libraries stay out of the page bundle.
+      const [jsPDF, html2canvas] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas-pro"),
+      ]);
       const canvas = await html2canvas.default(element, {
         scale: 2,
         useCORS: true,

@@ -47,8 +47,6 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog";
 import { toast } from "~/hooks/use-toast";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import { AnnualSalaryDialog } from "../blocks/salary/AnnualSalaryDialog";
 
 // Defined interface based on the query output
@@ -414,6 +412,11 @@ export function PayrollTable({ month, year }: PayrollTableProps) {
     if (!slipRef.current || !previewRecord) return;
     try {
       setIsDownloading(true);
+      // Loaded on demand so PDF libraries stay out of the page bundle.
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas-pro"),
+      ]);
       const canvas = await html2canvas(slipRef.current, {
         scale: 2,
         backgroundColor: "#ffffff",

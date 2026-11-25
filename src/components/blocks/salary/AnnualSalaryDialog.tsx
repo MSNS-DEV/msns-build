@@ -19,8 +19,6 @@ import {
 } from "~/components/ui/select";
 import { Loader2, Printer, Download, FileText } from "lucide-react";
 import { toast } from "~/hooks/use-toast";
-import * as jsPDF from "jspdf";
-import * as html2canvas from "html2canvas-pro";
 import { AnnualSalarySlip } from "./AnnualSalarySlip";
 
 interface SalaryRecord {
@@ -107,6 +105,11 @@ export function AnnualSalaryDialog({
       setIsDownloading(true);
       const element = annualRef.current;
 
+      // Loaded on demand so PDF libraries stay out of the page bundle.
+      const [jsPDF, html2canvas] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas-pro"),
+      ]);
       const canvas = await html2canvas.default(element, {
         scale: 2,
         useCORS: true,
