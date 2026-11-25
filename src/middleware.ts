@@ -65,10 +65,14 @@ export async function middleware(request: NextRequest) {
   const route = matchRoute(request.nextUrl.pathname);
   if (!route) return withHeaders(NextResponse.next());
 
+  // Auth.js uses the __Secure- cookie name whenever AUTH_URL/the site is https.
+  const secureCookie =
+    request.cookies.has("__Secure-authjs.session-token") ||
+    request.nextUrl.protocol === "https:";
   const token = await getToken({
     req: request,
     secret: process.env.AUTH_SECRET,
-    secureCookie: request.nextUrl.protocol === "https:",
+    secureCookie,
   });
 
   if (!token) {
