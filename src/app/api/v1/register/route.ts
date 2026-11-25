@@ -41,7 +41,10 @@ export async function POST(request: NextRequest) {
     const userRole = session.user.accountType;
     if (!ALLOWED_ROLES.includes(userRole)) {
       return NextResponse.json(
-        { message: "Forbidden — you do not have permission to register new users" },
+        {
+          message:
+            "Forbidden — you do not have permission to register new users",
+        },
         { status: 403 },
       );
     }
@@ -64,13 +67,19 @@ export async function POST(request: NextRequest) {
       !["ADMIN", "PRINCIPAL"].includes(userRole)
     ) {
       return NextResponse.json(
-        { message: "Forbidden — only an ADMIN or PRINCIPAL can create ADMIN, PRINCIPAL or HEAD accounts" },
+        {
+          message:
+            "Forbidden — only an ADMIN or PRINCIPAL can create ADMIN, PRINCIPAL or HEAD accounts",
+        },
         { status: 403 },
       );
     }
     const password = await hash(input.password, 10);
     const account = await db.$transaction(async (tx) => {
-      const userInfo = await generateUniqueUserCredentials(tx, input.accountType);
+      const userInfo = await generateUniqueUserCredentials(
+        tx,
+        input.accountType,
+      );
       return tx.user.create({
         data: {
           accountId: userInfo.accountId,
@@ -101,7 +110,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: error.message }, { status: 400 });
     } else if (error instanceof SyntaxError) {
       console.error(error.message);
-      return NextResponse.json({ message: "Invalid JSON body" }, { status: 400 });
+      return NextResponse.json(
+        { message: "Invalid JSON body" },
+        { status: 400 },
+      );
     }
     console.error(error);
     return NextResponse.json(

@@ -20,7 +20,9 @@ export const useSyncEngine = () => {
     let unsubscribeNetwork: (() => void) | undefined;
     void onNetworkStatusChange((status) => {
       if (status.connected) {
-        console.log("[SyncEngine] Network connection established, processing sync queue...");
+        console.log(
+          "[SyncEngine] Network connection established, processing sync queue...",
+        );
         void processSyncQueue(trpcClient);
       }
     }).then((unsub) => {
@@ -28,18 +30,22 @@ export const useSyncEngine = () => {
     });
 
     let appListener: AppListener | undefined;
-    void import("@capacitor/app").then(({ App }) => {
-      void App.addListener("appStateChange", (state) => {
-        if (state.isActive) {
-          console.log("[SyncEngine] App foregrounded, processing sync queue...");
-          void processSyncQueue(trpcClient);
-        }
-      }).then((listener) => {
-        appListener = listener;
+    void import("@capacitor/app")
+      .then(({ App }) => {
+        void App.addListener("appStateChange", (state) => {
+          if (state.isActive) {
+            console.log(
+              "[SyncEngine] App foregrounded, processing sync queue...",
+            );
+            void processSyncQueue(trpcClient);
+          }
+        }).then((listener) => {
+          appListener = listener;
+        });
+      })
+      .catch(() => {
+        // @capacitor/app not available on web — ignore
       });
-    }).catch(() => {
-      // @capacitor/app not available on web — ignore
-    });
 
     return () => {
       if (unsubscribeNetwork) unsubscribeNetwork();

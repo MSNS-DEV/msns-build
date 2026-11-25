@@ -1,38 +1,67 @@
 "use client";
 
 import { useState } from "react";
-import { Activity, UserPlus, CheckCircle2, BookOpen, Loader2, ChevronDown } from "lucide-react";
+import {
+  Activity,
+  UserPlus,
+  CheckCircle2,
+  BookOpen,
+  Loader2,
+  ChevronDown,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { api } from "~/trpc/react";
 import { formatDistanceToNow } from "date-fns";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "~/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "~/components/ui/collapsible";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
 const iconMap = {
   student: { icon: UserPlus, color: "bg-blue-500", textClass: "text-blue-500" },
-  fee: { icon: CheckCircle2, color: "bg-emerald-500", textClass: "text-emerald-500" },
-  diary: { icon: BookOpen, color: "bg-purple-500", textClass: "text-purple-500" },
+  fee: {
+    icon: CheckCircle2,
+    color: "bg-emerald-500",
+    textClass: "text-emerald-500",
+  },
+  diary: {
+    icon: BookOpen,
+    color: "bg-purple-500",
+    textClass: "text-purple-500",
+  },
 };
 
 export function ActivityFeed() {
   const [isOpen, setIsOpen] = useState(false);
-  const { data: activities = [], isLoading } = api.event.getRecentActivity.useQuery({ limit: 6 });
+  const { data: activities = [], isLoading } =
+    api.event.getRecentActivity.useQuery({ limit: 6 });
 
   return (
     <Card className="card-enhanced">
       <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
-        <CardHeader className="pb-2 pt-3 px-4 flex flex-row justify-between items-center space-y-0">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0 px-4 pb-2 pt-3">
           <div className="flex items-center gap-2">
             <div className="rounded-md bg-pink-500/10 p-1.5 text-pink-400">
               <Activity className="h-4 w-4" />
             </div>
-            <CardTitle className="text-sm font-semibold">Recent Activity</CardTitle>
-            <span className="ml-2 text-xs text-muted-foreground hidden sm:inline-block">Live updates</span>
+            <CardTitle className="text-sm font-semibold">
+              Recent Activity
+            </CardTitle>
+            <span className="ml-2 hidden text-xs text-muted-foreground sm:inline-block">
+              Live updates
+            </span>
           </div>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <ChevronDown className={cn("h-4 w-4 transition-all duration-200", isOpen ? "rotate-180" : "")} />
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-all duration-200",
+                  isOpen ? "rotate-180" : "",
+                )}
+              />
               <span className="sr-only">Toggle</span>
             </Button>
           </CollapsibleTrigger>
@@ -44,7 +73,9 @@ export function ActivityFeed() {
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : activities.length === 0 ? (
-              <div className="py-6 text-center text-xs text-muted-foreground">No recent activity.</div>
+              <div className="py-6 text-center text-xs text-muted-foreground">
+                No recent activity.
+              </div>
             ) : (
               <div className="space-y-1">
                 {activities.map((activity, index) => {
@@ -64,7 +95,9 @@ export function ActivityFeed() {
                         <p className="truncate text-xs text-slate-700 dark:text-slate-300">
                           {activity.text}
                         </p>
-                        <p className={`text-[10px] font-medium ${meta.textClass}`}>
+                        <p
+                          className={`text-[10px] font-medium ${meta.textClass}`}
+                        >
                           {activity.type === "student"
                             ? "Registration"
                             : activity.type === "fee"
@@ -73,7 +106,9 @@ export function ActivityFeed() {
                         </p>
                       </div>
                       <time className="shrink-0 font-mono text-[10px] text-slate-400">
-                        {formatDistanceToNow(new Date(activity.time), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(activity.time), {
+                          addSuffix: true,
+                        })}
                       </time>
                     </div>
                   );

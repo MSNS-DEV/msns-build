@@ -3,7 +3,13 @@ import { after } from "next/server";
 import { assertCanReadStudent } from "~/server/api/access";
 import { TRPCError } from "@trpc/server";
 import { type Prisma } from "@prisma/client";
-import { createTRPCRouter, protectedProcedure, clerkProcedure, financeProcedure, officeProcedure } from "~/server/api/trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  clerkProcedure,
+  financeProcedure,
+  officeProcedure,
+} from "~/server/api/trpc";
 import { computeFeeRows, sumAmounts } from "~/lib/fee-calc";
 
 // --- Input Schemas ---
@@ -189,7 +195,8 @@ export const feeRouter = createTRPCRouter({
         where: { classId: input.classId, sessionId: input.sessionId },
         select: { scId: true, studentId: true },
       });
-      if (studentClasses.length === 0) return { assignedCount: 0, skippedCount: 0 };
+      if (studentClasses.length === 0)
+        return { assignedCount: 0, skippedCount: 0 };
 
       const existing = await ctx.db.feeStudentClass.findMany({
         where: {
@@ -238,11 +245,17 @@ export const feeRouter = createTRPCRouter({
                 select: { studentId: true, studentName: true },
               }),
             ]);
-            const nameById = new Map(students.map((s) => [s.studentId, s.studentName]));
-            const feeType = feeRecord?.type === "MonthlyFee" ? "Monthly Fee" : "Annual Fee";
-            const { sendPushNotification } = await import("~/server/mobile/fcm");
+            const nameById = new Map(
+              students.map((s) => [s.studentId, s.studentName]),
+            );
+            const feeType =
+              feeRecord?.type === "MonthlyFee" ? "Monthly Fee" : "Annual Fee";
+            const { sendPushNotification } =
+              await import("~/server/mobile/fcm");
             for (const parent of parents) {
-              const childId = parent.linkedStudentIds.find((id) => nameById.has(id));
+              const childId = parent.linkedStudentIds.find((id) =>
+                nameById.has(id),
+              );
               const name = (childId && nameById.get(childId)) ?? "Student";
               await sendPushNotification(
                 [],
@@ -281,10 +294,17 @@ export const feeRouter = createTRPCRouter({
           where: { sfcId: feeStudentClassId },
           include: { fees: { select: { type: true } } },
         });
-        if (!current) throw new TRPCError({ code: "NOT_FOUND", message: "Voucher not found" });
+        if (!current)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Voucher not found",
+          });
 
-        const annualSet: Partial<Record<(typeof ANNUAL_FLAGS)[number], true>> = {};
-        const annualClear: Partial<Record<(typeof ANNUAL_FLAGS)[number], false>> = {};
+        const annualSet: Partial<Record<(typeof ANNUAL_FLAGS)[number], true>> =
+          {};
+        const annualClear: Partial<
+          Record<(typeof ANNUAL_FLAGS)[number], false>
+        > = {};
         for (const k of ANNUAL_FLAGS) {
           if (rest[k] === true) annualSet[k] = true;
           if (rest[k] === false) annualClear[k] = false;
@@ -292,7 +312,10 @@ export const feeRouter = createTRPCRouter({
 
         // Where annual components are recorded for this student-year.
         let annualTargetId = current.sfcId;
-        if (current.fees.type !== "AnnualFee" && Object.keys(annualSet).length > 0) {
+        if (
+          current.fees.type !== "AnnualFee" &&
+          Object.keys(annualSet).length > 0
+        ) {
           const annualVoucher = await tx.feeStudentClass.findFirst({
             where: {
               studentClassId: current.studentClassId,
@@ -307,17 +330,26 @@ export const feeRouter = createTRPCRouter({
         }
 
         const ownData: Prisma.FeeStudentClassUpdateInput = {
-          ...(rest.tuitionPaid !== undefined ? { tuitionPaid: rest.tuitionPaid } : {}),
-          ...(rest.admissionFeePaid !== undefined ? { admissionFeePaid: rest.admissionFeePaid } : {}),
+          ...(rest.tuitionPaid !== undefined
+            ? { tuitionPaid: rest.tuitionPaid }
+            : {}),
+          ...(rest.admissionFeePaid !== undefined
+            ? { admissionFeePaid: rest.admissionFeePaid }
+            : {}),
           ...(rest.discount !== undefined ? { discount: rest.discount } : {}),
           ...(rest.discountDescription !== undefined
             ? { discountDescription: rest.discountDescription }
             : {}),
-          ...(discountbypercent !== undefined ? { discountByPercent: discountbypercent } : {}),
+          ...(discountbypercent !== undefined
+            ? { discountByPercent: discountbypercent }
+            : {}),
           ...annualClear,
           ...(annualTargetId === current.sfcId ? annualSet : {}),
         };
-        await tx.feeStudentClass.update({ where: { sfcId: current.sfcId }, data: ownData });
+        await tx.feeStudentClass.update({
+          where: { sfcId: current.sfcId },
+          data: ownData,
+        });
 
         if (annualTargetId !== current.sfcId) {
           await tx.feeStudentClass.update({
@@ -327,7 +359,10 @@ export const feeRouter = createTRPCRouter({
         }
         if (Object.keys(annualClear).length > 0) {
           await tx.feeStudentClass.updateMany({
-            where: { studentClassId: current.studentClassId, year: current.year },
+            where: {
+              studentClassId: current.studentClassId,
+              year: current.year,
+            },
             data: annualClear,
           });
         }
@@ -351,7 +386,9 @@ export const feeRouter = createTRPCRouter({
           }
         }
 
-        return tx.feeStudentClass.findUniqueOrThrow({ where: { sfcId: current.sfcId } });
+        return tx.feeStudentClass.findUniqueOrThrow({
+          where: { sfcId: current.sfcId },
+        });
       });
     }),
 
@@ -372,10 +409,18 @@ export const feeRouter = createTRPCRouter({
       return ctx.db.$transaction(async (tx) => {
         const vouchers = await tx.feeStudentClass.findMany({
           where: { sfcId: { in: input.feeStudentClassIds } },
-          select: { sfcId: true, paidAt: true, fees: { select: { type: true } } },
+          select: {
+            sfcId: true,
+            paidAt: true,
+            fees: { select: { type: true } },
+          },
         });
-        const monthlyIds = vouchers.filter((v) => v.fees.type !== "AnnualFee").map((v) => v.sfcId);
-        const annualIds = vouchers.filter((v) => v.fees.type === "AnnualFee").map((v) => v.sfcId);
+        const monthlyIds = vouchers
+          .filter((v) => v.fees.type !== "AnnualFee")
+          .map((v) => v.sfcId);
+        const annualIds = vouchers
+          .filter((v) => v.fees.type === "AnnualFee")
+          .map((v) => v.sfcId);
         const paidAt = input.paid ? now : null;
 
         if (monthlyIds.length > 0) {
@@ -414,11 +459,16 @@ export const feeRouter = createTRPCRouter({
       const voucher = await ctx.db.feeStudentClass.findUnique({
         where: { sfcId: input.feeStudentClassId },
       });
-      if (!voucher) throw new TRPCError({ code: "NOT_FOUND", message: "Voucher not found" });
+      if (!voucher)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Voucher not found",
+        });
       if (isVoucherPaid(voucher)) {
         throw new TRPCError({
           code: "PRECONDITION_FAILED",
-          message: "This voucher has a payment recorded and cannot be removed. Mark it unpaid first if the payment was entered by mistake.",
+          message:
+            "This voucher has a payment recorded and cannot be removed. Mark it unpaid first if the payment was entered by mistake.",
         });
       }
       return ctx.db.feeStudentClass.delete({
@@ -515,7 +565,9 @@ export const feeRouter = createTRPCRouter({
         monthlyStats.forEach((m) => {
           m.outstanding = m.totalExpected - m.totalCollected;
           m.collectionRate =
-            m.totalExpected > 0 ? (m.totalCollected / m.totalExpected) * 100 : 0;
+            m.totalExpected > 0
+              ? (m.totalCollected / m.totalExpected) * 100
+              : 0;
         });
 
         return {
@@ -633,7 +685,13 @@ export const feeRouter = createTRPCRouter({
           const className = `${f.StudentClass.Grades.grade} - ${f.StudentClass.Grades.section}`;
           let entry = classMap.get(className);
           if (!entry) {
-            entry = { className, studentCount: 0, totalExpected: 0, totalPaid: 0, payments: [] };
+            entry = {
+              className,
+              studentCount: 0,
+              totalExpected: 0,
+              totalPaid: 0,
+              payments: [],
+            };
             classMap.set(className, entry);
           }
 
@@ -670,13 +728,19 @@ export const feeRouter = createTRPCRouter({
       });
       const amounts = computeFeeRows(assignments);
 
-      const monthlyData = new Map<number, { collected: number; expected: number }>();
+      const monthlyData = new Map<
+        number,
+        { collected: number; expected: number }
+      >();
       const categoryData = new Map<string, number>();
 
       assignments.forEach((f) => {
         const a = amounts.get(f.sfcId);
         if (!a || a.excluded) return;
-        const mStats = monthlyData.get(f.month) ?? { collected: 0, expected: 0 };
+        const mStats = monthlyData.get(f.month) ?? {
+          collected: 0,
+          expected: 0,
+        };
         mStats.collected += a.paid;
         mStats.expected += a.due;
         monthlyData.set(f.month, mStats);
@@ -712,16 +776,23 @@ export const feeRouter = createTRPCRouter({
     }),
 
   getYearComparison: financeProcedure
-    .input(z.object({ sessionId: z.string(), years: z.array(z.number()).max(10) }))
+    .input(
+      z.object({ sessionId: z.string(), years: z.array(z.number()).max(10) }),
+    )
     .query(async ({ ctx, input }) => {
       const assignments = await ctx.db.feeStudentClass.findMany({
-        where: { year: { in: input.years }, StudentClass: { sessionId: input.sessionId } },
+        where: {
+          year: { in: input.years },
+          StudentClass: { sessionId: input.sessionId },
+        },
         include: { fees: true },
       });
       const amounts = computeFeeRows(assignments);
       return input.years.map((year) => {
         const t = sumAmounts(
-          assignments.filter((f) => f.year === year).map((f) => amounts.get(f.sfcId)!),
+          assignments
+            .filter((f) => f.year === year)
+            .map((f) => amounts.get(f.sfcId)!),
         );
         return { year, totalExpected: t.due, totalCollected: t.paid };
       });
@@ -799,7 +870,9 @@ export const feeRouter = createTRPCRouter({
         requested ??
         enrolments.find((e) => e.Sessions.isActive) ??
         [...enrolments].sort((a, b) =>
-          (b.Sessions.sessionFrom ?? "").localeCompare(a.Sessions.sessionFrom ?? ""),
+          (b.Sessions.sessionFrom ?? "").localeCompare(
+            a.Sessions.sessionFrom ?? "",
+          ),
         )[0];
       if (!pick) return null;
 

@@ -1,6 +1,7 @@
 # Enterprise Fee Management & Monthly Voucher System — Tasks
 
 ## Phase 1: Database Schema & Migration
+
 - [ ] Add new enums to `prisma/schema.prisma` (`VoucherType`, `PaymentStatus`, `ConcessionCategory`, `ConcessionScope`, `FineNature`)
 - [ ] Add `ChallanValidity` model (non-overlapping installment windows per session/grade)
 - [ ] Upgrade `FeeStudentClass` model with voucher core (types, validity, concession vs exemption, sub-installment hierarchy, merged vouchers, payment audit)
@@ -9,6 +10,7 @@
 - [ ] Run `npx prisma validate` and `npx prisma generate` in `msns-build`
 
 ## Phase 2: Core Routers & Security Guardrails
+
 - [ ] Create `src/server/api/routers/challanValidity.ts` (scheduling, non-overlapping validation, bulk-sync engine)
 - [ ] Create `src/server/api/routers/voucher.ts` (batch generation, sub-installment splitting, multi-month merge, idempotent payment recording, cancellations)
 - [ ] Create `src/server/api/routers/concession.ts` (Principal exemption approval, >=80% attendance auto-continuation evaluator, sibling detection)
@@ -17,11 +19,13 @@
 - [ ] Mount routers in `src/server/api/root.ts`
 
 ## Phase 3: Printable Two-Part Challan & Visuals
+
 - [ ] Install `qrcode.react` (and types if needed)
 - [ ] Create `PrintableVoucher.tsx` (Two-part layout: School Copy & Student Copy, itemized breakdown, bank details, QR code payload)
 - [ ] Create `VoucherPrintSheet.tsx` for bulk-printing class vouchers with CSS page breaks
 
 ## Phase 4: Frontend Hub & Workflows
+
 - [ ] Create `MonthlyVoucherHub.tsx` (table view, filters by session/grade/month/status/type, quick actions)
 - [ ] Create `GenerateVouchersDialog.tsx` (session/grade selection, ChallanValidity preview, arrears toggle)
 - [ ] Create `SplitVoucherDialog.tsx` (sub-installment wizard, sequence locking)
@@ -33,6 +37,7 @@
 - [ ] Add "Download Fee Challan" button to Parent/Student Portal
 
 ## Phase 5: Verification & Quality Assurance
+
 - [ ] Run `npx prisma validate`
 - [ ] Run `tsc --noEmit` to verify type safety across the entire repository
 - [ ] Verify non-overlapping check on `ChallanValidity`

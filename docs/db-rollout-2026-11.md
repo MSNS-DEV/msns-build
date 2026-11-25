@@ -2,13 +2,14 @@
 
 This branch adds three migrations. Apply them to production **before** deploying the app.
 
-| Migration | What it does | Production action |
-|---|---|---|
+| Migration                               | What it does                                                                                                                                                                                                                                                                                                                                                                               | Production action                                                                                  |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
 | `20261125150000_baseline_db_push_drift` | Captures everything that reached production through `prisma db push` and never had a migration: the fee-voucher columns and enums, `Notification`, `DeviceRegistration`, `Broadcast`, `ChallanValidity`, `SchoolBankDetails`, `Employees.status/leftDate`, report-card remarks, `User.profilePic`. Every statement is idempotent. Fee rows with no voucher number get `'V-' \|\| "sfcId"`. | **Deploy**. Do not mark it as applied. It skips what already exists and fills in anything missing. |
-| `20261125160000_auth_hardening` | `User.mustChangePassword`, `User.tokenVersion`, `NotificationReceipt`, `LoginAttempt`. | Deploy |
-| `20261125170000_data_integrity` | Unique keys: `Salary(employeeId, month, year)`, `StudentClass(studentId, sessionId)` and `ClassSubject(classId, subjectId, employeeId, sessionId)`. Voucher `subInstallmentIndex` changes so that 0 means the whole voucher (existing non-split rows are set to 0). Adds lookup indexes. | Deploy, after the duplicate check below |
+| `20261125160000_auth_hardening`         | `User.mustChangePassword`, `User.tokenVersion`, `NotificationReceipt`, `LoginAttempt`.                                                                                                                                                                                                                                                                                                     | Deploy                                                                                             |
+| `20261125170000_data_integrity`         | Unique keys: `Salary(employeeId, month, year)`, `StudentClass(studentId, sessionId)` and `ClassSubject(classId, subjectId, employeeId, sessionId)`. Voucher `subInstallmentIndex` changes so that 0 means the whole voucher (existing non-split rows are set to 0). Adds lookup indexes.                                                                                                   | Deploy, after the duplicate check below                                                            |
 
 These steps were checked locally against three simulated production databases:
+
 - old migrations recorded, then `db push` with the voucher columns;
 - the same without the voucher columns, with existing fee rows;
 - `db push` only, with no migration history.
@@ -22,9 +23,11 @@ Run these from a trusted machine with `DATABASE_URL` set to production. Use the 
 1. **Back up.** Take a Railway snapshot, or run `pg_dump "$DATABASE_URL" -Fc -f msns-pre-2026-11.dump`.
 
 2. **Run the read-only pre-check:**
+
    ```sh
    psql "$DATABASE_URL" -f docs/db-precheck-2026-11.sql
    ```
+
    - Query 3 must return **0 rows** for all three tables. If it lists duplicates, resolve each one by hand before continuing (see "Duplicates" below). Otherwise the unique indexes cannot be created and the migration stops.
    - Note the counts from query 4.
 
@@ -38,6 +41,7 @@ Run these from a trusted machine with `DATABASE_URL` set to production. Use the 
    - Any row shows `finished = false` or a `rolled_back_at` value: stop and investigate before continuing.
 
 4. **Deploy:**
+
    ```sh
    npx prisma migrate deploy
    npx prisma migrate status   # expect: "Database schema is up to date!"
@@ -51,6 +55,7 @@ Run these from a trusted machine with `DATABASE_URL` set to production. Use the 
      ```
 
 6. **Flag default passwords** (from the security changes):
+
    ```sh
    npx tsx scripts/flag-default-passwords.ts          # dry run: counts accounts
    npx tsx scripts/flag-default-passwords.ts --apply

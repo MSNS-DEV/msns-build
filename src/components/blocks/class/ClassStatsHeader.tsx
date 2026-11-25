@@ -5,7 +5,14 @@ import { api } from "~/trpc/react";
 import { GradientStatCard } from "~/components/shared/GradientStatCard";
 import { PageExportButton } from "~/components/shared/PageExportButton";
 import { Button } from "~/components/ui/button";
-import { Users, BookOpen, DollarSign, Calendar, UploadCloud, Printer } from "lucide-react";
+import {
+  Users,
+  BookOpen,
+  DollarSign,
+  Calendar,
+  UploadCloud,
+  Printer,
+} from "lucide-react";
 import { Skeleton } from "~/components/ui/skeleton";
 
 interface ClassStatsHeaderProps {
@@ -13,10 +20,16 @@ interface ClassStatsHeaderProps {
   sessionId: string;
 }
 
-export function ClassStatsHeader({ classId, sessionId }: ClassStatsHeaderProps) {
-  const { data: students, isLoading: studentsLoading } = api.allotment.getStudentsByClassAndSession.useQuery({ classId, sessionId });
-  const { data: subjects, isLoading: subjectsLoading } = api.subject.getSubjectsByClass.useQuery({ classId, sessionId });
-  const { data: classDetails, isLoading: classLoading } = api.class.getClassById.useQuery({ classId });
+export function ClassStatsHeader({
+  classId,
+  sessionId,
+}: ClassStatsHeaderProps) {
+  const { data: students, isLoading: studentsLoading } =
+    api.allotment.getStudentsByClassAndSession.useQuery({ classId, sessionId });
+  const { data: subjects, isLoading: subjectsLoading } =
+    api.subject.getSubjectsByClass.useQuery({ classId, sessionId });
+  const { data: classDetails, isLoading: classLoading } =
+    api.class.getClassById.useQuery({ classId });
 
   const exportData = useMemo(() => {
     if (!students || !classDetails) return undefined;
@@ -26,11 +39,12 @@ export function ClassStatsHeader({ classId, sessionId }: ClassStatsHeaderProps) 
         { key: "fatherName", label: "Father Name", width: 25 },
         { key: "grade", label: "Grade", width: 10 },
       ],
-      rows: students.data?.map((s) => ({
-        studentName: s.Students.studentName,
-        fatherName: s.Students.fatherName,
-        grade: classDetails.grade,
-      })) ?? [],
+      rows:
+        students.data?.map((s) => ({
+          studentName: s.Students.studentName,
+          fatherName: s.Students.fatherName,
+          grade: classDetails.grade,
+        })) ?? [],
       sheetName: `Class ${classDetails.grade} Roster`,
       title: `Class ${classDetails.grade} - Enrolled Students`,
     };
@@ -38,9 +52,12 @@ export function ClassStatsHeader({ classId, sessionId }: ClassStatsHeaderProps) 
 
   if (studentsLoading || subjectsLoading || classLoading) {
     return (
-      <div className="mb-8 grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+      <div className="mb-8 grid w-full grid-cols-4 gap-1.5 sm:gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
-          <Skeleton key={i} className="h-20 sm:h-32 rounded-xl bg-slate-200 dark:bg-emerald-900/20" />
+          <Skeleton
+            key={i}
+            className="h-20 rounded-xl bg-slate-200 dark:bg-emerald-900/20 sm:h-32"
+          />
         ))}
       </div>
     );
@@ -68,19 +85,25 @@ export function ClassStatsHeader({ classId, sessionId }: ClassStatsHeaderProps) 
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <PageExportButton exportData={exportData} csvFilename={`class-${classDetails?.grade}-roster`} />
+          <PageExportButton
+            exportData={exportData}
+            csvFilename={`class-${classDetails?.grade}-roster`}
+          />
           <Button variant="outline" size="sm" className="gap-2">
             <UploadCloud className="h-4 w-4" />
             Import
           </Button>
-          <Button size="sm" className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+          <Button
+            size="sm"
+            className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+          >
             <Printer className="h-4 w-4" />
             Print Roster
           </Button>
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+      <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
         <GradientStatCard
           title="Enrolled Students"
           value={students?.data?.length ?? 0}

@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { assertNoPaidSalaries } from "~/server/utils/financial-guards";
 import { assertCanReadEmployee, isOffice } from "~/server/api/access";
-import { createTRPCRouter, managementProcedure, employeeProcedure, financeProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  managementProcedure,
+  employeeProcedure,
+  financeProcedure,
+} from "../trpc";
 import { TRPCError } from "@trpc/server";
 import { Prisma } from "@prisma/client";
 
@@ -82,7 +87,8 @@ const netPay = (s: {
   allowances: number | null;
   bonus: number | null;
   deductions: number | null;
-}) => (s.amount ?? 0) + (s.allowances ?? 0) + (s.bonus ?? 0) - (s.deductions ?? 0);
+}) =>
+  (s.amount ?? 0) + (s.allowances ?? 0) + (s.bonus ?? 0) - (s.deductions ?? 0);
 
 const isUniqueViolation = (e: unknown) =>
   e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002";
@@ -140,7 +146,10 @@ export const salaryRouter = createTRPCRouter({
             year: input.year,
             status: input.status,
             // Only a paid salary has a payment date.
-            paymentDate: input.status === "PAID" ? (input.paymentDate ?? new Date()) : input.paymentDate,
+            paymentDate:
+              input.status === "PAID"
+                ? (input.paymentDate ?? new Date())
+                : input.paymentDate,
             deductions: input.deductions,
             allowances: input.allowances,
             bonus: input.bonus,
@@ -178,7 +187,11 @@ export const salaryRouter = createTRPCRouter({
   delete: managementProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      await assertNoPaidSalaries(ctx.db, { id: input.id }, "delete this salary");
+      await assertNoPaidSalaries(
+        ctx.db,
+        { id: input.id },
+        "delete this salary",
+      );
       return ctx.db.salary.delete({ where: { id: input.id } });
     }),
 
@@ -186,7 +199,11 @@ export const salaryRouter = createTRPCRouter({
   bulkDelete: managementProcedure
     .input(bulkDeleteSchema)
     .mutation(async ({ ctx, input }) => {
-      await assertNoPaidSalaries(ctx.db, { id: { in: input.ids } }, "delete these salaries");
+      await assertNoPaidSalaries(
+        ctx.db,
+        { id: { in: input.ids } },
+        "delete these salaries",
+      );
       return ctx.db.salary.deleteMany({
         where: {
           id: { in: input.ids },
@@ -219,7 +236,10 @@ export const salaryRouter = createTRPCRouter({
         take: input.limit + 1,
         cursor: input.cursor ? { id: input.cursor } : undefined,
         // id breaks ties so cursor pages never repeat or skip rows (paymentDate is often null).
-        orderBy: [{ paymentDate: { sort: "desc", nulls: "last" } }, { id: "desc" }],
+        orderBy: [
+          { paymentDate: { sort: "desc", nulls: "last" } },
+          { id: "desc" },
+        ],
         include: { Employees: true },
       });
 
@@ -624,7 +644,7 @@ export const salaryRouter = createTRPCRouter({
           SELECT DISTINCT ON ("employeeId") id
           FROM "SalaryAssignment"
           WHERE "employeeId" IN (
-            SELECT "employeeId" FROM "Employees" WHERE "employeeName" ILIKE ${'%' + searchTerm + '%'}
+            SELECT "employeeId" FROM "Employees" WHERE "employeeName" ILIKE ${"%" + searchTerm + "%"}
           )
           ORDER BY "employeeId", "assignedDate" DESC
         `;

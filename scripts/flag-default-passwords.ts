@@ -15,8 +15,12 @@ const apply = process.argv.includes("--apply");
 
 async function main() {
   const [students, employees] = await Promise.all([
-    db.students.findMany({ select: { registrationNumber: true, admissionNumber: true } }),
-    db.employees.findMany({ select: { registrationNumber: true, admissionNumber: true } }),
+    db.students.findMany({
+      select: { registrationNumber: true, admissionNumber: true },
+    }),
+    db.employees.findMany({
+      select: { registrationNumber: true, admissionNumber: true },
+    }),
   ]);
   const defaultByAccountId = new Map<string, string>();
   for (const p of [...students, ...employees]) {
@@ -40,7 +44,10 @@ async function main() {
     acc[u.accountType] = (acc[u.accountType] ?? 0) + 1;
     return acc;
   }, {});
-  console.log(`Accounts still on the default password: ${flagged.length}`, byRole);
+  console.log(
+    `Accounts still on the default password: ${flagged.length}`,
+    byRole,
+  );
 
   if (apply && flagged.length > 0) {
     const res = await db.user.updateMany({

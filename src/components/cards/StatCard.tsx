@@ -70,37 +70,39 @@ export function StatsCards() {
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+    <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
       {stats.map((stat) => (
         <Card
           key={stat.title}
-          className={`relative overflow-hidden border transition-all duration-500 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)] min-w-0 ${stat.className}`}
+          className={`relative min-w-0 overflow-hidden border transition-all duration-500 hover:-translate-y-1 hover:shadow-xl dark:hover:shadow-[0_8px_30px_rgb(0,0,0,0.3)] ${stat.className}`}
         >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-2 px-2 sm:pb-1.5 sm:pt-3 sm:px-4">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 px-2 pb-1 pt-2 sm:px-4 sm:pb-1.5 sm:pt-3">
             <CardTitle
-              className={`text-[10px] sm:text-xs font-semibold opacity-70 truncate ${stat.textColor}`}
+              className={`truncate text-[10px] font-semibold opacity-70 sm:text-xs ${stat.textColor}`}
             >
               {stat.title}
             </CardTitle>
-            <div className={`rounded-md sm:rounded-lg p-1 sm:p-1.5 flex-shrink-0 ${stat.iconBox}`}>
-              <stat.icon className="h-3 w-3 sm:h-3.5 sm:h-3.5" />
+            <div
+              className={`flex-shrink-0 rounded-md p-1 sm:rounded-lg sm:p-1.5 ${stat.iconBox}`}
+            >
+              <stat.icon className="h-3 w-3 sm:h-3.5" />
             </div>
           </CardHeader>
           <CardContent className="px-2 pb-2 sm:px-4 sm:pb-3">
             {stat.loading ? (
               <div className="space-y-1 sm:space-y-2">
-                <Skeleton className="h-5 sm:h-8 w-1/2 bg-black/5 dark:bg-white/10" />
-                <Skeleton className="h-3 sm:h-4 w-3/4 bg-black/5 dark:bg-white/10" />
+                <Skeleton className="h-5 w-1/2 bg-black/5 dark:bg-white/10 sm:h-8" />
+                <Skeleton className="h-3 w-3/4 bg-black/5 dark:bg-white/10 sm:h-4" />
               </div>
             ) : (
               <>
                 <div
-                  className={`text-sm sm:text-xl font-bold tracking-tight truncate ${stat.textColor}`}
+                  className={`truncate text-sm font-bold tracking-tight sm:text-xl ${stat.textColor}`}
                 >
                   {stat.value.toLocaleString()}
                 </div>
                 <p
-                  className={`mt-0.5 text-[9px] sm:text-xs font-medium opacity-60 truncate ${stat.textColor}`}
+                  className={`mt-0.5 truncate text-[9px] font-medium opacity-60 sm:text-xs ${stat.textColor}`}
                 >
                   {stat.description}
                 </p>

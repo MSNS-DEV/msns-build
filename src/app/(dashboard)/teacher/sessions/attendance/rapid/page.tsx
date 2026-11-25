@@ -31,15 +31,23 @@ export default function RapidAttendancePage() {
   const { data: classes } = api.class.getClasses.useQuery();
   const { data: sessions } = api.session.getSessions.useQuery();
 
-  const activeClassId = classId !== "" ? classId : (classes as ClassItem[] | undefined)?.[0]?.classId ?? "";
-  const activeSessionId = sessionId !== "" ? sessionId : (sessions as SessionItem[] | undefined)?.[0]?.sessionId ?? "";
+  const activeClassId =
+    classId !== ""
+      ? classId
+      : ((classes as ClassItem[] | undefined)?.[0]?.classId ?? "");
+  const activeSessionId =
+    sessionId !== ""
+      ? sessionId
+      : ((sessions as SessionItem[] | undefined)?.[0]?.sessionId ?? "");
 
-  const { data: students, isLoading } = api.student.getStudentsByClassAndSession.useQuery(
-    { classId: activeClassId, sessionId: activeSessionId },
-    { enabled: !!activeClassId && !!activeSessionId }
-  );
+  const { data: students, isLoading } =
+    api.student.getStudentsByClassAndSession.useQuery(
+      { classId: activeClassId, sessionId: activeSessionId },
+      { enabled: !!activeClassId && !!activeSessionId },
+    );
 
-  const markAttendanceMutation = api.attendance.markStudentAttendance.useMutation();
+  const markAttendanceMutation =
+    api.attendance.markStudentAttendance.useMutation();
 
   const handleToggle = (studentId: string) => {
     setRecords((prev) => {
@@ -76,7 +84,8 @@ export default function RapidAttendancePage() {
 
       alert("Rapid attendance recorded successfully!");
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "An unknown error occurred";
+      const message =
+        err instanceof Error ? err.message : "An unknown error occurred";
       alert(`Attendance save failed: ${message}`);
     } finally {
       setSubmitting(false);
@@ -84,40 +93,45 @@ export default function RapidAttendancePage() {
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto p-4 sm:p-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-            <UserCheck className="h-6 w-6 text-emerald-400" /> Rapid Attendance Marker
+          <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
+            <UserCheck className="h-6 w-6 text-emerald-400" /> Rapid Attendance
+            Marker
           </h1>
-          <p className="text-sm text-slate-400">One-tap classroom attendance entry with smart defaults</p>
+          <p className="text-sm text-slate-400">
+            One-tap classroom attendance entry with smart defaults
+          </p>
         </div>
 
         <div className="flex items-center gap-2">
           <Button
             size="sm"
             onClick={() => handleSetAll("P")}
-            className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20 text-xs"
+            className="border border-emerald-500/20 bg-emerald-500/10 text-xs text-emerald-400 hover:bg-emerald-500/20"
           >
-            <Sparkles className="h-3.5 w-3.5 mr-1" /> All Present (P)
+            <Sparkles className="mr-1 h-3.5 w-3.5" /> All Present (P)
           </Button>
           <Button
             size="sm"
             onClick={() => handleSetAll("A")}
-            className="bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 text-xs"
+            className="border border-rose-500/20 bg-rose-500/10 text-xs text-rose-400 hover:bg-rose-500/20"
           >
             All Absent (A)
           </Button>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+      <div className="grid gap-3 rounded-2xl border border-slate-800 bg-slate-900/60 p-4 sm:grid-cols-2">
         <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase">Class Level</label>
+          <label className="text-xs font-semibold uppercase text-slate-400">
+            Class Level
+          </label>
           <select
             value={activeClassId}
             onChange={(e) => setClassId(e.target.value)}
-            className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+            className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
           >
             {(classes as ClassItem[] | undefined)?.map((c) => (
               <option key={c.classId} value={c.classId}>
@@ -128,11 +142,13 @@ export default function RapidAttendancePage() {
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase">Academic Session</label>
+          <label className="text-xs font-semibold uppercase text-slate-400">
+            Academic Session
+          </label>
           <select
             value={activeSessionId}
             onChange={(e) => setSessionId(e.target.value)}
-            className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+            className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
           >
             {(sessions as SessionItem[] | undefined)?.map((s) => (
               <option key={s.sessionId} value={s.sessionId}>
@@ -159,27 +175,35 @@ export default function RapidAttendancePage() {
               <div
                 key={student.studentId}
                 onClick={() => handleToggle(student.studentId)}
-                className="flex items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-4 cursor-pointer hover:border-slate-700 transition-all select-none"
+                className="flex cursor-pointer select-none items-center justify-between rounded-xl border border-slate-800 bg-slate-950/60 p-4 transition-all hover:border-slate-700"
               >
                 <div>
-                  <p className="text-base font-bold text-white">{student.studentName}</p>
-                  <p className="text-xs text-slate-400">Reg: {student.registrationNumber}</p>
+                  <p className="text-base font-bold text-white">
+                    {student.studentName}
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    Reg: {student.registrationNumber}
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span
-                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                    className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold transition-all ${
                       status === "P"
                         ? "bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20"
                         : status === "A"
-                        ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
-                        : "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                          ? "bg-rose-500 text-white shadow-md shadow-rose-500/20"
+                          : "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
                     }`}
                   >
                     {status === "P" && <Check className="h-4 w-4" />}
                     {status === "A" && <X className="h-4 w-4" />}
                     {status === "L" && <Clock className="h-4 w-4" />}
-                    {status === "P" ? "PRESENT" : status === "A" ? "ABSENT" : "LEAVE"}
+                    {status === "P"
+                      ? "PRESENT"
+                      : status === "A"
+                        ? "ABSENT"
+                        : "LEAVE"}
                   </span>
                 </div>
               </div>
@@ -189,9 +213,9 @@ export default function RapidAttendancePage() {
           <Button
             onClick={() => void handleSubmit()}
             disabled={submitting}
-            className="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-6 text-base shadow-lg shadow-emerald-600/25 mt-4"
+            className="mt-4 w-full bg-emerald-600 py-6 text-base font-bold text-slate-950 shadow-lg shadow-emerald-600/25 hover:bg-emerald-500"
           >
-            <Send className="h-5 w-5 mr-2" /> Submit Attendance Records
+            <Send className="mr-2 h-5 w-5" /> Submit Attendance Records
           </Button>
         </div>
       )}

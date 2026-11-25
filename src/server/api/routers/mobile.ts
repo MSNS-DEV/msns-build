@@ -12,11 +12,23 @@ type DeviceRegistrationDb = {
   deviceRegistration: {
     upsert: (args: {
       where: { token: string };
-      update: { platform: string; userId: string | null; parentGuardianId: string | null };
-      create: { token: string; platform: string; userId: string | null; parentGuardianId: string | null };
+      update: {
+        platform: string;
+        userId: string | null;
+        parentGuardianId: string | null;
+      };
+      create: {
+        token: string;
+        platform: string;
+        userId: string | null;
+        parentGuardianId: string | null;
+      };
     }) => Promise<{ id: string; token: string; platform: string }>;
     deleteMany: (args: {
-      where: { token: string; OR: ({ userId: string } | { parentGuardianId: string })[] };
+      where: {
+        token: string;
+        OR: ({ userId: string } | { parentGuardianId: string })[];
+      };
     }) => Promise<{ count: number }>;
   };
 };
@@ -35,7 +47,7 @@ export const mobileRouter = createTRPCRouter({
       z.object({
         token: fcmToken,
         platform: z.enum(["android", "ios"]),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -54,7 +66,10 @@ export const mobileRouter = createTRPCRouter({
         });
         return { success: true };
       } catch (error) {
-        console.error("Device registration error:", error instanceof Error ? error.message : error);
+        console.error(
+          "Device registration error:",
+          error instanceof Error ? error.message : error,
+        );
         throw new Error("Failed to register device");
       }
     }),
@@ -66,7 +81,10 @@ export const mobileRouter = createTRPCRouter({
       const db = ctx.db as unknown as DeviceRegistrationDb;
       // Only remove the caller's own binding for this token.
       const { count } = await db.deviceRegistration.deleteMany({
-        where: { token: input.token, OR: [{ userId }, { parentGuardianId: userId }] },
+        where: {
+          token: input.token,
+          OR: [{ userId }, { parentGuardianId: userId }],
+        },
       });
       return { success: true, removed: count };
     }),

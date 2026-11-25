@@ -92,7 +92,10 @@ const adminAttendanceNav: NavItem = {
   icon: ClipboardList,
   items: [
     { title: "Student Attendance", url: "/admin/attendance" },
-    { title: "Employee Attendance", url: "/admin/sessions/attendance/employees/monthly" },
+    {
+      title: "Employee Attendance",
+      url: "/admin/sessions/attendance/employees/monthly",
+    },
   ],
 };
 
@@ -114,7 +117,11 @@ const data: NavigationConfig = {
     adminAttendanceNav,
     reportsNav,
     { title: "Faculty", url: "/admin/users/faculty/view", icon: Briefcase },
-    { title: "Students", url: "/admin/users/student/view", icon: GraduationCap },
+    {
+      title: "Students",
+      url: "/admin/users/student/view",
+      icon: GraduationCap,
+    },
     { title: "Documents", url: "/documents", icon: FileText },
     { title: "Profile", url: "/admin/users/profile", icon: User },
     { title: "Gallery", url: "/admin/gallery", icon: Images },
@@ -128,7 +135,11 @@ const data: NavigationConfig = {
     adminAttendanceNav,
     reportsNav,
     { title: "Faculty", url: "/admin/users/faculty/view", icon: Briefcase },
-    { title: "Students", url: "/admin/users/student/view", icon: GraduationCap },
+    {
+      title: "Students",
+      url: "/admin/users/student/view",
+      icon: GraduationCap,
+    },
     { title: "Documents", url: "/documents", icon: FileText },
     { title: "Profile", url: "/head/profile", icon: User },
     { title: "Gallery", url: "/head/gallery", icon: Images },
@@ -142,7 +153,11 @@ const data: NavigationConfig = {
     adminAttendanceNav,
     reportsNav,
     { title: "Faculty", url: "/admin/users/faculty/view", icon: Briefcase },
-    { title: "Students", url: "/admin/users/student/view", icon: GraduationCap },
+    {
+      title: "Students",
+      url: "/admin/users/student/view",
+      icon: GraduationCap,
+    },
     { title: "Documents", url: "/documents", icon: FileText },
     { title: "Profile", url: "/principal/profile", icon: User },
     { title: "Gallery", url: "/principal/gallery", icon: Images },
@@ -167,12 +182,19 @@ const data: NavigationConfig = {
       icon: ClipboardList,
       items: [
         { title: "Student Attendance", url: "/clerk/attendance" },
-        { title: "Employee Attendance", url: "/clerk/sessions/attendance/employees/monthly" },
+        {
+          title: "Employee Attendance",
+          url: "/clerk/sessions/attendance/employees/monthly",
+        },
       ],
     },
     clerkReportsNav,
     { title: "Faculty", url: "/clerk/users/faculty/view", icon: Briefcase },
-    { title: "Students", url: "/clerk/users/student/view", icon: GraduationCap },
+    {
+      title: "Students",
+      url: "/clerk/users/student/view",
+      icon: GraduationCap,
+    },
     { title: "Documents", url: "/documents", icon: FileText },
     { title: "Profile", url: "/clerk/users/profile", icon: User },
     { title: "Gallery", url: "/clerk/gallery", icon: Images },
@@ -202,16 +224,10 @@ const data: NavigationConfig = {
     { title: "Profile", url: "/student/profile", icon: User },
   ],
 
-  PARENT: [
-    { title: "Documents", url: "/documents", icon: FileText },
-  ],
+  PARENT: [{ title: "Documents", url: "/documents", icon: FileText }],
 
-  NONE: [
-    { title: "Documents", url: "/documents", icon: FileText },
-  ],
-  ALL: [
-    { title: "Documents", url: "/documents", icon: FileText },
-  ],
+  NONE: [{ title: "Documents", url: "/documents", icon: FileText }],
+  ALL: [{ title: "Documents", url: "/documents", icon: FileText }],
   WORKER: [
     { title: "Dashboard", url: "/worker", icon: LayoutDashboard },
     { title: "Documents", url: "/documents", icon: FileText },
@@ -242,7 +258,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </div>
 
       {/* Sidebar Header */}
-      <SidebarHeader className="relative z-10 flex h-24 items-center justify-center border-b border-emerald-900/30 bg-transparent p-4 transition-all duration-300 group-data-[collapsible=icon]:p-2 group-data-[collapsible=icon]:h-20 backdrop-blur-xl">
+      <SidebarHeader className="relative z-10 flex h-24 items-center justify-center border-b border-emerald-900/30 bg-transparent p-4 backdrop-blur-xl transition-all duration-300 group-data-[collapsible=icon]:h-20 group-data-[collapsible=icon]:p-2">
         <div
           className={cn(
             "group relative flex items-center justify-center transition-all duration-300",
@@ -261,7 +277,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <Image
               className={cn(
                 "object-contain drop-shadow-xl transition-all duration-500 group-hover:scale-110",
-                state === "collapsed" ? "p-0" : "p-1"
+                state === "collapsed" ? "p-0" : "p-1",
               )}
               src="/api/images/logos/Official_LOGO_grn_ic9ldd.png"
               alt="Institution Logo"
@@ -279,7 +295,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       {/* Sidebar Footer */}
-      <SidebarFooter className="relative z-10 border-t border-emerald-500/20 bg-transparent p-4 transition-all duration-300 group-data-[collapsible=icon]:p-2 backdrop-blur-xl">
+      <SidebarFooter className="relative z-10 border-t border-emerald-500/20 bg-transparent p-4 backdrop-blur-xl transition-all duration-300 group-data-[collapsible=icon]:p-2">
         {/* System Status - Only show when expanded */}
         {state !== "collapsed" && (
           <div className="mb-4 flex items-center justify-between rounded-lg border border-emerald-500/20 bg-emerald-50/50 px-3 py-2 dark:bg-emerald-950/30">

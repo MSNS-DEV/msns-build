@@ -1,5 +1,10 @@
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
-import { ClassAttendanceTab, ClassExamsTab, ClassDiariesTab, ClassSubjectsTab } from "~/components/blocks/class/lazy-tabs";
+import {
+  ClassAttendanceTab,
+  ClassExamsTab,
+  ClassDiariesTab,
+  ClassSubjectsTab,
+} from "~/components/blocks/class/lazy-tabs";
 import { ClassTimetableTab } from "~/components/blocks/class/ClassTimetableTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
@@ -14,7 +19,9 @@ type PageProps = {
   searchParams: Promise<{ classId: string; sessionId: string }>;
 };
 
-export default async function StudentClassDetailsPage({ searchParams }: PageProps) {
+export default async function StudentClassDetailsPage({
+  searchParams,
+}: PageProps) {
   const searchProps = await searchParams;
 
   const breadcrumbs = [

@@ -118,7 +118,8 @@ function ExamSubjectsTable({
             const evaluated = sub.studentsEvaluated > 0;
             const passingMarks = data.exam.passingMarks;
             const avgPassed =
-              sub.averageObtained !== null && sub.averageObtained >= passingMarks;
+              sub.averageObtained !== null &&
+              sub.averageObtained >= passingMarks;
 
             return (
               <TableRow
@@ -194,7 +195,11 @@ function ExamSubjectsTable({
                 <TableCell className="text-center">
                   <span className="flex items-center justify-center gap-1 text-sm">
                     <Users className="h-3 w-3 text-muted-foreground" />
-                    <span className={evaluated ? "text-foreground" : "text-muted-foreground"}>
+                    <span
+                      className={
+                        evaluated ? "text-foreground" : "text-muted-foreground"
+                      }
+                    >
                       {sub.studentsEvaluated}
                     </span>
                   </span>
@@ -246,17 +251,20 @@ function ExamCard({
 }) {
   const [expanded, setExpanded] = useState(false);
 
-  const statusStyles = {
-    COMPLETED: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-    ONGOING: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-    SCHEDULED: "bg-slate-500/20 text-muted-foreground border-slate-500/20",
-  }[exam.status] ?? "bg-slate-500/20 text-muted-foreground border-slate-500/20";
+  const statusStyles =
+    {
+      COMPLETED: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
+      ONGOING: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+      SCHEDULED: "bg-slate-500/20 text-muted-foreground border-slate-500/20",
+    }[exam.status] ??
+    "bg-slate-500/20 text-muted-foreground border-slate-500/20";
 
-  const borderColor = {
-    COMPLETED: "border-l-emerald-500",
-    ONGOING: "border-l-blue-500",
-    SCHEDULED: "border-l-amber-500",
-  }[exam.status] ?? "border-l-amber-500";
+  const borderColor =
+    {
+      COMPLETED: "border-l-emerald-500",
+      ONGOING: "border-l-blue-500",
+      SCHEDULED: "border-l-amber-500",
+    }[exam.status] ?? "border-l-amber-500";
 
   return (
     <Card
@@ -269,11 +277,17 @@ function ExamCard({
               variant="outline"
               className="mb-2 border-amber-500/20 bg-amber-500/10 text-amber-400"
             >
-              {EXAM_TYPE_LABELS[exam.examTypeEnum] ?? exam.examTypeEnum.replace(/_/g, " ")}
+              {EXAM_TYPE_LABELS[exam.examTypeEnum] ??
+                exam.examTypeEnum.replace(/_/g, " ")}
             </Badge>
-            <CardTitle className="text-lg text-foreground">{exam.ExamType.name}</CardTitle>
+            <CardTitle className="text-lg text-foreground">
+              {exam.ExamType.name}
+            </CardTitle>
           </div>
-          <Badge variant="outline" className={`border text-xs font-semibold ${statusStyles}`}>
+          <Badge
+            variant="outline"
+            className={`border text-xs font-semibold ${statusStyles}`}
+          >
             {exam.status}
           </Badge>
         </div>
@@ -313,7 +327,9 @@ function ExamCard({
             <span className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
               <Users className="h-3 w-3" /> Evaluated
             </span>
-            <p className="font-medium text-emerald-400">{exam.uniqueStudents}</p>
+            <p className="font-medium text-emerald-400">
+              {exam.uniqueStudents}
+            </p>
           </div>
         </div>
 
@@ -335,7 +351,7 @@ function ExamCard({
 
         {/* Subject Table (expandable) */}
         {expanded && (
-          <div className="animate-in fade-in slide-in-from-top-2 pt-1 duration-200">
+          <div className="pt-1 duration-200 animate-in fade-in slide-in-from-top-2">
             <ExamSubjectsTable
               examId={exam.examId}
               classId={classId}

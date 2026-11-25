@@ -48,12 +48,20 @@ export const pettyCashRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       const register = await ctx.db.pettyCashRegister.findUnique({
         where: { sessionId: input.sessionId },
       });
-      if (!register) throw new TRPCError({ code: "NOT_FOUND", message: "Petty cash register not found" });
+      if (!register)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Petty cash register not found",
+        });
       if (register.currentBalance < input.amount) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -65,13 +73,17 @@ export const pettyCashRouter = createTRPCRouter({
         // Conditional decrement: only succeeds if the balance still covers the amount,
         // so two disbursements at once cannot overdraw the register.
         const debited = await tx.pettyCashRegister.updateMany({
-          where: { registerId: register.registerId, currentBalance: { gte: input.amount } },
+          where: {
+            registerId: register.registerId,
+            currentBalance: { gte: input.amount },
+          },
           data: { currentBalance: { decrement: input.amount } },
         });
         if (debited.count === 0) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Insufficient petty cash: the balance changed while this was being recorded. Refresh and try again.",
+            message:
+              "Insufficient petty cash: the balance changed while this was being recorded. Refresh and try again.",
           });
         }
         await tx.pettyCashDisbursement.create({
@@ -109,7 +121,11 @@ export const pettyCashRouter = createTRPCRouter({
       const register = await ctx.db.pettyCashRegister.findUnique({
         where: { sessionId: input.sessionId },
       });
-      if (!register) throw new TRPCError({ code: "NOT_FOUND", message: "Petty cash register not found" });
+      if (!register)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Petty cash register not found",
+        });
 
       const updated = await ctx.db.pettyCashRegister.update({
         where: { registerId: register.registerId },
@@ -131,12 +147,20 @@ export const pettyCashRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       const register = await ctx.db.pettyCashRegister.findUnique({
         where: { sessionId: input.sessionId },
       });
-      if (!register) throw new TRPCError({ code: "NOT_FOUND", message: "Register not found" });
+      if (!register)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Register not found",
+        });
 
       const variance = input.physicalCount - register.currentBalance;
 
@@ -179,7 +203,8 @@ export const pettyCashRouter = createTRPCRouter({
 
       if (!register) return null;
 
-      const needsReplenishment = register.currentBalance <= register.minimumBalance;
+      const needsReplenishment =
+        register.currentBalance <= register.minimumBalance;
       return { ...register, needsReplenishment };
     }),
 });

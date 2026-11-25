@@ -15,8 +15,15 @@ import { Button } from "~/components/ui/button";
 
 // Chart code (recharts) is loaded on demand to keep the page bundle small.
 const RevenueAnalyticsChart = nextDynamic(
-  () => import("~/components/blocks/dashboard/AnalyticsCharts").then((m) => m.RevenueAnalyticsChart),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted/40" /> },
+  () =>
+    import("~/components/blocks/dashboard/AnalyticsCharts").then(
+      (m) => m.RevenueAnalyticsChart,
+    ),
+  {
+    loading: () => (
+      <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+    ),
+  },
 );
 
 const EventsTable = lazy(() => import("~/components/tables/EventsTable"));
@@ -89,11 +96,17 @@ export function SharedAdminDashboard({ role, ManagementSection }: Props) {
             </div>
 
             <div className="p-4 sm:p-5">
-              <TabsContent value="management" className="mt-0 focus-visible:outline-none">
+              <TabsContent
+                value="management"
+                className="mt-0 focus-visible:outline-none"
+              >
                 <ManagementSection />
               </TabsContent>
 
-              <TabsContent value="events" className="mt-0 focus-visible:outline-none">
+              <TabsContent
+                value="events"
+                className="mt-0 focus-visible:outline-none"
+              >
                 <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <h3 className="text-sm font-semibold text-slate-900 dark:text-foreground">
@@ -110,14 +123,21 @@ export function SharedAdminDashboard({ role, ManagementSection }: Props) {
                     <Plus className="h-4 w-4" /> Create Event
                   </Button>
                 </div>
-                <Suspense fallback={<Skeleton className="h-[300px] w-full rounded-xl" />}>
+                <Suspense
+                  fallback={
+                    <Skeleton className="h-[300px] w-full rounded-xl" />
+                  }
+                >
                   <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-black/20">
                     <EventsTable />
                   </div>
                 </Suspense>
               </TabsContent>
 
-              <TabsContent value="analytics" className="mt-0 focus-visible:outline-none">
+              <TabsContent
+                value="analytics"
+                className="mt-0 focus-visible:outline-none"
+              >
                 <RevenueAnalyticsChart />
               </TabsContent>
             </div>
@@ -131,7 +151,10 @@ export function SharedAdminDashboard({ role, ManagementSection }: Props) {
       </Fade>
 
       {/* Chart, Activity, and Broadcasts layered grid */}
-      <Fade delay={0.21} className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <Fade
+        delay={0.21}
+        className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4"
+      >
         {/* Revenue chart takes full width on tablet, half on ultra-wide */}
         <div className="md:col-span-2 xl:col-span-2">
           <RevenueAnalyticsChart />

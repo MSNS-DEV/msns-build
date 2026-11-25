@@ -3,12 +3,7 @@
 import React, { useState, useMemo } from "react";
 import { api } from "~/trpc/react";
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import {
   Select,
@@ -58,7 +53,7 @@ import {
   Clock,
   CheckSquare,
   FileText,
-  Check
+  Check,
 } from "lucide-react";
 import Link from "next/link";
 import { DatesheetsViewerTab } from "~/components/blocks/exam/DatesheetsViewerTab";
@@ -66,8 +61,15 @@ import nextDynamic from "next/dynamic";
 
 // Chart code (recharts) is loaded on demand to keep the page bundle small.
 const ExamResultsAnalyticsTab = nextDynamic(
-  () => import("~/components/blocks/exam/ExamResultsAnalyticsTab").then((m) => m.ExamResultsAnalyticsTab),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted/40" /> },
+  () =>
+    import("~/components/blocks/exam/ExamResultsAnalyticsTab").then(
+      (m) => m.ExamResultsAnalyticsTab,
+    ),
+  {
+    loading: () => (
+      <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+    ),
+  },
 );
 
 // --- Interfaces ---
@@ -195,7 +197,16 @@ export default function ExamManagementPage() {
       const res = await createExamMutation.mutateAsync({
         sessionId: selectedSession,
         classIds: createDialogClasses,
-        examTypeEnum: newExamData.examType as "FIRST_TIME" | "MIDTERM" | "FINAL" | "PHASE_1" | "PHASE_2" | "PHASE_3" | "PHASE_4" | "PHASE_5" | "PHASE_6",
+        examTypeEnum: newExamData.examType as
+          | "FIRST_TIME"
+          | "MIDTERM"
+          | "FINAL"
+          | "PHASE_1"
+          | "PHASE_2"
+          | "PHASE_3"
+          | "PHASE_4"
+          | "PHASE_5"
+          | "PHASE_6",
         startDate: new Date(newExamData.startDate),
         endDate: new Date(newExamData.endDate),
         totalMarks: newExamData.totalMarks,
@@ -222,7 +233,8 @@ export default function ExamManagementPage() {
       alert(res.message ?? "Exams created successfully!");
     } catch (error: unknown) {
       console.error("Error creating exam:", error);
-      const msg = error instanceof Error ? error.message : "Failed to create exam";
+      const msg =
+        error instanceof Error ? error.message : "Failed to create exam";
       alert(msg);
     }
   };
@@ -269,15 +281,18 @@ export default function ExamManagementPage() {
     }
   };
 
-  const selectedSessionName = sessions?.find((s: Session) => s.sessionId === selectedSession);
+  const selectedSessionName = sessions?.find(
+    (s: Session) => s.sessionId === selectedSession,
+  );
 
   const stats = useMemo(() => {
-    if (!examsForSession) return { total: 0, scheduled: 0, ongoing: 0, completed: 0 };
+    if (!examsForSession)
+      return { total: 0, scheduled: 0, ongoing: 0, completed: 0 };
     return {
       total: examsForSession.length,
-      scheduled: examsForSession.filter(e => e.status === "SCHEDULED").length,
-      ongoing: examsForSession.filter(e => e.status === "ONGOING").length,
-      completed: examsForSession.filter(e => e.status === "COMPLETED").length,
+      scheduled: examsForSession.filter((e) => e.status === "SCHEDULED").length,
+      ongoing: examsForSession.filter((e) => e.status === "ONGOING").length,
+      completed: examsForSession.filter((e) => e.status === "COMPLETED").length,
     };
   }, [examsForSession]);
 
@@ -287,13 +302,20 @@ export default function ExamManagementPage() {
       columns: [
         { key: "type", label: "Exam Type", width: 20 },
         { key: "class", label: "Class", width: 20 },
-        { key: "start", label: "Start Date", width: 15, format: "date" as const },
+        {
+          key: "start",
+          label: "Start Date",
+          width: 15,
+          format: "date" as const,
+        },
         { key: "end", label: "End Date", width: 15, format: "date" as const },
         { key: "marks", label: "Marks", width: 15 },
         { key: "status", label: "Status", width: 15 },
       ],
-      rows: examsForSession.map(e => ({
-        type: EXAM_TYPES.find(t => t.value === e.examTypeEnum)?.label ?? e.examTypeEnum,
+      rows: examsForSession.map((e) => ({
+        type:
+          EXAM_TYPES.find((t) => t.value === e.examTypeEnum)?.label ??
+          e.examTypeEnum,
         class: `${e.Grades.grade} ${e.Grades.section}`,
         start: new Date(e.startDate),
         end: new Date(e.endDate),
@@ -321,11 +343,16 @@ export default function ExamManagementPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {selectedSession && <PageExportButton exportData={exportData} csvFilename={`exams-${selectedSessionName?.sessionName}`} />}
+          {selectedSession && (
+            <PageExportButton
+              exportData={exportData}
+              csvFilename={`exams-${selectedSessionName?.sessionName}`}
+            />
+          )}
           <Button
             size="sm"
             variant="outline"
-            className="shrink-0 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-300 dark:hover:bg-emerald-500/10 gap-2"
+            className="shrink-0 gap-2 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
             asChild
           >
             <Link href="/admin/reports?report=student-marks-percentage">
@@ -336,7 +363,7 @@ export default function ExamManagementPage() {
           <Button
             size="sm"
             variant="outline"
-            className="shrink-0 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-300 dark:hover:bg-emerald-500/10 gap-2"
+            className="shrink-0 gap-2 border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-500/5 dark:text-emerald-300 dark:hover:bg-emerald-500/10"
             asChild
           >
             <Link href="/admin/exams/promotion">
@@ -349,7 +376,7 @@ export default function ExamManagementPage() {
               <Button
                 size="sm"
                 onClick={handleOpenCreateDialog}
-                className="bg-emerald-600 text-white hover:bg-emerald-700 gap-2"
+                className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
                 disabled={!selectedSession}
               >
                 <Plus className="h-4 w-4" />
@@ -363,18 +390,19 @@ export default function ExamManagementPage() {
                   Create New Exam
                 </DialogTitle>
                 <DialogDescription className="text-muted-foreground">
-                  Session: {selectedSessionName?.sessionName ?? "Select a Session"}
+                  Session:{" "}
+                  {selectedSessionName?.sessionName ?? "Select a Session"}
                 </DialogDescription>
               </DialogHeader>
 
               <div className="space-y-5 pt-2">
                 {/* Target Classes Selection with Checkmarks */}
-                <div className="rounded-xl border border-slate-200 p-4 dark:border-border space-y-3 bg-slate-50/50 dark:bg-white/5">
+                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4 dark:border-border dark:bg-white/5">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                       Target Classes ({createDialogClasses.length} selected)
                     </Label>
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+                    <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                       Select multiple classes with check marks
                     </span>
                   </div>
@@ -393,7 +421,7 @@ export default function ExamManagementPage() {
                           <Badge
                             key={id}
                             variant="outline"
-                            className="bg-emerald-50 text-emerald-700 border-emerald-200 text-xs py-0.5 dark:bg-emerald-500/10 dark:text-emerald-300 dark:border-emerald-500/20 gap-1"
+                            className="gap-1 border-emerald-200 bg-emerald-50 py-0.5 text-xs text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
                           >
                             <Check className="h-3 w-3 stroke-[3]" />
                             {cls.grade} {cls.section}
@@ -402,7 +430,7 @@ export default function ExamManagementPage() {
                       })}
                     </div>
                   ) : (
-                    <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                    <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
                       ⚠️ Please check mark at least one class to create exams.
                     </p>
                   )}
@@ -521,14 +549,16 @@ export default function ExamManagementPage() {
                   </h3>
 
                   {subjectsLoading ? (
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground py-4 justify-center">
-                      <Loader2 className="h-4 w-4 animate-spin" /> Loading subjects…
+                    <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" /> Loading
+                      subjects…
                     </div>
                   ) : datesheet.length === 0 ? (
-                    <div className="rounded-lg border border-dashed border-slate-200 dark:border-border bg-slate-50 dark:bg-black/10 p-6 text-center">
+                    <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center dark:border-border dark:bg-black/10">
                       <BookOpen className="mx-auto mb-2 h-6 w-6 text-muted-foreground opacity-40" />
                       <p className="text-sm text-muted-foreground">
-                        No subjects assigned yet. Exam schedule will be created without fixed subject datesheets.
+                        No subjects assigned yet. Exam schedule will be created
+                        without fixed subject datesheets.
                       </p>
                     </div>
                   ) : (
@@ -609,7 +639,8 @@ export default function ExamManagementPage() {
                   {createExamMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Creating Exams for {createDialogClasses.length} class(es)...
+                      Creating Exams for {createDialogClasses.length}{" "}
+                      class(es)...
                     </>
                   ) : (
                     <>
@@ -625,7 +656,7 @@ export default function ExamManagementPage() {
       </div>
 
       {/* --- Key Metrics Grid --- */}
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+      <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
         <GradientStatCard
           title="Total Exams"
           value={stats.total}
@@ -672,13 +703,19 @@ export default function ExamManagementPage() {
               <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Session
               </Label>
-              <Select value={selectedSession} onValueChange={setSelectedSession}>
+              <Select
+                value={selectedSession}
+                onValueChange={setSelectedSession}
+              >
                 <SelectTrigger className="border-slate-200 bg-white text-sm transition-all focus:border-emerald-500/50 dark:border-border dark:bg-card dark:text-foreground">
                   <SelectValue placeholder="Select session" />
                 </SelectTrigger>
                 <SelectContent>
                   {sessions?.map((session: Session) => (
-                    <SelectItem key={session.sessionId} value={session.sessionId}>
+                    <SelectItem
+                      key={session.sessionId}
+                      value={session.sessionId}
+                    >
                       {session.sessionName}
                     </SelectItem>
                   ))}
@@ -687,10 +724,10 @@ export default function ExamManagementPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center justify-between">
+              <Label className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 <span>Class Filter</span>
                 {selectedClasses.length > 0 && (
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">
+                  <span className="text-[10px] font-normal text-emerald-600 dark:text-emerald-400">
                     {selectedClasses.length} selected
                   </span>
                 )}
@@ -732,7 +769,7 @@ export default function ExamManagementPage() {
                   <Badge
                     key={id}
                     variant="outline"
-                    className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300 gap-1"
+                    className="gap-1 border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-300"
                   >
                     <Check className="h-3 w-3 stroke-[3]" />
                     {cls.grade} {cls.section}
@@ -747,21 +784,33 @@ export default function ExamManagementPage() {
       {/* --- Main Content Tabs --- */}
       <Tabs defaultValue="registry" className="space-y-6">
         <TabsList className="h-auto flex-wrap justify-start gap-1 border border-slate-200 bg-slate-100 p-1 dark:border-border dark:bg-card">
-          <TabsTrigger value="registry" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground">
+          <TabsTrigger
+            value="registry"
+            className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground"
+          >
             <ClipboardList className="h-4 w-4" />
             Exam Registry
           </TabsTrigger>
-          <TabsTrigger value="datesheets" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground">
+          <TabsTrigger
+            value="datesheets"
+            className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground"
+          >
             <CalendarDays className="h-4 w-4" />
             Datesheets
           </TabsTrigger>
-          <TabsTrigger value="results" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground">
+          <TabsTrigger
+            value="results"
+            className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground"
+          >
             <FileText className="h-4 w-4" />
             Results Overview
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="registry" className="m-0 duration-300 animate-in fade-in-50">
+        <TabsContent
+          value="registry"
+          className="m-0 duration-300 animate-in fade-in-50"
+        >
           {examsForSession && examsForSession.length > 0 ? (
             <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm backdrop-blur-md dark:border-border dark:bg-card dark:shadow-xl">
               <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-border dark:bg-white/5">
@@ -813,8 +862,13 @@ export default function ExamManagementPage() {
                           className="border-b border-slate-100 transition-colors hover:bg-slate-50/50 dark:border-border dark:hover:bg-white/5"
                         >
                           <TableCell className="font-semibold text-slate-900 dark:text-foreground">
-                            <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/5 text-emerald-700 dark:text-emerald-400 text-xs">
-                              {EXAM_TYPES.find(t => t.value === exam.examTypeEnum)?.label ?? exam.examTypeEnum}
+                            <Badge
+                              variant="outline"
+                              className="border-emerald-500/20 bg-emerald-500/5 text-xs text-emerald-700 dark:text-emerald-400"
+                            >
+                              {EXAM_TYPES.find(
+                                (t) => t.value === exam.examTypeEnum,
+                              )?.label ?? exam.examTypeEnum}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-slate-600 dark:text-foreground">
@@ -836,7 +890,7 @@ export default function ExamManagementPage() {
                           <TableCell>
                             <Badge
                               variant="outline"
-                              className={`border font-semibold text-xs ${getStatusBadge(exam.status)}`}
+                              className={`border text-xs font-semibold ${getStatusBadge(exam.status)}`}
                             >
                               {exam.status}
                             </Badge>
@@ -847,7 +901,10 @@ export default function ExamManagementPage() {
                                 size="sm"
                                 variant="outline"
                                 onClick={() =>
-                                  handlePromotionCheck(exam.classId, exam.examId)
+                                  handlePromotionCheck(
+                                    exam.classId,
+                                    exam.examId,
+                                  )
                                 }
                                 className="h-7 border-slate-200 bg-white text-xs text-slate-600 hover:bg-emerald-50 hover:text-emerald-700 dark:border-border dark:bg-white/5 dark:text-foreground dark:hover:bg-emerald-500/10 dark:hover:text-emerald-300"
                               >
@@ -880,7 +937,8 @@ export default function ExamManagementPage() {
                 No exams found
               </h3>
               <p className="mb-5 max-w-xs text-sm text-muted-foreground">
-                No exams found for the selected session. Select a class and create one to get started.
+                No exams found for the selected session. Select a class and
+                create one to get started.
               </p>
             </div>
           ) : (
@@ -895,7 +953,10 @@ export default function ExamManagementPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="datesheets" className="m-0 duration-300 animate-in fade-in-50">
+        <TabsContent
+          value="datesheets"
+          className="m-0 duration-300 animate-in fade-in-50"
+        >
           <DatesheetsViewerTab
             sessionId={selectedSession}
             selectedClassId={selectedClasses[0] ?? null}
@@ -903,7 +964,10 @@ export default function ExamManagementPage() {
           />
         </TabsContent>
 
-        <TabsContent value="results" className="m-0 duration-300 animate-in fade-in-50">
+        <TabsContent
+          value="results"
+          className="m-0 duration-300 animate-in fade-in-50"
+        >
           <ExamResultsAnalyticsTab
             sessionId={selectedSession}
             selectedClassId={selectedClasses[0] ?? null}

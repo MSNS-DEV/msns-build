@@ -44,8 +44,15 @@ import nextDynamic from "next/dynamic";
 
 // Chart code (recharts) is loaded on demand to keep the page bundle small.
 const SalaryAnalytics = nextDynamic(
-  () => import("~/components/blocks/salary/SalaryAnalytics").then((m) => m.SalaryAnalytics),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted/40" /> },
+  () =>
+    import("~/components/blocks/salary/SalaryAnalytics").then(
+      (m) => m.SalaryAnalytics,
+    ),
+  {
+    loading: () => (
+      <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+    ),
+  },
 );
 
 const MONTHS = [
@@ -83,7 +90,7 @@ export function SalaryContent({
     String(new Date().getFullYear()),
   );
   const [isGenerating, setIsGenerating] = useState(false);
-  
+
   const selectedMonth = externalMonth ?? internalMonth;
   const selectedYear = externalYear ?? internalYear;
   const activeSessionId = externalSessionId ?? "default-session-id";
@@ -246,7 +253,7 @@ export function SalaryContent({
       )}
 
       {isEmbedded && (
-        <div className="flex justify-end mb-2">
+        <div className="mb-2 flex justify-end">
           <Button
             onClick={handleGeneratePayroll}
             disabled={isGenerating}
@@ -351,7 +358,11 @@ export function SalaryContent({
                 </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button asChild variant="outline" className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/10">
+                <Button
+                  asChild
+                  variant="outline"
+                  className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-500/30 dark:text-emerald-400 dark:hover:bg-emerald-500/10"
+                >
                   <Link href="/admin/erp/revenue/bulk-salary">
                     <ListPlus className="mr-2 h-4 w-4" />
                     Bulk Options

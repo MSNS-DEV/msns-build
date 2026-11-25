@@ -2,11 +2,15 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getFromS3 } from "~/lib/s3";
 import { Readable } from "stream";
 import { auth } from "~/server/auth";
-import { cacheControlFor, isPublicKey, isSafeKey } from "~/server/storage-access";
+import {
+  cacheControlFor,
+  isPublicKey,
+  isSafeKey,
+} from "~/server/storage-access";
 
 export async function GET(
   _request: NextRequest,
-  { params }: { params: Promise<{ key: string[] }> }
+  { params }: { params: Promise<{ key: string[] }> },
 ) {
   try {
     const p = await params;

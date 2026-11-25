@@ -8,7 +8,7 @@ import { isSafeKey } from "~/server/storage-access";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ filename: string[] }> }
+  { params }: { params: Promise<{ filename: string[] }> },
 ) {
   try {
     const { filename } = await params;
@@ -30,9 +30,12 @@ export async function GET(
       try {
         const response = await getFromS3(key);
         if (response.Body) {
-          const stream = Readable.toWeb(response.Body as Readable) as ReadableStream;
+          const stream = Readable.toWeb(
+            response.Body as Readable,
+          ) as ReadableStream;
           const headers = new Headers();
-          if (response.ContentType) headers.set("Content-Type", response.ContentType);
+          if (response.ContentType)
+            headers.set("Content-Type", response.ContentType);
           if (response.ContentLength)
             headers.set("Content-Length", response.ContentLength.toString());
           headers.set("Cache-Control", "private, no-store");
@@ -46,8 +49,13 @@ export async function GET(
     // 2. Fallback to local filesystem if exists (e.g. during migration)
     const filepath = path.join(process.cwd(), "public", "uploads", file);
     const resolvedPath = path.resolve(filepath);
-    const resolvedUploadDir = path.resolve(path.join(process.cwd(), "public", "uploads"));
-    if (resolvedPath.startsWith(resolvedUploadDir) && existsSync(resolvedPath)) {
+    const resolvedUploadDir = path.resolve(
+      path.join(process.cwd(), "public", "uploads"),
+    );
+    if (
+      resolvedPath.startsWith(resolvedUploadDir) &&
+      existsSync(resolvedPath)
+    ) {
       const fileBuffer = readFileSync(resolvedPath);
       const ext = path.extname(resolvedPath).toLowerCase();
       let contentType = "application/octet-stream";

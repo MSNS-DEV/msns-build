@@ -202,8 +202,18 @@ const Sidebar = React.forwardRef<
     },
     ref,
   ) => {
-    const { isMobile, state, open, openMobile, setOpenMobile, isPeeking, setIsPeeking } = useSidebar();
-    const leaveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+    const {
+      isMobile,
+      state,
+      open,
+      openMobile,
+      setOpenMobile,
+      isPeeking,
+      setIsPeeking,
+    } = useSidebar();
+    const leaveTimeoutRef = React.useRef<ReturnType<typeof setTimeout> | null>(
+      null,
+    );
 
     const handleMouseEnter = React.useCallback(() => {
       if (leaveTimeoutRef.current) {
@@ -255,7 +265,7 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] border-r border-emerald-500/20 bg-slate-950/90 p-0 text-slate-100 backdrop-blur-xl [&>button]:text-slate-400 [&>button]:hover:text-white pt-safe pb-safe pl-safe"
+            className="pt-safe pb-safe pl-safe w-[--sidebar-width] border-r border-emerald-500/20 bg-slate-950/90 p-0 text-slate-100 backdrop-blur-xl [&>button]:text-slate-400 [&>button]:hover:text-white"
             style={
               {
                 "--sidebar-width": SIDEBAR_WIDTH_MOBILE,
@@ -274,7 +284,7 @@ const Sidebar = React.forwardRef<
         {/* Desktop Edge Hover Hit Zone (Left 0-20px) to trigger Peek */}
         {!open && (
           <div
-            className="fixed inset-y-0 left-0 z-30 hidden w-5 md:block pointer-events-auto"
+            className="pointer-events-auto fixed inset-y-0 left-0 z-30 hidden w-5 md:block"
             onMouseEnter={handleMouseEnter}
             aria-hidden="true"
           />
@@ -294,9 +304,9 @@ const Sidebar = React.forwardRef<
               "relative h-svh bg-transparent transition-[width] duration-300 ease-in-out",
               open
                 ? "w-[--sidebar-width]"
-                : (variant === "floating" || variant === "inset"
-                    ? "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
-                    : "w-[--sidebar-width-icon]"),
+                : variant === "floating" || variant === "inset"
+                  ? "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4))]"
+                  : "w-[--sidebar-width-icon]",
               "group-data-[collapsible=offcanvas]:w-0",
               "group-data-[side=right]:rotate-180",
             )}
@@ -308,10 +318,12 @@ const Sidebar = React.forwardRef<
               "fixed inset-y-0 z-10 hidden h-svh transition-[left,right,width,box-shadow] duration-300 ease-in-out md:flex",
               open || isPeeking
                 ? "w-[--sidebar-width]"
-                : (variant === "floating" || variant === "inset"
-                    ? "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
-                    : "w-[--sidebar-width-icon]"),
-              isPeeking && !open && "z-50 shadow-[12px_0_36px_rgba(0,0,0,0.6)] border-r border-emerald-500/30",
+                : variant === "floating" || variant === "inset"
+                  ? "w-[calc(var(--sidebar-width-icon)_+_theme(spacing.4)_+2px)]"
+                  : "w-[--sidebar-width-icon]",
+              isPeeking &&
+                !open &&
+                "z-50 border-r border-emerald-500/30 shadow-[12px_0_36px_rgba(0,0,0,0.6)]",
               side === "left"
                 ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
                 : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
@@ -695,7 +707,7 @@ const SidebarMenuAction = React.forwardRef<
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-        "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-emerald-300 md:opacity-0",
+          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-emerald-300 md:opacity-0",
         className,
       )}
       {...props}

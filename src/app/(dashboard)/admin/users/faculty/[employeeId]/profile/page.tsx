@@ -152,7 +152,7 @@ export default function EmployeeProfilePage() {
           <div className="relative z-10 flex flex-col items-center gap-6 md:flex-row md:items-start">
             {/* Avatar */}
             <div
-              className="relative group cursor-pointer h-28 w-28 shrink-0 overflow-hidden rounded-full border-4 border-slate-700 bg-slate-800 shadow-xl ring-2 ring-emerald-500/30 sm:h-32 sm:w-32 md:h-40 md:w-40"
+              className="group relative h-28 w-28 shrink-0 cursor-pointer overflow-hidden rounded-full border-4 border-slate-700 bg-slate-800 shadow-xl ring-2 ring-emerald-500/30 sm:h-32 sm:w-32 md:h-40 md:w-40"
               onClick={() => setEditOpen(true)}
               title="Click to update photo"
             >
@@ -161,14 +161,14 @@ export default function EmployeeProfilePage() {
                   <AvatarImage
                     src={employee.profilePic ?? user?.profilePic ?? ""}
                     alt={employee.employeeName}
-                    className="object-cover h-full w-full"
+                    className="h-full w-full object-cover"
                   />
                 )}
                 <AvatarFallback className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-600/30 to-slate-700 text-4xl font-black text-emerald-300 sm:text-5xl">
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+              <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100">
                 <Camera className="h-8 w-8 text-white" />
               </div>
             </div>
@@ -181,7 +181,7 @@ export default function EmployeeProfilePage() {
                 </h1>
                 <Badge
                   variant="outline"
-                  className={`px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider border ${designationColor(employee.designation)}`}
+                  className={`border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider ${designationColor(employee.designation)}`}
                 >
                   {employee.designation}
                 </Badge>
@@ -248,8 +248,16 @@ export default function EmployeeProfilePage() {
               </CardHeader>
               <CardContent className="grid grid-cols-1 gap-6 pt-6 sm:grid-cols-2">
                 <InfoItem label="Designation" value={employee.designation} />
-                <InfoItem label="Education" value={employee.education} icon={<GraduationCap className="h-4 w-4" />} />
-                <InfoItem label="Date of Joining" value={employee.doj} icon={<Calendar className="h-4 w-4" />} />
+                <InfoItem
+                  label="Education"
+                  value={employee.education}
+                  icon={<GraduationCap className="h-4 w-4" />}
+                />
+                <InfoItem
+                  label="Date of Joining"
+                  value={employee.doj}
+                  icon={<Calendar className="h-4 w-4" />}
+                />
                 <InfoItem
                   label="Joined"
                   value={new Date(employee.doj).toLocaleDateString("en-PK", {
@@ -280,7 +288,11 @@ export default function EmployeeProfilePage() {
                 <InfoItem label="Gender" value={employee.gender} />
                 {employee.fatherName && (
                   <InfoItem
-                    label={employee.gender?.toUpperCase() === "FEMALE" ? "Father Name (D/O)" : "Father Name (S/O)"}
+                    label={
+                      employee.gender?.toUpperCase() === "FEMALE"
+                        ? "Father Name (D/O)"
+                        : "Father Name (S/O)"
+                    }
                     value={employee.fatherName}
                     icon={<User className="h-4 w-4" />}
                   />
@@ -336,11 +348,14 @@ export default function EmployeeProfilePage() {
                   />
                   <InfoItem
                     label="Member Since"
-                    value={new Date(user.createdAt).toLocaleDateString("en-PK", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                    value={new Date(user.createdAt).toLocaleDateString(
+                      "en-PK",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      },
+                    )}
                     icon={<Clock className="h-4 w-4" />}
                     fullWidth
                   />
@@ -402,9 +417,13 @@ export default function EmployeeProfilePage() {
                     Status
                   </h4>
                   <div className="flex items-center gap-3">
-                    <UserCheck className={`h-5 w-5 ${employee.isAssign ? "text-emerald-500" : "text-slate-400"}`} />
+                    <UserCheck
+                      className={`h-5 w-5 ${employee.isAssign ? "text-emerald-500" : "text-slate-400"}`}
+                    />
                     <div>
-                      <p className="text-xs text-muted-foreground">Assignment Status</p>
+                      <p className="text-xs text-muted-foreground">
+                        Assignment Status
+                      </p>
                       <p className="font-semibold text-foreground">
                         {employee.isAssign ? "Assigned / Active" : "Unassigned"}
                       </p>

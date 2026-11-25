@@ -82,49 +82,49 @@ export function SalaryAnalytics({ year }: { year: number }) {
   return (
     <div className="space-y-6 duration-700 animate-in fade-in slide-in-from-bottom-4">
       {/* Summary Cards */}
-      <div className="grid grid-cols-3 gap-1.5 sm:gap-4 w-full">
-        <Card className="border-emerald-500/20 bg-card shadow-lg backdrop-blur-sm min-w-0">
-          <CardContent className="flex items-center gap-2 sm:gap-4 p-2 sm:p-4">
-            <div className="rounded-md sm:rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-1.5 sm:p-2.5 flex-shrink-0">
-              <DollarSign className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-emerald-400" />
+      <div className="grid w-full grid-cols-3 gap-1.5 sm:gap-4">
+        <Card className="min-w-0 border-emerald-500/20 bg-card shadow-lg backdrop-blur-sm">
+          <CardContent className="flex items-center gap-2 p-2 sm:gap-4 sm:p-4">
+            <div className="flex-shrink-0 rounded-md border border-emerald-500/20 bg-emerald-500/10 p-1.5 sm:rounded-xl sm:p-2.5">
+              <DollarSign className="h-3.5 w-3.5 text-emerald-400 sm:h-5 sm:w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
+              <p className="truncate text-[9px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-[10px]">
                 Total Payout
               </p>
-              <p className="text-xs sm:text-xl font-bold text-foreground truncate">
+              <p className="truncate text-xs font-bold text-foreground sm:text-xl">
                 Rs. {stats.total.toLocaleString()}
               </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-emerald-500/20 bg-card shadow-lg backdrop-blur-sm min-w-0">
-          <CardContent className="flex items-center gap-2 sm:gap-4 p-2 sm:p-4">
-            <div className="rounded-md sm:rounded-xl border border-blue-500/20 bg-blue-500/10 p-1.5 sm:p-2.5 flex-shrink-0">
-              <TrendingUp className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-blue-400" />
+        <Card className="min-w-0 border-emerald-500/20 bg-card shadow-lg backdrop-blur-sm">
+          <CardContent className="flex items-center gap-2 p-2 sm:gap-4 sm:p-4">
+            <div className="flex-shrink-0 rounded-md border border-blue-500/20 bg-blue-500/10 p-1.5 sm:rounded-xl sm:p-2.5">
+              <TrendingUp className="h-3.5 w-3.5 text-blue-400 sm:h-5 sm:w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
+              <p className="truncate text-[9px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-[10px]">
                 Avg. Monthly
               </p>
-              <p className="text-xs sm:text-xl font-bold text-foreground truncate">
+              <p className="truncate text-xs font-bold text-foreground sm:text-xl">
                 Rs. {Math.round(stats.average).toLocaleString()}
               </p>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border-emerald-500/20 bg-card shadow-lg backdrop-blur-sm min-w-0">
-          <CardContent className="flex items-center gap-2 sm:gap-4 p-2 sm:p-4">
-            <div className="rounded-md sm:rounded-xl border border-purple-500/20 bg-purple-500/10 p-1.5 sm:p-2.5 flex-shrink-0">
-              <Activity className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-purple-400" />
+        <Card className="min-w-0 border-emerald-500/20 bg-card shadow-lg backdrop-blur-sm">
+          <CardContent className="flex items-center gap-2 p-2 sm:gap-4 sm:p-4">
+            <div className="flex-shrink-0 rounded-md border border-purple-500/20 bg-purple-500/10 p-1.5 sm:rounded-xl sm:p-2.5">
+              <Activity className="h-3.5 w-3.5 text-purple-400 sm:h-5 sm:w-5" />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] sm:text-[10px] font-semibold uppercase tracking-wider text-muted-foreground truncate">
+              <p className="truncate text-[9px] font-semibold uppercase tracking-wider text-muted-foreground sm:text-[10px]">
                 Peak Month
               </p>
-              <p className="text-xs sm:text-xl font-bold text-foreground truncate">
+              <p className="truncate text-xs font-bold text-foreground sm:text-xl">
                 Rs. {stats.highest.toLocaleString()}
               </p>
             </div>

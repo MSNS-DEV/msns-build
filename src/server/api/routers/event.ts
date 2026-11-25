@@ -1,7 +1,12 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { isOffice, type AccessCtx } from "~/server/api/access";
-import { createTRPCRouter, protectedProcedure, employeeProcedure, officeProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  employeeProcedure,
+  officeProcedure,
+} from "../trpc";
 import { type Prisma } from "@prisma/client";
 import {
   AttendeeStatusSchema,
@@ -23,9 +28,13 @@ async function assertCanEditEvent(ctx: AccessCtx, eventId: string) {
     where: { id: eventId },
     select: { User: { select: { id: true } } },
   });
-  if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+  if (!event)
+    throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
   if (!event.User.some((u) => u.id === ctx.session?.user.id)) {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Only the organiser can change this event" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Only the organiser can change this event",
+    });
   }
 }
 
@@ -40,26 +49,26 @@ export const EventRouter = createTRPCRouter({
           User: { connect: { id: ctx.session.user.id } },
           tags: input.tagIds
             ? {
-              create: input.tagIds.map((tagId: string) => ({
-                tag: { connect: { id: tagId } },
-              })),
-            }
+                create: input.tagIds.map((tagId: string) => ({
+                  tag: { connect: { id: tagId } },
+                })),
+              }
             : undefined,
           reminders: input.reminders
             ? {
-              create: input.reminders.map((reminder) => ({
-                type: reminder.type,
-                minutesBefore: reminder.value,
-              })),
-            }
+                create: input.reminders.map((reminder) => ({
+                  type: reminder.type,
+                  minutesBefore: reminder.value,
+                })),
+              }
             : undefined,
           attendees: input.attendees
             ? {
-              create: input.attendees.map((attendee) => ({
-                user: { connect: { id: attendee.userId } },
-                status: attendee.status,
-              })),
-            }
+                create: input.attendees.map((attendee) => ({
+                  user: { connect: { id: attendee.userId } },
+                  status: attendee.status,
+                })),
+              }
             : undefined,
         },
         include: {
@@ -83,29 +92,29 @@ export const EventRouter = createTRPCRouter({
           ...eventData,
           tags: input.tagIds
             ? {
-              deleteMany: {},
-              create: input.tagIds.map((tagId: string) => ({
-                tag: { connect: { id: tagId } },
-              })),
-            }
+                deleteMany: {},
+                create: input.tagIds.map((tagId: string) => ({
+                  tag: { connect: { id: tagId } },
+                })),
+              }
             : undefined,
           reminders: input.reminders
             ? {
-              deleteMany: {},
-              create: input.reminders.map((reminder) => ({
-                type: reminder.type,
-                minutesBefore: reminder.value,
-              })),
-            }
+                deleteMany: {},
+                create: input.reminders.map((reminder) => ({
+                  type: reminder.type,
+                  minutesBefore: reminder.value,
+                })),
+              }
             : undefined,
           attendees: input.attendees
             ? {
-              deleteMany: {},
-              create: input.attendees.map((attendee) => ({
-                user: { connect: { id: attendee.userId } },
-                status: attendee.status,
-              })),
-            }
+                deleteMany: {},
+                create: input.attendees.map((attendee) => ({
+                  user: { connect: { id: attendee.userId } },
+                  status: attendee.status,
+                })),
+              }
             : undefined,
         },
         include: {
@@ -154,19 +163,19 @@ export const EventRouter = createTRPCRouter({
           AND: [
             input.search
               ? {
-                OR: [
-                  { title: { contains: input.search, mode: "insensitive" } },
-                  {
-                    description: {
-                      contains: input.search,
-                      mode: "insensitive",
+                  OR: [
+                    { title: { contains: input.search, mode: "insensitive" } },
+                    {
+                      description: {
+                        contains: input.search,
+                        mode: "insensitive",
+                      },
                     },
-                  },
-                  {
-                    location: { contains: input.search, mode: "insensitive" },
-                  },
-                ],
-              }
+                    {
+                      location: { contains: input.search, mode: "insensitive" },
+                    },
+                  ],
+                }
               : {},
             input.status ? { status: input.status } : {},
           ],
@@ -292,7 +301,9 @@ export const EventRouter = createTRPCRouter({
           take: perSource,
           include: {
             Teacher: { select: { employeeName: true } },
-            ClassSubject: { include: { Subject: { select: { subjectName: true } } } },
+            ClassSubject: {
+              include: { Subject: { select: { subjectName: true } } },
+            },
           },
         }),
       ]);
@@ -306,10 +317,11 @@ export const EventRouter = createTRPCRouter({
       const activities: ActivityItem[] = [
         ...recentStudents.map((s) => ({
           type: "student" as const,
-          text: `${s.studentName} was registered${s.StudentClass[0]?.Grades
+          text: `${s.studentName} was registered${
+            s.StudentClass[0]?.Grades
               ? ` in Grade ${s.StudentClass[0].Grades.grade} (${s.StudentClass[0].Grades.section})`
               : ""
-            }.`,
+          }.`,
           time: s.createdAt,
         })),
         ...recentFees

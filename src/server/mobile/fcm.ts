@@ -5,7 +5,7 @@ export const sendPushNotification = async (
   parentGuardianIds: string[],
   title: string,
   _body: string,
-  _data?: Record<string, string>
+  _data?: Record<string, string>,
 ) => {
   // Do not log recipient ids, message bodies or device tokens (personal data / credentials).
 
@@ -27,20 +27,27 @@ export const sendPushNotification = async (
       where: {
         OR: [
           { userId: { in: userIds.filter(Boolean) } },
-          { parentGuardianId: { in: parentGuardianIds.filter(Boolean) } }
-        ]
+          { parentGuardianId: { in: parentGuardianIds.filter(Boolean) } },
+        ],
       },
-      select: { token: true }
+      select: { token: true },
     });
 
     const tokens = registrations.map((r: { token: string }) => r.token);
     if (tokens.length === 0) {
-      console.log("[FCM Push] No registered device tokens for this notification.");
+      console.log(
+        "[FCM Push] No registered device tokens for this notification.",
+      );
       return;
     }
 
-    console.log(`[FCM Push] Mock send "${title}" to ${tokens.length} device(s).`);
+    console.log(
+      `[FCM Push] Mock send "${title}" to ${tokens.length} device(s).`,
+    );
   } catch (error) {
-    console.error("[FCM Push] Error fetching tokens / sending notification:", error);
+    console.error(
+      "[FCM Push] Error fetching tokens / sending notification:",
+      error,
+    );
   }
 };

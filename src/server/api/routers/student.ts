@@ -1,6 +1,12 @@
 import { TRPCError } from "@trpc/server";
 import { assertNoPaidVouchers } from "~/server/utils/financial-guards";
-import { createTRPCRouter, protectedProcedure, clerkProcedure, officeProcedure, teacherProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  clerkProcedure,
+  officeProcedure,
+  teacherProcedure,
+} from "../trpc";
 import { z } from "zod";
 import { generatePdf } from "~/lib/pdf-reports";
 import { Prisma } from "@prisma/client";
@@ -56,7 +62,7 @@ export const StudentRouter = createTRPCRouter({
         },
       });
 
-      return students.map(student => {
+      return students.map((student) => {
         if (student.profilePic?.startsWith("/uploads/")) {
           return { ...student, profilePic: `/api${student.profilePic}` };
         }
@@ -95,25 +101,25 @@ export const StudentRouter = createTRPCRouter({
           isAssign: false,
           OR: input.searchTerm
             ? [
-              {
-                studentName: {
-                  contains: input.searchTerm,
-                  mode: "insensitive",
+                {
+                  studentName: {
+                    contains: input.searchTerm,
+                    mode: "insensitive",
+                  },
                 },
-              },
-              {
-                fatherName: {
-                  contains: input.searchTerm,
-                  mode: "insensitive",
+                {
+                  fatherName: {
+                    contains: input.searchTerm,
+                    mode: "insensitive",
+                  },
                 },
-              },
-              {
-                admissionNumber: {
-                  contains: input.searchTerm,
-                  mode: "insensitive",
+                {
+                  admissionNumber: {
+                    contains: input.searchTerm,
+                    mode: "insensitive",
+                  },
                 },
-              },
-            ]
+              ]
             : undefined,
         };
 
@@ -250,7 +256,8 @@ export const StudentRouter = createTRPCRouter({
         if (error instanceof TRPCError) throw error;
         // Don't leak raw database errors to the client.
         const isDuplicate =
-          error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002";
         throw new TRPCError({
           code: isDuplicate ? "CONFLICT" : "INTERNAL_SERVER_ERROR",
           message: isDuplicate
@@ -479,17 +486,35 @@ export const StudentRouter = createTRPCRouter({
           promotionEligibilityDel,
           bulkPromotionItemsDel,
           userDel,
-          studentDel
+          studentDel,
         ] = await ctx.db.$transaction([
-          ctx.db.feeStudentClass.deleteMany({ where: { studentClassId: { in: scIds } } }),
-          ctx.db.studentClass.deleteMany({ where: { studentId: { in: input.studentIds } } }),
-          ctx.db.reportCardDetail.deleteMany({ where: { reportCardId: { in: rcIds } } }),
-          ctx.db.reportCard.deleteMany({ where: { studentId: { in: input.studentIds } } }),
-          ctx.db.marks.deleteMany({ where: { studentId: { in: input.studentIds } } }),
-          ctx.db.promotionHistory.deleteMany({ where: { studentId: { in: input.studentIds } } }),
-          ctx.db.studentAttendance.deleteMany({ where: { studentId: { in: input.studentIds } } }),
-          ctx.db.promotionEligibilityResult.deleteMany({ where: { studentId: { in: input.studentIds } } }),
-          ctx.db.bulkPromotionBatchItem.deleteMany({ where: { studentId: { in: input.studentIds } } }),
+          ctx.db.feeStudentClass.deleteMany({
+            where: { studentClassId: { in: scIds } },
+          }),
+          ctx.db.studentClass.deleteMany({
+            where: { studentId: { in: input.studentIds } },
+          }),
+          ctx.db.reportCardDetail.deleteMany({
+            where: { reportCardId: { in: rcIds } },
+          }),
+          ctx.db.reportCard.deleteMany({
+            where: { studentId: { in: input.studentIds } },
+          }),
+          ctx.db.marks.deleteMany({
+            where: { studentId: { in: input.studentIds } },
+          }),
+          ctx.db.promotionHistory.deleteMany({
+            where: { studentId: { in: input.studentIds } },
+          }),
+          ctx.db.studentAttendance.deleteMany({
+            where: { studentId: { in: input.studentIds } },
+          }),
+          ctx.db.promotionEligibilityResult.deleteMany({
+            where: { studentId: { in: input.studentIds } },
+          }),
+          ctx.db.bulkPromotionBatchItem.deleteMany({
+            where: { studentId: { in: input.studentIds } },
+          }),
           ctx.db.user.deleteMany({ where: { accountId: { in: regNumbers } } }),
           ctx.db.students.deleteMany({
             where: { studentId: { in: input.studentIds } },
@@ -498,7 +523,8 @@ export const StudentRouter = createTRPCRouter({
 
         return {
           success: true,
-          message: "Students and all their related records successfully deleted.",
+          message:
+            "Students and all their related records successfully deleted.",
           summary: {
             studentsDeleted: studentDel.count,
             usersDeleted: userDel.count,
@@ -513,8 +539,8 @@ export const StudentRouter = createTRPCRouter({
             bulkPromotionItemsDeleted: bulkPromotionItemsDel.count,
           },
           reasons: [
-            "Cleaned up all database relations to prevent foreign key constraint violations."
-          ]
+            "Cleaned up all database relations to prevent foreign key constraint violations.",
+          ],
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;

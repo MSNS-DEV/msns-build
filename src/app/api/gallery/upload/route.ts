@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     if (!ALLOWED_ROLES.includes(userRole)) {
       return NextResponse.json(
         { error: "You do not have permission to upload gallery media" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -45,8 +45,11 @@ export async function POST(request: NextRequest) {
 
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: "Invalid file type. Allowed: JPEG, PNG, WebP, GIF, AVIF, MP4, WebM, OGG, MOV" },
-        { status: 400 }
+        {
+          error:
+            "Invalid file type. Allowed: JPEG, PNG, WebP, GIF, AVIF, MP4, WebM, OGG, MOV",
+        },
+        { status: 400 },
       );
     }
 
@@ -55,18 +58,19 @@ export async function POST(request: NextRequest) {
     if (file.size > maxSize) {
       return NextResponse.json(
         { error: `File size exceeds ${isVideo ? "100MB" : "10MB"} limit` },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     const folder = (formData.get("folder") as string | null) ?? "";
-    const customName = (formData.get("customName") as string | null) ?? file.name;
+    const customName =
+      (formData.get("customName") as string | null) ?? file.name;
 
     const rawBuffer = Buffer.from(await file.arrayBuffer());
     const optimized = await optimizeImageForUpload(rawBuffer, file.type);
     const timestamp = Date.now();
     const sanitizedName = customName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    
+
     // Support nested folders by splitting and sanitizing each folder segment
     let targetFolder = folder;
     if (isVideo && !targetFolder) {
@@ -75,7 +79,7 @@ export async function POST(request: NextRequest) {
 
     const sanitizedFolderParts = targetFolder
       .split("/")
-      .map(part => part.replace(/[^a-zA-Z0-9_-]/g, "_"))
+      .map((part) => part.replace(/[^a-zA-Z0-9_-]/g, "_"))
       .filter(Boolean);
 
     let prefix = "gallery/";
@@ -83,14 +87,18 @@ export async function POST(request: NextRequest) {
       prefix = ""; // Key will start with videos/
     }
 
-    const sanitizedFolder = sanitizedFolderParts.length > 0
-      ? sanitizedFolderParts.join("/") + "/"
-      : "";
-    
+    const sanitizedFolder =
+      sanitizedFolderParts.length > 0
+        ? sanitizedFolderParts.join("/") + "/"
+        : "";
+
     // Preserve extension if customName doesn't have one but original file does
-    const originalExt = file.name.split('.').pop()?.toLowerCase();
-    const hasExt = sanitizedName.includes('.');
-    const finalName = !hasExt && originalExt ? `${sanitizedName}.${originalExt}` : sanitizedName;
+    const originalExt = file.name.split(".").pop()?.toLowerCase();
+    const hasExt = sanitizedName.includes(".");
+    const finalName =
+      !hasExt && originalExt
+        ? `${sanitizedName}.${originalExt}`
+        : sanitizedName;
 
     const key = `${prefix}${sanitizedFolder}${timestamp}_${finalName}`;
 
@@ -108,7 +116,7 @@ export async function POST(request: NextRequest) {
     console.error("Error uploading file:", error);
     return NextResponse.json(
       { error: "Failed to upload file" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

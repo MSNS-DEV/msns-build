@@ -25,9 +25,15 @@ export const StudentDeletionDialog = ({
       alert("Failed to delete students. Please try again.");
     },
     onSuccess: () => {
-      void import("~/lib/mobile/notification-service").then(({ sendModuleActionNotification }) => {
-        void sendModuleActionNotification("Student", "Students Deleted", `${studentIds.length} student record(s) removed`);
-      });
+      void import("~/lib/mobile/notification-service").then(
+        ({ sendModuleActionNotification }) => {
+          void sendModuleActionNotification(
+            "Student",
+            "Students Deleted",
+            `${studentIds.length} student record(s) removed`,
+          );
+        },
+      );
       alert("Students deleted successfully.");
     },
   });

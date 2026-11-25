@@ -74,7 +74,9 @@ export default function SessionDeletionDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleteSessions.isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={deleteSessions.isPending}>
+            Cancel
+          </AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button
               variant="destructive"

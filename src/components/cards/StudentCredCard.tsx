@@ -75,7 +75,7 @@ export default function StudentCredDetails() {
   const handleDelete = (studentId: string, name: string) => {
     if (
       confirm(
-        `Are you sure you want to delete ${name}? This action cannot be undone.`
+        `Are you sure you want to delete ${name}? This action cannot be undone.`,
       )
     ) {
       deleteMutation.mutate({ studentIds: [studentId] });
@@ -94,20 +94,24 @@ export default function StudentCredDetails() {
       return "N/A";
     }
     const parsedDate = new Date(dateStr);
-    return isNaN(parsedDate.getTime()) ? dateStr : parsedDate.toLocaleDateString();
+    return isNaN(parsedDate.getTime())
+      ? dateStr
+      : parsedDate.toLocaleDateString();
   };
 
   const filteredStudents = students.filter(
     (student) =>
       student.studentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.studentCNIC?.includes(searchQuery) ||
-      student.registrationNumber?.toLowerCase().includes(searchQuery.toLowerCase())
+      student.registrationNumber
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()),
   );
 
   const totalPages = Math.ceil(filteredStudents.length / itemsPerPage);
   const paginatedStudents = filteredStudents.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   const containerVariants = {
@@ -195,12 +199,17 @@ export default function StudentCredDetails() {
         <div className="flex items-center justify-between px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
           <span>
             Showing{" "}
-            <span className="text-emerald-400 font-semibold">
-              {filteredStudents.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1}
+            <span className="font-semibold text-emerald-400">
+              {filteredStudents.length === 0
+                ? 0
+                : (currentPage - 1) * itemsPerPage + 1}
               {" - "}
               {Math.min(currentPage * itemsPerPage, filteredStudents.length)}
             </span>{" "}
-            of <span className="text-emerald-400 font-semibold">{filteredStudents.length}</span>{" "}
+            of{" "}
+            <span className="font-semibold text-emerald-400">
+              {filteredStudents.length}
+            </span>{" "}
             Students
           </span>
           <div className="flex items-center gap-2">
@@ -276,7 +285,9 @@ export default function StudentCredDetails() {
                             {student.studentName}
                           </h2>
                           <p className="truncate text-sm text-muted-foreground">
-                            <span className="opacity-60">{getParentagePrefix(student.gender)}:</span>{" "}
+                            <span className="opacity-60">
+                              {getParentagePrefix(student.gender)}:
+                            </span>{" "}
                             {student.fatherName}
                           </p>
                           <div className="flex flex-wrap gap-2 pt-1">
@@ -342,7 +353,12 @@ export default function StudentCredDetails() {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => handleDelete(student.studentId, student.studentName)}
+                            onClick={() =>
+                              handleDelete(
+                                student.studentId,
+                                student.studentName,
+                              )
+                            }
                             disabled={deleteMutation.isPending}
                             className="h-10 w-10 rounded-xl border border-red-500/20 bg-red-900/10 text-red-400 transition-all hover:bg-red-600/20 hover:text-foreground disabled:opacity-50"
                           >
@@ -376,13 +392,21 @@ export default function StudentCredDetails() {
               Previous
             </Button>
             <span className="text-sm text-muted-foreground">
-              Page <span className="font-semibold text-emerald-400">{currentPage}</span> of{" "}
-              <span className="font-semibold text-emerald-400">{totalPages}</span>
+              Page{" "}
+              <span className="font-semibold text-emerald-400">
+                {currentPage}
+              </span>{" "}
+              of{" "}
+              <span className="font-semibold text-emerald-400">
+                {totalPages}
+              </span>
             </span>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(prev + 1, totalPages))
+              }
               disabled={currentPage === totalPages}
               className="h-10 rounded-xl border-emerald-500/20 bg-muted px-4 text-emerald-400 transition-all hover:border-emerald-500/50 hover:bg-emerald-900/30 disabled:opacity-40"
             >

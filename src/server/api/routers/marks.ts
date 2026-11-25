@@ -1,9 +1,16 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, teacherProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  teacherProcedure,
+} from "../trpc";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
-import { assertCanReadStudent, assertCanTeachClassSubject } from "~/server/api/access";
+import {
+  assertCanReadStudent,
+  assertCanTeachClassSubject,
+} from "~/server/api/access";
 
 const uploadMarksSchema = z.object({
   examId: z.string().cuid(),

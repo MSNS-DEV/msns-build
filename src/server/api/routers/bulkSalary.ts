@@ -49,7 +49,10 @@ export const bulkSalaryRouter = createTRPCRouter({
       );
 
       // If copyFromSession, get previous session assignments
-      let prevAssignmentMap = new Map<string, { baseSalary: number; totalSalary: number }>();
+      let prevAssignmentMap = new Map<
+        string,
+        { baseSalary: number; totalSalary: number }
+      >();
       if (input.fromSessionId) {
         const prevAssignments = await ctx.db.salaryAssignment.findMany({
           where: { sessionId: input.fromSessionId },
@@ -127,7 +130,10 @@ export const bulkSalaryRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const initiatorEmployee = await getSessionEmployee(ctx);
       if (!initiatorEmployee) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee record not found" });
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee record not found",
+        });
       }
 
       // FR-SAL-07: Validate all items before transaction
@@ -138,7 +144,9 @@ export const bulkSalaryRouter = createTRPCRouter({
           where: { employeeId: { in: invalid.map((i) => i.employeeId) } },
           select: { employeeId: true, employeeName: true },
         });
-        const nameById = new Map(names.map((n) => [n.employeeId, n.employeeName]));
+        const nameById = new Map(
+          names.map((n) => [n.employeeId, n.employeeName]),
+        );
         for (const item of invalid) {
           validationErrors.push(
             `${nameById.get(item.employeeId) ?? item.employeeId}: Salary must be positive`,
@@ -154,72 +162,77 @@ export const bulkSalaryRouter = createTRPCRouter({
       }
 
       // FR-SAL-06: Execute in a single Prisma transaction
-      const result = await ctx.db.$transaction(async (tx) => {
-        // Create the batch record
-        const batch = await tx.bulkSalaryCreationBatch.create({
-          data: {
-            initiatedBy: initiatorEmployee.employeeId,
-            fromSessionId: input.fromSessionId,
-            toSessionId: input.toSessionId,
-            globalIncrementType: input.globalIncrementType,
-            globalIncrementValue: input.globalIncrementValue,
-            totalEmployees: input.items.length,
-          },
-        });
+      const result = await ctx.db.$transaction(
+        async (tx) => {
+          // Create the batch record
+          const batch = await tx.bulkSalaryCreationBatch.create({
+            data: {
+              initiatedBy: initiatorEmployee.employeeId,
+              fromSessionId: input.fromSessionId,
+              toSessionId: input.toSessionId,
+              globalIncrementType: input.globalIncrementType,
+              globalIncrementValue: input.globalIncrementValue,
+              totalEmployees: input.items.length,
+            },
+          });
 
-        // Get previous salary amounts for the batch items
-        const prevAssignments =
-          input.fromSessionId
+          // Get previous salary amounts for the batch items
+          const prevAssignments = input.fromSessionId
             ? await tx.salaryAssignment.findMany({
                 where: { sessionId: input.fromSessionId },
                 select: { employeeId: true, totalSalary: true },
               })
             : [];
-        const prevMap = new Map(prevAssignments.map((a) => [a.employeeId, a.totalSalary]));
+          const prevMap = new Map(
+            prevAssignments.map((a) => [a.employeeId, a.totalSalary]),
+          );
 
-        // Skip employees who already have an assignment in the target session.
-        const existing = await tx.salaryAssignment.findMany({
-          where: {
-            sessionId: input.toSessionId,
-            employeeId: { in: input.items.map((i) => i.employeeId) },
-          },
-          select: { employeeId: true },
-        });
-        const already = new Set(existing.map((e) => e.employeeId));
-        const seen = new Set<string>();
-        const toCreate = input.items.filter((i) => {
-          if (already.has(i.employeeId) || seen.has(i.employeeId)) return false;
-          seen.add(i.employeeId);
-          return true;
-        });
+          // Skip employees who already have an assignment in the target session.
+          const existing = await tx.salaryAssignment.findMany({
+            where: {
+              sessionId: input.toSessionId,
+              employeeId: { in: input.items.map((i) => i.employeeId) },
+            },
+            select: { employeeId: true },
+          });
+          const already = new Set(existing.map((e) => e.employeeId));
+          const seen = new Set<string>();
+          const toCreate = input.items.filter((i) => {
+            if (already.has(i.employeeId) || seen.has(i.employeeId))
+              return false;
+            seen.add(i.employeeId);
+            return true;
+          });
 
-        await tx.salaryAssignment.createMany({
-          data: toCreate.map((item) => ({
-            employeeId: item.employeeId,
-            baseSalary: item.newSalary,
-            increment: 0,
-            totalSalary: item.newSalary,
-            sessionId: input.toSessionId,
-          })),
-        });
-        await tx.bulkSalaryCreationItem.createMany({
-          data: toCreate.map((item) => ({
-            batchId: batch.batchId,
-            employeeId: item.employeeId,
-            previousSalary: prevMap.get(item.employeeId) ?? 0,
-            newSalary: item.newSalary,
-            isOverridden: item.isOverridden,
-          })),
-        });
-        const createdCount = toCreate.length;
+          await tx.salaryAssignment.createMany({
+            data: toCreate.map((item) => ({
+              employeeId: item.employeeId,
+              baseSalary: item.newSalary,
+              increment: 0,
+              totalSalary: item.newSalary,
+              sessionId: input.toSessionId,
+            })),
+          });
+          await tx.bulkSalaryCreationItem.createMany({
+            data: toCreate.map((item) => ({
+              batchId: batch.batchId,
+              employeeId: item.employeeId,
+              previousSalary: prevMap.get(item.employeeId) ?? 0,
+              newSalary: item.newSalary,
+              isOverridden: item.isOverridden,
+            })),
+          });
+          const createdCount = toCreate.length;
 
-        await tx.bulkSalaryCreationBatch.update({
-          where: { batchId: batch.batchId },
-          data: { totalCreated: createdCount },
-        });
+          await tx.bulkSalaryCreationBatch.update({
+            where: { batchId: batch.batchId },
+            data: { totalCreated: createdCount },
+          });
 
-        return { batchId: batch.batchId, createdCount };
-      }, { timeout: 30_000 });
+          return { batchId: batch.batchId, createdCount };
+        },
+        { timeout: 30_000 },
+      );
 
       return {
         success: true,
@@ -274,7 +287,8 @@ export const bulkSalaryRouter = createTRPCRouter({
       if (assignments.length === 0) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "No salary assignments found for the selected employees in this session",
+          message:
+            "No salary assignments found for the selected employees in this session",
         });
       }
 

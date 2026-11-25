@@ -6,7 +6,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { ClasswiseView } from "~/components/attendance/timetable/classwise-view";
 import { TeacherwiseView } from "~/components/attendance/timetable/teacherwise-view";
 import type { Class, Teacher, TimetableViewMode } from "~/lib/timetable-types";
-import { GridIcon, Users, Clock, Calendar, Printer, UploadCloud, LayoutGrid } from "lucide-react";
+import {
+  GridIcon,
+  Users,
+  Clock,
+  Calendar,
+  Printer,
+  UploadCloud,
+  LayoutGrid,
+} from "lucide-react";
 import { api } from "~/trpc/react";
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import { GradientStatCard } from "~/components/shared/GradientStatCard";
@@ -30,7 +38,11 @@ function TimetableContent() {
 
   const breadcrumbs = [
     { href: "/admin", label: "Dashboard" },
-    { href: "/admin/sessions/timetable", label: "Timetable Management", current: true },
+    {
+      href: "/admin/sessions/timetable",
+      label: "Timetable Management",
+      current: true,
+    },
   ];
 
   const { data: teachers, isLoading: teachersLoading } =
@@ -62,7 +74,10 @@ function TimetableContent() {
         <div className="h-10 w-48 animate-pulse rounded-md bg-slate-200 dark:bg-emerald-900/20" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-32 animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20" />
+            <div
+              key={i}
+              className="h-32 animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20"
+            />
           ))}
         </div>
         <div className="h-96 w-full animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20" />
@@ -70,22 +85,18 @@ function TimetableContent() {
     );
   }
 
-  const transformedClasses: Class[] = (classes ?? []).map(
-    (cls) => ({
-      classId: cls.classId,
-      grade: cls.grade,
-      section: cls.section,
-    }),
-  );
+  const transformedClasses: Class[] = (classes ?? []).map((cls) => ({
+    classId: cls.classId,
+    grade: cls.grade,
+    section: cls.section,
+  }));
 
-  const transformedTeachers: Teacher[] = (teachers ?? []).map(
-    (teacher) => ({
-      employeeId: teacher.employeeId,
-      employeeName: teacher.employeeName,
-      designation: teacher.designation,
-      education: teacher.education ?? undefined,
-    }),
-  );
+  const transformedTeachers: Teacher[] = (teachers ?? []).map((teacher) => ({
+    employeeId: teacher.employeeId,
+    employeeName: teacher.employeeName,
+    designation: teacher.designation,
+    education: teacher.education ?? undefined,
+  }));
 
   return (
     <div className="w-full space-y-6">
@@ -112,7 +123,10 @@ function TimetableContent() {
             <UploadCloud className="h-4 w-4" />
             Import
           </Button>
-          <Button size="sm" className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+          <Button
+            size="sm"
+            className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+          >
             <Printer className="h-4 w-4" />
             Print All
           </Button>
@@ -120,7 +134,7 @@ function TimetableContent() {
       </div>
 
       {/* --- Key Metrics Grid --- */}
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+      <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
         <GradientStatCard
           title="Total Classes"
           value={transformedClasses.length}
@@ -181,7 +195,10 @@ function TimetableContent() {
             </div>
 
             {/* Classwise View */}
-            <TabsContent value="class" className="m-0 border-t border-slate-100 dark:border-border duration-300 animate-in fade-in-50">
+            <TabsContent
+              value="class"
+              className="m-0 border-t border-slate-100 duration-300 animate-in fade-in-50 dark:border-border"
+            >
               <div className="p-4 sm:p-6">
                 <ClasswiseView
                   classes={transformedClasses}
@@ -192,7 +209,10 @@ function TimetableContent() {
             </TabsContent>
 
             {/* Teacherwise View */}
-            <TabsContent value="teacher" className="m-0 border-t border-slate-100 dark:border-border duration-300 animate-in fade-in-50">
+            <TabsContent
+              value="teacher"
+              className="m-0 border-t border-slate-100 duration-300 animate-in fade-in-50 dark:border-border"
+            >
               <div className="p-4 sm:p-6">
                 <TeacherwiseView
                   teachers={transformedTeachers}
@@ -216,7 +236,10 @@ export default function TimetablePage() {
           <div className="h-10 w-48 animate-pulse rounded-md bg-slate-200 dark:bg-emerald-900/20" />
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-32 animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20" />
+              <div
+                key={i}
+                className="h-32 animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20"
+              />
             ))}
           </div>
           <div className="h-96 w-full animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20" />

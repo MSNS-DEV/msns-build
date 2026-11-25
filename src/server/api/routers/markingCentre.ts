@@ -42,13 +42,17 @@ async function assertCanWriteCells(
     if (cs?.classId !== exam.classId || cs.subjectId !== cell.subjectId) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: "Marks target a subject that does not belong to this exam's class",
+        message:
+          "Marks target a subject that does not belong to this exam's class",
       });
     }
   }
   if (isOffice(ctx)) return;
   if (roleOf(ctx) !== "TEACHER") {
-    throw new TRPCError({ code: "FORBIDDEN", message: "Not allowed to enter marks" });
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Not allowed to enter marks",
+    });
   }
   const employee = await requireSessionEmployee(ctx);
   if (classSubjects.some((cs) => cs.employeeId !== employee.employeeId)) {
@@ -68,9 +72,7 @@ export const markingCentreRouter = createTRPCRouter({
         classId: z.string().cuid(),
         sessionId: z.string().cuid(),
         subjectFilter: z.string().cuid().optional(), // FR-EXM-32 subject filter
-        statusFilter: z
-          .enum(["Pending", "Partial", "Complete"])
-          .optional(), // FR-EXM-32 status filter
+        statusFilter: z.enum(["Pending", "Partial", "Complete"]).optional(), // FR-EXM-32 status filter
         studentSearch: z.string().optional(), // FR-EXM-32 student search
       }),
     )
@@ -92,7 +94,8 @@ export const markingCentreRouter = createTRPCRouter({
           },
         },
       });
-      if (!exam) throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
+      if (!exam)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
 
       // Get all class subjects for this class/session
       const classSubjects = await ctx.db.classSubject.findMany({
@@ -116,7 +119,10 @@ export const markingCentreRouter = createTRPCRouter({
           sessionId: input.sessionId,
           ...(input.studentSearch && {
             Students: {
-              studentName: { contains: input.studentSearch, mode: "insensitive" },
+              studentName: {
+                contains: input.studentSearch,
+                mode: "insensitive",
+              },
             },
           }),
         },
@@ -172,7 +178,9 @@ export const markingCentreRouter = createTRPCRouter({
           };
         });
 
-        const markedCount = cells.filter((c) => c.obtainedMarks !== null).length;
+        const markedCount = cells.filter(
+          (c) => c.obtainedMarks !== null,
+        ).length;
         const totalSubjects = cells.length;
         const completionStatus: "Pending" | "Partial" | "Complete" =
           markedCount === 0
@@ -194,10 +202,9 @@ export const markingCentreRouter = createTRPCRouter({
       });
 
       // Apply FR-EXM-32 status filter
-      const filteredRows =
-        input.statusFilter
-          ? gridRows.filter((r) => r.completionStatus === input.statusFilter)
-          : gridRows;
+      const filteredRows = input.statusFilter
+        ? gridRows.filter((r) => r.completionStatus === input.statusFilter)
+        : gridRows;
 
       // Column-level completion (per subject)
       const columnStats = classSubjects.map((cs) => {
@@ -244,14 +251,25 @@ export const markingCentreRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
-      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
+      if (!userId)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
 
       // Resolve to employeeId for the Marks relation
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
-      const exam = await ctx.db.exam.findUnique({ where: { examId: input.examId } });
-      if (!exam) throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
+      const exam = await ctx.db.exam.findUnique({
+        where: { examId: input.examId },
+      });
+      if (!exam)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
       await assertCanWriteCells(ctx, exam, input.marks);
 
       // FR-EXM-31: Validate marks don't exceed total
@@ -304,17 +322,30 @@ export const markingCentreRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;
-      if (!userId) throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
+      if (!userId)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
 
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
-      const exam = await ctx.db.exam.findUnique({ where: { examId: input.examId } });
-      if (!exam) throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
+      const exam = await ctx.db.exam.findUnique({
+        where: { examId: input.examId },
+      });
+      if (!exam)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
       await assertCanWriteCells(ctx, exam, input.cells);
 
       // FR-EXM-31: Validate all cells
-      const invalid = input.cells.filter((c) => c.obtainedMarks > exam.totalMarks);
+      const invalid = input.cells.filter(
+        (c) => c.obtainedMarks > exam.totalMarks,
+      );
       if (invalid.length > 0) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -381,7 +412,8 @@ export const markingCentreRouter = createTRPCRouter({
           },
         },
       });
-      if (!exam) throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
+      if (!exam)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
 
       const validRows: {
         studentId: string;
@@ -408,7 +440,9 @@ export const markingCentreRouter = createTRPCRouter({
         }
 
         const subject = exam.ExamDatesheet.find(
-          (ds) => ds.Subject.subjectName.toLowerCase() === row.subjectCode.toLowerCase(),
+          (ds) =>
+            ds.Subject.subjectName.toLowerCase() ===
+            row.subjectCode.toLowerCase(),
         );
 
         if (!subject) {

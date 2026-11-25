@@ -8,12 +8,12 @@ import { Button } from "~/components/ui/button";
 
 export default function NotFound() {
   return (
-    <main className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-[#020806] text-slate-100 selection:bg-emerald-500/30 p-4">
+    <main className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden bg-[#020806] p-4 text-slate-100 selection:bg-emerald-500/30">
       {/* Cyber Grid Background */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(16,185,129,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.05)_1px,transparent_1px)] bg-[size:3rem_3rem]" />
         <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/40 via-black to-slate-950/90" />
-        <div className="absolute -top-40 left-1/2 -translate-x-1/2 h-96 w-96 rounded-full bg-emerald-500/10 blur-[120px]" />
+        <div className="absolute -top-40 left-1/2 h-96 w-96 -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[120px]" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-2xl text-center">
@@ -41,7 +41,7 @@ export default function NotFound() {
           className="space-y-3"
         >
           <div className="inline-flex items-center gap-2 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-emerald-400">
-            <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-400" />
             Route Not Found
           </div>
           <h1 className="bg-gradient-to-r from-emerald-200 via-emerald-400 to-teal-200 bg-clip-text font-serif text-6xl font-black tracking-tight text-transparent sm:text-8xl">
@@ -51,7 +51,8 @@ export default function NotFound() {
             This page could not be found
           </p>
           <p className="mx-auto max-w-md text-sm text-slate-400">
-            The page you are looking for might have been moved, renamed, or is temporarily unavailable.
+            The page you are looking for might have been moved, renamed, or is
+            temporarily unavailable.
           </p>
         </motion.div>
 
@@ -60,13 +61,13 @@ export default function NotFound() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.2 }}
-          className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 text-left"
+          className="mt-8 grid grid-cols-2 gap-3 text-left sm:grid-cols-4"
         >
           <Link
             href="/"
             className="group flex flex-col gap-1.5 rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-4 backdrop-blur-md transition-all hover:border-emerald-500/50 hover:bg-emerald-950/30"
           >
-            <Home className="h-5 w-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <Home className="h-5 w-5 text-emerald-400 transition-transform group-hover:scale-110" />
             <span className="text-xs font-bold text-slate-200">LMS Home</span>
             <span className="text-[10px] text-slate-500">Main portal</span>
           </Link>
@@ -75,7 +76,7 @@ export default function NotFound() {
             href="/sign-in"
             className="group flex flex-col gap-1.5 rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-4 backdrop-blur-md transition-all hover:border-emerald-500/50 hover:bg-emerald-950/30"
           >
-            <LogIn className="h-5 w-5 text-emerald-400 group-hover:scale-110 transition-transform" />
+            <LogIn className="h-5 w-5 text-emerald-400 transition-transform group-hover:scale-110" />
             <span className="text-xs font-bold text-slate-200">Sign In</span>
             <span className="text-[10px] text-slate-500">Student & staff</span>
           </Link>
@@ -84,8 +85,10 @@ export default function NotFound() {
             href="/privacy-policy"
             className="group flex flex-col gap-1.5 rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-4 backdrop-blur-md transition-all hover:border-emerald-500/50 hover:bg-emerald-950/30"
           >
-            <ShieldCheck className="h-5 w-5 text-emerald-400 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-bold text-slate-200">Privacy Policy</span>
+            <ShieldCheck className="h-5 w-5 text-emerald-400 transition-transform group-hover:scale-110" />
+            <span className="text-xs font-bold text-slate-200">
+              Privacy Policy
+            </span>
             <span className="text-[10px] text-slate-500">Data protection</span>
           </Link>
 
@@ -93,8 +96,10 @@ export default function NotFound() {
             href="https://www.msns.edu.pk"
             className="group flex flex-col gap-1.5 rounded-2xl border border-emerald-500/20 bg-slate-900/60 p-4 backdrop-blur-md transition-all hover:border-emerald-500/50 hover:bg-emerald-950/30"
           >
-            <Globe className="h-5 w-5 text-emerald-400 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-bold text-slate-200">Main Website</span>
+            <Globe className="h-5 w-5 text-emerald-400 transition-transform group-hover:scale-110" />
+            <span className="text-xs font-bold text-slate-200">
+              Main Website
+            </span>
             <span className="text-[10px] text-slate-500">msns.edu.pk</span>
           </a>
         </motion.div>
@@ -104,19 +109,19 @@ export default function NotFound() {
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.3 }}
-          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
+          className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
           <Button
             onClick={() => window.history.back()}
             variant="outline"
-            className="w-full sm:w-auto rounded-xl border-emerald-500/30 bg-slate-900/80 text-slate-200 hover:bg-slate-800"
+            className="w-full rounded-xl border-emerald-500/30 bg-slate-900/80 text-slate-200 hover:bg-slate-800 sm:w-auto"
           >
             <ArrowLeft className="mr-2 h-4 w-4" /> Go Back
           </Button>
 
           <Button
             asChild
-            className="w-full sm:w-auto rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-900/30 hover:from-emerald-500 hover:to-teal-500"
+            className="w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-lg shadow-emerald-900/30 hover:from-emerald-500 hover:to-teal-500 sm:w-auto"
           >
             <Link href="/">
               <Home className="mr-2 h-4 w-4" /> Return to Portal

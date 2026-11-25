@@ -25,7 +25,15 @@ interface PageHeaderProps {
   }>;
 }
 
-const KNOWN_ROLES = ["admin", "clerk", "teacher", "student", "principal", "head", "worker"];
+const KNOWN_ROLES = [
+  "admin",
+  "clerk",
+  "teacher",
+  "student",
+  "principal",
+  "head",
+  "worker",
+];
 
 const LABEL_MAP: Record<string, string> = {
   erp: "ERP",
@@ -65,7 +73,8 @@ export function PageHeader({ breadcrumbs }: PageHeaderProps) {
       return [{ href: "/", label: "Dashboard", current: true }];
     }
 
-    const crumbs: Array<{ href: string; label: string; current?: boolean }> = [];
+    const crumbs: Array<{ href: string; label: string; current?: boolean }> =
+      [];
     let accumPath = "";
 
     segments.forEach((seg, idx) => {
@@ -108,7 +117,9 @@ export function PageHeader({ breadcrumbs }: PageHeaderProps) {
       // Check if it's a CUID / UUID
       const isCuidOrUuid =
         (seg.length >= 20 && seg.startsWith("c")) ||
-        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(seg);
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          seg,
+        );
 
       if (isCuidOrUuid) {
         crumbs.push({
@@ -136,12 +147,12 @@ export function PageHeader({ breadcrumbs }: PageHeaderProps) {
   }, [breadcrumbs, pathname, sessions, classes]);
 
   return (
-    <div className="sticky top-0 z-40 mb-4 flex w-full flex-col items-center pt-safe pt-2 sm:pt-3">
-      <header className="flex h-14 sm:h-16 w-full items-center justify-between gap-3 sm:gap-4 rounded-xl border border-slate-200/90 bg-white/85 px-3 sm:px-6 shadow-sm backdrop-blur-xl transition-all dark:border-border dark:bg-card/90 dark:shadow-none">
-        <div className="flex items-center gap-2 sm:gap-4 overflow-hidden">
-          <SidebarTrigger className="text-slate-600 hover:bg-slate-100 dark:text-foreground dark:hover:bg-white/10 shrink-0" />
+    <div className="pt-safe sticky top-0 z-40 mb-4 flex w-full flex-col items-center pt-2 sm:pt-3">
+      <header className="flex h-14 w-full items-center justify-between gap-3 rounded-xl border border-slate-200/90 bg-white/85 px-3 shadow-sm backdrop-blur-xl transition-all dark:border-border dark:bg-card/90 dark:shadow-none sm:h-16 sm:gap-4 sm:px-6">
+        <div className="flex items-center gap-2 overflow-hidden sm:gap-4">
+          <SidebarTrigger className="shrink-0 text-slate-600 hover:bg-slate-100 dark:text-foreground dark:hover:bg-white/10" />
 
-          <Breadcrumb className="hidden sm:block overflow-hidden text-ellipsis whitespace-nowrap">
+          <Breadcrumb className="hidden overflow-hidden text-ellipsis whitespace-nowrap sm:block">
             <BreadcrumbList>
               {computedBreadcrumbs.map((crumb, index) => (
                 <React.Fragment key={crumb.href + index}>
@@ -168,13 +179,13 @@ export function PageHeader({ breadcrumbs }: PageHeaderProps) {
           </Breadcrumb>
         </div>
 
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-          <div className="hidden md:flex items-center justify-center">
+        <div className="flex shrink-0 items-center gap-2 sm:gap-4">
+          <div className="hidden items-center justify-center md:flex">
             <CommandPalette />
           </div>
           <NotificationBell />
           {session?.user && (
-            <div className="hidden sm:flex flex-col items-end gap-0.5">
+            <div className="hidden flex-col items-end gap-0.5 sm:flex">
               <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground dark:text-muted-foreground">
                 ID:{" "}
                 <span className="font-mono text-slate-700 dark:text-foreground">

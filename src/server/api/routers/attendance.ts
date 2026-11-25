@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { createTRPCRouter, officeProcedure, teacherProcedure, protectedProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  officeProcedure,
+  teacherProcedure,
+  protectedProcedure,
+} from "../trpc";
 import { after } from "next/server";
 import { pkYmd } from "~/server/utils/pk-time";
 import { TRPCError } from "@trpc/server";
@@ -55,7 +60,9 @@ export const attendanceRouter = createTRPCRouter({
       z.object({
         classId: z.string(),
         sessionId: z.string(),
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+        date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
         records: z.array(
           z.object({
             studentId: z.string(),
@@ -66,7 +73,10 @@ export const attendanceRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCanTeachClass(ctx, { classId: input.classId, sessionId: input.sessionId });
+      await assertCanTeachClass(ctx, {
+        classId: input.classId,
+        sessionId: input.sessionId,
+      });
       const enrolled = await ctx.db.studentClass.count({
         where: {
           classId: input.classId,
@@ -77,7 +87,8 @@ export const attendanceRouter = createTRPCRouter({
       if (enrolled !== new Set(input.records.map((r) => r.studentId)).size) {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Some students are not enrolled in this class for this session",
+          message:
+            "Some students are not enrolled in this class for this session",
         });
       }
       try {
@@ -110,7 +121,9 @@ export const attendanceRouter = createTRPCRouter({
         );
 
         // Absence alerts after the response, so they are not dropped when the function freezes.
-        const absentIds = input.records.filter((r) => r.status === "A").map((r) => r.studentId);
+        const absentIds = input.records
+          .filter((r) => r.status === "A")
+          .map((r) => r.studentId);
         if (absentIds.length > 0) {
           const db = ctx.db;
           after(async () => {
@@ -125,7 +138,8 @@ export const attendanceRouter = createTRPCRouter({
                   select: { guardentId: true, linkedStudentIds: true },
                 }),
               ]);
-              const { sendPushNotification } = await import("~/server/mobile/fcm");
+              const { sendPushNotification } =
+                await import("~/server/mobile/fcm");
               for (const st of students) {
                 const parentIds = parents
                   .filter((p) => p.linkedStudentIds.includes(st.studentId))
@@ -140,7 +154,10 @@ export const attendanceRouter = createTRPCRouter({
                 }
               }
             } catch (err) {
-              console.error("Failed to send student attendance push notification:", err);
+              console.error(
+                "Failed to send student attendance push notification:",
+                err,
+              );
             }
           });
         }
@@ -157,7 +174,9 @@ export const attendanceRouter = createTRPCRouter({
       z.object({
         classId: z.string(),
         sessionId: z.string(),
-        date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+        date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
       }),
     )
     .query(async ({ ctx, input }) => {

@@ -69,7 +69,6 @@ import {
   DropdownMenuSubContent,
 } from "~/components/ui/dropdown-menu";
 
-
 interface GalleryImage {
   key: string;
   url: string;
@@ -195,7 +194,6 @@ const FOLDER_COLORS = [
   },
 ];
 
-
 interface GalleryUploaderProps {
   canDelete?: boolean;
 }
@@ -226,7 +224,9 @@ export default function GalleryUploader({
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   // Inline inputs state
-  const [createFolderWindowId, setCreateFolderWindowId] = useState<string | null>(null);
+  const [createFolderWindowId, setCreateFolderWindowId] = useState<
+    string | null
+  >(null);
   const [newFolderNameInline, setNewFolderNameInline] = useState("");
 
   // Upload State
@@ -238,7 +238,8 @@ export default function GalleryUploader({
   const [actionLoading, setActionLoading] = useState(false);
 
   // Manage Folders Dialog
-  const [isManageFoldersDialogOpen, setIsManageFoldersDialogOpen] = useState(false);
+  const [isManageFoldersDialogOpen, setIsManageFoldersDialogOpen] =
+    useState(false);
   const [selectedFolders, setSelectedFolders] = useState<string[]>([]);
 
   // Move & Copy Dialogs
@@ -255,28 +256,32 @@ export default function GalleryUploader({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   // Single-Folder Delete States
-  const [isFolderDeleteDialogOpen, setIsFolderDeleteDialogOpen] = useState(false);
+  const [isFolderDeleteDialogOpen, setIsFolderDeleteDialogOpen] =
+    useState(false);
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null);
 
   // Folder Color, Rename, and Move States
   const [folderColors, setFolderColors] = useState<Record<string, string>>({});
-  const [isFolderRenameDialogOpen, setIsFolderRenameDialogOpen] = useState(false);
+  const [isFolderRenameDialogOpen, setIsFolderRenameDialogOpen] =
+    useState(false);
   const [folderToRename, setFolderToRename] = useState<string | null>(null);
   const [folderRenameValue, setFolderRenameValue] = useState("");
   const [isFolderMoveDialogOpen, setIsFolderMoveDialogOpen] = useState(false);
   const [folderToMove, setFolderToMove] = useState<string | null>(null);
   const [folderMoveTargetFolder, setFolderMoveTargetFolder] = useState("root");
 
-
-
   // Lightbox State
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [zoomScale, setZoomScale] = useState(1);
-  const [lightboxSourceList, setLightboxSourceList] = useState<GalleryImage[]>([]);
+  const [lightboxSourceList, setLightboxSourceList] = useState<GalleryImage[]>(
+    [],
+  );
 
   const activeMedia = useMemo(() => {
-    return lightboxIndex !== null ? lightboxSourceList[lightboxIndex] ?? null : null;
+    return lightboxIndex !== null
+      ? (lightboxSourceList[lightboxIndex] ?? null)
+      : null;
   }, [lightboxIndex, lightboxSourceList]);
 
   // Detect mobile screen sizes
@@ -391,8 +396,8 @@ export default function GalleryUploader({
       if (existing) {
         setWindows((prev) =>
           prev.map((w) =>
-            w.id === existing.id ? { ...w, zIndex: nextZIndex } : w
-          )
+            w.id === existing.id ? { ...w, zIndex: nextZIndex } : w,
+          ),
         );
         setNextZIndex((prev) => prev + 1);
         return;
@@ -413,7 +418,7 @@ export default function GalleryUploader({
       setWindows((prev) => [...prev, newWindow]);
       setNextZIndex((prev) => prev + 1);
     },
-    [windows, nextZIndex]
+    [windows, nextZIndex],
   );
 
   const closeWindow = useCallback((windowId: string) => {
@@ -423,24 +428,24 @@ export default function GalleryUploader({
   const toggleMaximizeWindow = useCallback((windowId: string) => {
     setWindows((prev) =>
       prev.map((w) =>
-        w.id === windowId ? { ...w, isMaximized: !w.isMaximized } : w
-      )
+        w.id === windowId ? { ...w, isMaximized: !w.isMaximized } : w,
+      ),
     );
   }, []);
 
   const focusWindow = useCallback(
     (windowId: string) => {
       setWindows((prev) =>
-        prev.map((w) => (w.id === windowId ? { ...w, zIndex: nextZIndex } : w))
+        prev.map((w) => (w.id === windowId ? { ...w, zIndex: nextZIndex } : w)),
       );
       setNextZIndex((prev) => prev + 1);
     },
-    [nextZIndex]
+    [nextZIndex],
   );
 
   const navigateWindow = useCallback((windowId: string, newPath: string) => {
     setWindows((prev) =>
-      prev.map((w) => (w.id === windowId ? { ...w, path: newPath } : w))
+      prev.map((w) => (w.id === windowId ? { ...w, path: newPath } : w)),
     );
   }, []);
 
@@ -452,8 +457,8 @@ export default function GalleryUploader({
         (w) =>
           w.path === "" ||
           w.path === "__all_items__" ||
-          existingFolders.includes(w.path)
-      )
+          existingFolders.includes(w.path),
+      ),
     );
   }, [existingFolders, loading, apiFolders]);
 
@@ -466,7 +471,8 @@ export default function GalleryUploader({
   const handlePrevMedia = useCallback(() => {
     if (lightboxIndex === null || lightboxSourceList.length === 0) return;
     setLightboxIndex(
-      (lightboxIndex - 1 + lightboxSourceList.length) % lightboxSourceList.length
+      (lightboxIndex - 1 + lightboxSourceList.length) %
+        lightboxSourceList.length,
     );
   }, [lightboxIndex, lightboxSourceList]);
 
@@ -487,7 +493,10 @@ export default function GalleryUploader({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isLightboxOpen, handleNextMedia, handlePrevMedia]);
 
-  const handleOpenLightbox = (image: GalleryImage, sourceList: GalleryImage[]) => {
+  const handleOpenLightbox = (
+    image: GalleryImage,
+    sourceList: GalleryImage[],
+  ) => {
     const idx = sourceList.findIndex((img) => img.key === image.key);
     if (idx !== -1) {
       setLightboxSourceList(sourceList);
@@ -528,8 +537,8 @@ export default function GalleryUploader({
               const progress = Math.round((event.loaded / event.total) * 100);
               setUploadingItems((prev) =>
                 prev.map((item) =>
-                  item.id === tempId ? { ...item, progress } : item
-                )
+                  item.id === tempId ? { ...item, progress } : item,
+                ),
               );
             }
           };
@@ -545,7 +554,9 @@ export default function GalleryUploader({
             } else {
               let errMsg = "Upload failed";
               try {
-                const resObj = JSON.parse(xhr.responseText) as { error?: string };
+                const resObj = JSON.parse(xhr.responseText) as {
+                  error?: string;
+                };
                 errMsg = resObj.error ?? errMsg;
               } catch {}
               reject(new Error(errMsg));
@@ -573,15 +584,15 @@ export default function GalleryUploader({
           prev.map((item) =>
             item.id === tempId
               ? { ...item, status: "failed", error: (error as Error).message }
-              : item
-          )
+              : item,
+          ),
         );
         toast.error(
-          `Failed to upload ${nameWithoutExt}: ${(error as Error).message}`
+          `Failed to upload ${nameWithoutExt}: ${(error as Error).message}`,
         );
       }
     },
-    [fetchImages]
+    [fetchImages],
   );
 
   // Single-Item Actions Implementation
@@ -638,7 +649,10 @@ export default function GalleryUploader({
       const res = await fetch("/api/gallery/rename", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ key: activeItem.key, newName: renameValue.trim() }),
+        body: JSON.stringify({
+          key: activeItem.key,
+          newName: renameValue.trim(),
+        }),
       });
 
       const data = (await res.json()) as { success: boolean; error?: string };
@@ -657,37 +671,34 @@ export default function GalleryUploader({
     }
   };
 
-  const handleDelete = useCallback(
-    async (key: string) => {
-      try {
-        setDeleting(key);
-        const res = await fetch(`/api/gallery/${key}`, {
-          method: "DELETE",
-        });
+  const handleDelete = useCallback(async (key: string) => {
+    try {
+      setDeleting(key);
+      const res = await fetch(`/api/gallery/${key}`, {
+        method: "DELETE",
+      });
 
-        if (!res.ok) {
-          const data = (await res.json()) as { error: string };
-          toast.error(data.error ?? "Failed to delete item");
-          return;
-        }
-
-        toast.success("Item deleted successfully");
-        setImages((prev) => prev.filter((img) => img.key !== key));
-        setIsDeleteDialogOpen(false);
-        setActiveItem(null);
-      } catch {
-        toast.error("Failed to delete item");
-      } finally {
-        setDeleting(null);
+      if (!res.ok) {
+        const data = (await res.json()) as { error: string };
+        toast.error(data.error ?? "Failed to delete item");
+        return;
       }
-    },
-    []
-  );
+
+      toast.success("Item deleted successfully");
+      setImages((prev) => prev.filter((img) => img.key !== key));
+      setIsDeleteDialogOpen(false);
+      setActiveItem(null);
+    } catch {
+      toast.error("Failed to delete item");
+    } finally {
+      setDeleting(null);
+    }
+  }, []);
 
   // Bulk Actions
   const toggleSelection = (key: string) => {
     setSelectedKeys((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
     );
   };
 
@@ -720,8 +731,8 @@ export default function GalleryUploader({
     const target = isNewActionFolder
       ? newActionFolderName.trim()
       : actionTargetFolder === "root"
-      ? ""
-      : actionTargetFolder;
+        ? ""
+        : actionTargetFolder;
 
     try {
       setActionLoading(true);
@@ -731,7 +742,7 @@ export default function GalleryUploader({
       });
       if (!res.ok) throw new Error(`Failed to ${action}`);
       toast.success(
-        `Items ${action === "move" ? "moved" : "copied"} successfully`
+        `Items ${action === "move" ? "moved" : "copied"} successfully`,
       );
 
       if (action === "move") setIsMoveDialogOpen(false);
@@ -776,7 +787,7 @@ export default function GalleryUploader({
     if (selectedFolders.length === 0) return;
     if (
       !confirm(
-        `Are you sure you want to delete ${selectedFolders.length} folder(s) and all their contents? This cannot be undone.`
+        `Are you sure you want to delete ${selectedFolders.length} folder(s) and all their contents? This cannot be undone.`,
       )
     )
       return;
@@ -814,8 +825,8 @@ export default function GalleryUploader({
       // Close windows that belong to this folder or its subfolders
       setWindows((prev) =>
         prev.filter(
-          (w) => w.path !== folderPath && !w.path.startsWith(folderPath + "/")
-        )
+          (w) => w.path !== folderPath && !w.path.startsWith(folderPath + "/"),
+        ),
       );
 
       await fetchImages();
@@ -838,7 +849,7 @@ export default function GalleryUploader({
     } else {
       if (
         confirm(
-          `Are you sure you want to delete folder "${folderPath}"? This will delete all its contents.`
+          `Are you sure you want to delete folder "${folderPath}"? This will delete all its contents.`,
         )
       ) {
         await executeFolderDelete(folderPath);
@@ -868,9 +879,22 @@ export default function GalleryUploader({
   const getFolderColor = (folderPath: string) => {
     const colorVal = folderColors[folderPath] ?? "emerald";
     if (colorVal.startsWith("#")) {
-      return { isCustom: true, hex: colorVal, name: "custom", label: "Custom", text: "", bg: "", border: "", hoverBorder: "" };
+      return {
+        isCustom: true,
+        hex: colorVal,
+        name: "custom",
+        label: "Custom",
+        text: "",
+        bg: "",
+        border: "",
+        hoverBorder: "",
+      };
     }
-    return { ...(FOLDER_COLORS.find((c) => c.name === colorVal) ?? FOLDER_COLORS[0]!), isCustom: false, hex: "" };
+    return {
+      ...(FOLDER_COLORS.find((c) => c.name === colorVal) ?? FOLDER_COLORS[0]!),
+      isCustom: false,
+      hex: "",
+    };
   };
 
   const handleFolderRename = async () => {
@@ -906,9 +930,12 @@ export default function GalleryUploader({
   const handleFolderMove = async () => {
     if (!folderToMove) return;
 
-    const targetParent = folderMoveTargetFolder === "root" ? "" : folderMoveTargetFolder;
+    const targetParent =
+      folderMoveTargetFolder === "root" ? "" : folderMoveTargetFolder;
     const folderNameOnly = folderToMove.split("/").pop()!;
-    const newPath = targetParent ? `${targetParent}/${folderNameOnly}` : folderNameOnly;
+    const newPath = targetParent
+      ? `${targetParent}/${folderNameOnly}`
+      : folderNameOnly;
 
     if (newPath === folderToMove) {
       setIsFolderMoveDialogOpen(false);
@@ -942,7 +969,6 @@ export default function GalleryUploader({
     }
   };
 
-
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -967,11 +993,11 @@ export default function GalleryUploader({
   const handleFileDragStart = (
     e: React.DragEvent,
     key: string,
-    sourcePath: string
+    sourcePath: string,
   ) => {
     e.dataTransfer.setData(
       "application/json",
-      JSON.stringify({ type: "file", key, sourcePath })
+      JSON.stringify({ type: "file", key, sourcePath }),
     );
     e.dataTransfer.effectAllowed = "move";
   };
@@ -981,7 +1007,10 @@ export default function GalleryUploader({
     e.dataTransfer.dropEffect = "move";
   };
 
-  const handleFolderDrop = async (e: React.DragEvent, targetFolderPath: string) => {
+  const handleFolderDrop = async (
+    e: React.DragEvent,
+    targetFolderPath: string,
+  ) => {
     e.preventDefault();
     e.stopPropagation();
     try {
@@ -1051,7 +1080,9 @@ export default function GalleryUploader({
         const isVideo = file.type.startsWith("video/");
         const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
         if (file.size > maxSize) {
-          toast.error(`${file.name} exceeds ${isVideo ? "100MB" : "10MB"} limit`);
+          toast.error(
+            `${file.name} exceeds ${isVideo ? "100MB" : "10MB"} limit`,
+          );
           return false;
         }
         return true;
@@ -1093,7 +1124,7 @@ export default function GalleryUploader({
             return { ...w, x: newX, y: newY };
           }
           return w;
-        })
+        }),
       );
     };
 
@@ -1164,12 +1195,12 @@ export default function GalleryUploader({
     return (
       <div
         key={item.id}
-        className="group relative aspect-square overflow-hidden rounded-xl border border-emerald-500/30 bg-muted/20 backdrop-blur-xs flex flex-col items-center justify-center p-4 text-center select-none shadow-md"
+        className="backdrop-blur-xs group relative flex aspect-square select-none flex-col items-center justify-center overflow-hidden rounded-xl border border-emerald-500/30 bg-muted/20 p-4 text-center shadow-md"
       >
         {item.isVideo ? (
           <video
             src={item.previewUrl}
-            className="absolute inset-0 w-full h-full object-cover opacity-20"
+            className="absolute inset-0 h-full w-full object-cover opacity-20"
             muted
             playsInline
           />
@@ -1183,13 +1214,13 @@ export default function GalleryUploader({
           />
         )}
 
-        <div className="absolute inset-0 bg-background/60 flex flex-col items-center justify-center p-3 gap-2">
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/60 p-3">
           {item.status === "failed" ? (
             <>
-              <div className="rounded-full bg-destructive/10 text-destructive p-1.5 border border-destructive/20 animate-pulse">
+              <div className="animate-pulse rounded-full border border-destructive/20 bg-destructive/10 p-1.5 text-destructive">
                 <X className="h-3.5 w-3.5" />
               </div>
-              <p className="text-[9px] text-destructive font-semibold truncate max-w-full">
+              <p className="max-w-full truncate text-[9px] font-semibold text-destructive">
                 Failed
               </p>
               <Button
@@ -1198,18 +1229,18 @@ export default function GalleryUploader({
                 onClick={(e) => {
                   e.stopPropagation();
                   setUploadingItems((prev) =>
-                    prev.filter((x) => x.id !== item.id)
+                    prev.filter((x) => x.id !== item.id),
                   );
                 }}
-                className="text-[9px] h-5 px-1.5 text-muted-foreground"
+                className="h-5 px-1.5 text-[9px] text-muted-foreground"
               >
                 Dismiss
               </Button>
             </>
           ) : (
             <>
-              <div className="relative h-9 w-9 flex items-center justify-center">
-                <svg className="absolute w-full h-full transform -rotate-90">
+              <div className="relative flex h-9 w-9 items-center justify-center">
+                <svg className="absolute h-full w-full -rotate-90 transform">
                   <circle
                     cx="18"
                     cy="18"
@@ -1237,7 +1268,7 @@ export default function GalleryUploader({
                   {item.progress}%
                 </span>
               </div>
-              <p className="text-[9px] text-muted-foreground font-semibold truncate max-w-full">
+              <p className="max-w-full truncate text-[9px] font-semibold text-muted-foreground">
                 {item.name}
               </p>
             </>
@@ -1269,17 +1300,17 @@ export default function GalleryUploader({
         }}
         className={`group relative aspect-square overflow-hidden rounded-xl border transition-all duration-300 ${
           selectedKeys.includes(image.key)
-            ? "border-emerald-500 ring-2 ring-emerald-500/50 shadow-lg"
+            ? "border-emerald-500 shadow-lg ring-2 ring-emerald-500/50"
             : "border-border hover:border-emerald-500/50 hover:shadow-md"
-        } bg-card backdrop-blur-xs cursor-pointer`}
+        } backdrop-blur-xs cursor-pointer bg-card`}
       >
         {selectionMode && (
-          <div className="absolute top-2 left-2 z-10">
+          <div className="absolute left-2 top-2 z-10">
             <div
-              className={`rounded-full border h-5 w-5 flex items-center justify-center ${
+              className={`flex h-5 w-5 items-center justify-center rounded-full border ${
                 selectedKeys.includes(image.key)
-                  ? "bg-emerald-500 border-emerald-500"
-                  : "bg-background/60 border-muted-foreground"
+                  ? "border-emerald-500 bg-emerald-500"
+                  : "border-muted-foreground bg-background/60"
               }`}
             >
               {selectedKeys.includes(image.key) && (
@@ -1292,7 +1323,7 @@ export default function GalleryUploader({
         {/* Action Button on each item */}
         {!selectionMode && (
           <div
-            className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            className="absolute right-2 top-2 z-10 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
             onClick={(e) => e.stopPropagation()}
           >
             <DropdownMenu>
@@ -1300,17 +1331,17 @@ export default function GalleryUploader({
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="h-6 w-6 bg-background/80 border border-border backdrop-blur-xs rounded-md shadow-md"
+                  className="backdrop-blur-xs h-6 w-6 rounded-md border border-border bg-background/80 shadow-md"
                 >
                   <MoreVertical className="h-3.5 w-3.5 text-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent
                 align="end"
-                className="w-36 bg-card border-border text-foreground backdrop-blur-md"
+                className="w-36 border-border bg-card text-foreground backdrop-blur-md"
               >
                 <DropdownMenuItem
-                  className="cursor-pointer flex items-center gap-2 text-xs"
+                  className="flex cursor-pointer items-center gap-2 text-xs"
                   onClick={() => void handleDownload(image)}
                 >
                   <Download className="h-3.5 w-3.5 text-emerald-400" />
@@ -1318,7 +1349,7 @@ export default function GalleryUploader({
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  className="cursor-pointer flex items-center gap-2 text-xs"
+                  className="flex cursor-pointer items-center gap-2 text-xs"
                   onClick={() => void handleShare(image)}
                 >
                   <Share2 className="h-3.5 w-3.5 text-emerald-400" />
@@ -1326,7 +1357,7 @@ export default function GalleryUploader({
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  className="cursor-pointer flex items-center gap-2 text-xs"
+                  className="flex cursor-pointer items-center gap-2 text-xs"
                   onClick={() => {
                     setActiveItem(image);
                     const nameParts = cleanFilename.split(".");
@@ -1343,7 +1374,7 @@ export default function GalleryUploader({
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  className="cursor-pointer flex items-center gap-2 text-xs"
+                  className="flex cursor-pointer items-center gap-2 text-xs"
                   onClick={() => {
                     setActiveItem(image);
                     setActionTargetFolder(windowPath || "root");
@@ -1355,7 +1386,7 @@ export default function GalleryUploader({
                 </DropdownMenuItem>
 
                 <DropdownMenuItem
-                  className="cursor-pointer flex items-center gap-2 text-xs"
+                  className="flex cursor-pointer items-center gap-2 text-xs"
                   onClick={() => {
                     setActiveItem(image);
                     setActionTargetFolder(windowPath || "root");
@@ -1370,7 +1401,7 @@ export default function GalleryUploader({
                   <>
                     <DropdownMenuSeparator className="bg-border" />
                     <DropdownMenuItem
-                      className="cursor-pointer flex items-center gap-2 text-xs text-destructive focus:text-destructive focus:bg-destructive/10"
+                      className="flex cursor-pointer items-center gap-2 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
                       onClick={() => {
                         setActiveItem(image);
                         setIsDeleteDialogOpen(true);
@@ -1387,16 +1418,16 @@ export default function GalleryUploader({
         )}
 
         {isVideo ? (
-          <div className="relative w-full h-full bg-muted flex items-center justify-center">
+          <div className="relative flex h-full w-full items-center justify-center bg-muted">
             <video
               src={image.url}
-              className="w-full h-full object-cover opacity-70"
+              className="h-full w-full object-cover opacity-70"
               preload="metadata"
               muted
               playsInline
             />
             <div className="absolute inset-0 flex items-center justify-center">
-              <div className="rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 p-2 group-hover:scale-110 transition-transform">
+              <div className="rounded-full border border-emerald-500/30 bg-emerald-500/20 p-2 text-emerald-400 transition-transform group-hover:scale-110">
                 <Play className="h-4 w-4 fill-current" />
               </div>
             </div>
@@ -1411,14 +1442,14 @@ export default function GalleryUploader({
           />
         )}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-        <div className="absolute bottom-0 left-0 right-0 p-2 translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
-          <p className="text-[10px] text-white truncate font-semibold">
+        <div className="absolute bottom-0 left-0 right-0 translate-y-2 p-2 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+          <p className="truncate text-[10px] font-semibold text-white">
             {cleanFilename}
           </p>
           {image.size && (
-            <p className="text-[8px] text-emerald-400 font-medium">
+            <p className="text-[8px] font-medium text-emerald-400">
               {formatFileSize(image.size)}
             </p>
           )}
@@ -1434,15 +1465,17 @@ export default function GalleryUploader({
   };
 
   return (
-    <div className="flex flex-1 flex-col space-y-4 h-full min-h-0">
+    <div className="flex h-full min-h-0 flex-1 flex-col space-y-4">
       {/* Workspace Dashboard Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-card border border-border p-4 rounded-2xl shadow-xl backdrop-blur-md shrink-0">
+      <div className="flex shrink-0 flex-col justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-xl backdrop-blur-md md:flex-row md:items-center">
         <div className="flex items-center gap-3">
-          <div className="rounded-lg bg-emerald-500/10 p-2 border border-emerald-500/20">
+          <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/10 p-2">
             <Images className="h-5 w-5 text-emerald-400" />
           </div>
           <div>
-            <h2 className="text-lg font-bold text-foreground">Media Explorer Workspace</h2>
+            <h2 className="text-lg font-bold text-foreground">
+              Media Explorer Workspace
+            </h2>
             <p className="text-xs text-muted-foreground">
               {loading
                 ? "Syncing items..."
@@ -1456,7 +1489,7 @@ export default function GalleryUploader({
             <Button
               variant="outline"
               size="icon"
-              className="h-8 w-8 text-foreground border-border bg-background"
+              className="h-8 w-8 border-border bg-background text-foreground"
               onClick={() => setSidebarOpen(!sidebarOpen)}
             >
               <Menu className="h-4 w-4" />
@@ -1467,9 +1500,10 @@ export default function GalleryUploader({
             variant="outline"
             size="sm"
             onClick={() => openFolderWindow("")}
-            className="border-border bg-background hover:bg-accent text-foreground text-xs"
+            className="border-border bg-background text-xs text-foreground hover:bg-accent"
           >
-            <Home className="h-3.5 w-3.5 mr-1 text-emerald-400" /> Open Root Explorer
+            <Home className="mr-1 h-3.5 w-3.5 text-emerald-400" /> Open Root
+            Explorer
           </Button>
 
           <Button
@@ -1477,24 +1511,25 @@ export default function GalleryUploader({
             size="sm"
             onClick={() => void fetchImages()}
             disabled={loading}
-            className="border-border bg-background hover:bg-accent text-foreground text-xs"
+            className="border-border bg-background text-xs text-foreground hover:bg-accent"
           >
-            <RefreshCw className="h-3.5 w-3.5 mr-1 text-emerald-400 animate-hover" /> Refresh All
+            <RefreshCw className="animate-hover mr-1 h-3.5 w-3.5 text-emerald-400" />{" "}
+            Refresh All
           </Button>
         </div>
       </div>
 
       {/* Main Workspace Layout */}
-      <div className="flex flex-1 border border-border rounded-2xl overflow-hidden bg-card/45 backdrop-blur-md shadow-2xl relative min-h-[500px] h-full">
+      <div className="relative flex h-full min-h-[500px] flex-1 overflow-hidden rounded-2xl border border-border bg-card/45 shadow-2xl backdrop-blur-md">
         {/* Left Sidebar */}
         {sidebarOpen && (
           <div
-            className={`w-60 border-r border-border bg-card/70 backdrop-blur-md flex flex-col shrink-0 z-20 ${
+            className={`z-20 flex w-60 shrink-0 flex-col border-r border-border bg-card/70 backdrop-blur-md ${
               isMobile ? "absolute inset-y-0 left-0" : "relative"
             }`}
           >
-            <div className="p-3 border-b border-border flex items-center justify-between">
-              <span className="text-xs font-bold tracking-wider text-muted-foreground uppercase">
+            <div className="flex items-center justify-between border-b border-border p-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                 Quick Access
               </span>
               {isMobile && (
@@ -1509,15 +1544,15 @@ export default function GalleryUploader({
               )}
             </div>
 
-            <div className="flex-1 overflow-y-auto p-2.5 space-y-1.5">
+            <div className="flex-1 space-y-1.5 overflow-y-auto p-2.5">
               <button
                 onClick={() => {
                   openFolderWindow("");
                   if (isMobile) setSidebarOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-muted/50 text-foreground transition-all group"
+                className="group flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold text-foreground transition-all hover:bg-muted/50"
               >
-                <Home className="h-4 w-4 text-emerald-400 group-hover:scale-105 transition-transform" />
+                <Home className="h-4 w-4 text-emerald-400 transition-transform group-hover:scale-105" />
                 <span>Root Folder</span>
               </button>
 
@@ -1526,19 +1561,19 @@ export default function GalleryUploader({
                   openFolderWindow("__all_items__");
                   if (isMobile) setSidebarOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left text-xs font-semibold hover:bg-muted/50 text-foreground transition-all group"
+                className="group flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-xs font-semibold text-foreground transition-all hover:bg-muted/50"
               >
-                <Images className="h-4 w-4 text-emerald-400 group-hover:scale-105 transition-transform" />
+                <Images className="h-4 w-4 text-emerald-400 transition-transform group-hover:scale-105" />
                 <span>All Media Items</span>
               </button>
 
-              <div className="h-px bg-border my-2" />
+              <div className="my-2 h-px bg-border" />
 
-              <span className="block px-3 py-1 text-[10px] font-bold text-muted-foreground/80 uppercase tracking-wider">
+              <span className="block px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/80">
                 Folders Tree
               </span>
               {existingFolders.length === 0 ? (
-                <p className="text-[11px] text-muted-foreground px-3 py-2">
+                <p className="px-3 py-2 text-[11px] text-muted-foreground">
                   No custom folders.
                 </p>
               ) : (
@@ -1551,32 +1586,42 @@ export default function GalleryUploader({
                       <div
                         key={folder}
                         style={{ paddingLeft: `${12 + depth * 8}px` }}
-                        className="w-full flex items-center justify-between group rounded-lg text-left text-xs text-foreground/80 hover:text-foreground hover:bg-muted/40 transition-all"
+                        className="group flex w-full items-center justify-between rounded-lg text-left text-xs text-foreground/80 transition-all hover:bg-muted/40 hover:text-foreground"
                       >
                         <button
                           onClick={() => {
                             openFolderWindow(folder);
                             if (isMobile) setSidebarOpen(false);
                           }}
-                          className="flex-1 flex items-center gap-2 px-2 py-1.5 min-w-0 text-left"
+                          className="flex min-w-0 flex-1 items-center gap-2 px-2 py-1.5 text-left"
                         >
-                          <Folder className={`h-3.5 w-3.5 ${folderColor.text} shrink-0`} style={folderColor.isCustom ? { color: folderColor.hex } : undefined} />
+                          <Folder
+                            className={`h-3.5 w-3.5 ${folderColor.text} shrink-0`}
+                            style={
+                              folderColor.isCustom
+                                ? { color: folderColor.hex }
+                                : undefined
+                            }
+                          />
                           <span className="truncate">{name}</span>
                         </button>
-                        
+
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
                               onClick={(e) => e.stopPropagation()}
-                              className="opacity-0 group-hover:opacity-100 p-1 hover:bg-muted rounded text-muted-foreground hover:text-foreground transition-all shrink-0 mr-1.5"
+                              className="mr-1.5 shrink-0 rounded p-1 text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
                               title="Folder Actions"
                             >
                               <MoreVertical className="h-3 w-3" />
                             </button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-40 bg-card border-border text-foreground backdrop-blur-md">
+                          <DropdownMenuContent
+                            align="end"
+                            className="w-40 border-border bg-card text-foreground backdrop-blur-md"
+                          >
                             <DropdownMenuItem
-                              className="cursor-pointer flex items-center gap-2 text-xs"
+                              className="flex cursor-pointer items-center gap-2 text-xs"
                               onClick={() => {
                                 openFolderWindow(folder);
                                 if (isMobile) setSidebarOpen(false);
@@ -1587,7 +1632,7 @@ export default function GalleryUploader({
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
-                              className="cursor-pointer flex items-center gap-2 text-xs"
+                              className="flex cursor-pointer items-center gap-2 text-xs"
                               onClick={() => {
                                 setFolderToRename(folder);
                                 setFolderRenameValue(name);
@@ -1599,7 +1644,7 @@ export default function GalleryUploader({
                             </DropdownMenuItem>
 
                             <DropdownMenuItem
-                              className="cursor-pointer flex items-center gap-2 text-xs"
+                              className="flex cursor-pointer items-center gap-2 text-xs"
                               onClick={() => {
                                 setFolderToMove(folder);
                                 setFolderMoveTargetFolder("root");
@@ -1611,12 +1656,22 @@ export default function GalleryUploader({
                             </DropdownMenuItem>
 
                             <DropdownMenuSub>
-                              <DropdownMenuSubTrigger className="cursor-pointer flex items-center gap-2 text-xs focus:bg-accent focus:text-accent-foreground">
-                                <span className={`h-3 w-3 rounded-full border ${folderColor.border} ${folderColor.bg}`} style={folderColor.isCustom ? { backgroundColor: folderColor.hex, borderColor: folderColor.hex } : undefined} />
+                              <DropdownMenuSubTrigger className="flex cursor-pointer items-center gap-2 text-xs focus:bg-accent focus:text-accent-foreground">
+                                <span
+                                  className={`h-3 w-3 rounded-full border ${folderColor.border} ${folderColor.bg}`}
+                                  style={
+                                    folderColor.isCustom
+                                      ? {
+                                          backgroundColor: folderColor.hex,
+                                          borderColor: folderColor.hex,
+                                        }
+                                      : undefined
+                                  }
+                                />
                                 <span>Change Color</span>
                               </DropdownMenuSubTrigger>
-                              <DropdownMenuSubContent className="bg-card border-border text-foreground backdrop-blur-md">
-                                <div className="grid grid-cols-5 gap-1.5 p-2 w-40">
+                              <DropdownMenuSubContent className="border-border bg-card text-foreground backdrop-blur-md">
+                                <div className="grid w-40 grid-cols-5 gap-1.5 p-2">
                                   {FOLDER_COLORS.map((c) => (
                                     <button
                                       key={c.name}
@@ -1624,19 +1679,34 @@ export default function GalleryUploader({
                                         e.stopPropagation();
                                         saveFolderColor(folder, c.name);
                                       }}
-                                      className={`h-6 w-6 rounded-full ${c.bg} ${c.border} border hover:scale-110 active:scale-95 transition-transform flex items-center justify-center`}
+                                      className={`h-6 w-6 rounded-full ${c.bg} ${c.border} flex items-center justify-center border transition-transform hover:scale-110 active:scale-95`}
                                       title={c.label}
                                     >
-                                      <span className={`h-3 w-3 rounded-full ${c.text.replace('text-', 'bg-')}`} />
+                                      <span
+                                        className={`h-3 w-3 rounded-full ${c.text.replace("text-", "bg-")}`}
+                                      />
                                     </button>
                                   ))}
-                                  <div className="relative h-6 w-6 rounded-full border border-border hover:scale-110 active:scale-95 transition-transform flex items-center justify-center overflow-hidden" style={{ background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)' }} title="Custom RGB Color">
-                                    <input 
-                                      type="color" 
-                                      value={folderColor.isCustom ? folderColor.hex : "#ffffff"} 
-                                      onChange={(e) => saveFolderColor(folder, e.target.value)}
+                                  <div
+                                    className="relative flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-border transition-transform hover:scale-110 active:scale-95"
+                                    style={{
+                                      background:
+                                        "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)",
+                                    }}
+                                    title="Custom RGB Color"
+                                  >
+                                    <input
+                                      type="color"
+                                      value={
+                                        folderColor.isCustom
+                                          ? folderColor.hex
+                                          : "#ffffff"
+                                      }
+                                      onChange={(e) =>
+                                        saveFolderColor(folder, e.target.value)
+                                      }
                                       onClick={(e) => e.stopPropagation()}
-                                      className="absolute -inset-2 opacity-0 cursor-pointer w-10 h-10"
+                                      className="absolute -inset-2 h-10 w-10 cursor-pointer opacity-0"
                                     />
                                   </div>
                                 </div>
@@ -1647,8 +1717,10 @@ export default function GalleryUploader({
                               <>
                                 <DropdownMenuSeparator className="bg-border" />
                                 <DropdownMenuItem
-                                  className="cursor-pointer flex items-center gap-2 text-xs text-destructive focus:text-destructive focus:bg-destructive/10"
-                                  onClick={() => void triggerDeleteFolder(folder)}
+                                  className="flex cursor-pointer items-center gap-2 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                  onClick={() =>
+                                    void triggerDeleteFolder(folder)
+                                  }
                                 >
                                   <Trash2 className="h-3.5 w-3.5" />
                                   <span>Delete</span>
@@ -1664,15 +1736,16 @@ export default function GalleryUploader({
               )}
             </div>
 
-            <div className="p-3 border-t border-border bg-muted/20">
+            <div className="border-t border-border bg-muted/20 p-3">
               <Button
                 variant="outline"
                 size="sm"
-                className="w-full text-xs border-border bg-background text-foreground hover:bg-accent"
+                className="w-full border-border bg-background text-xs text-foreground hover:bg-accent"
                 onClick={() => setIsManageFoldersDialogOpen(true)}
                 disabled={existingFolders.length === 0}
               >
-                <FolderOpen className="h-3.5 w-3.5 mr-1 text-emerald-400" /> Manage Folders
+                <FolderOpen className="mr-1 h-3.5 w-3.5 text-emerald-400" />{" "}
+                Manage Folders
               </Button>
             </div>
           </div>
@@ -1680,19 +1753,21 @@ export default function GalleryUploader({
 
         {/* Workspace Canvas / Windows Area */}
         <div
-          className="flex-1 relative bg-muted/5 min-h-[450px] h-full overflow-hidden p-4"
+          className="relative h-full min-h-[450px] flex-1 overflow-hidden bg-muted/5 p-4"
           onDragOver={handleDragOver}
           onDrop={(e) => handleWindowDrop(e, "")}
         >
           {loading && images.length === 0 ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-xs z-50">
+            <div className="backdrop-blur-xs absolute inset-0 z-50 flex items-center justify-center bg-background/50">
               <Loader2 className="h-8 w-8 animate-spin text-emerald-400" />
             </div>
           ) : windows.length === 0 ? (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
-              <FolderOpen className="h-12 w-12 text-muted-foreground/60 mb-3" />
-              <h3 className="text-base font-semibold text-muted-foreground">Workspace is Empty</h3>
-              <p className="text-xs text-muted-foreground/80 mt-1 mb-4">
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+              <FolderOpen className="mb-3 h-12 w-12 text-muted-foreground/60" />
+              <h3 className="text-base font-semibold text-muted-foreground">
+                Workspace is Empty
+              </h3>
+              <p className="mb-4 mt-1 text-xs text-muted-foreground/80">
                 Open a folder window from the sidebar or click below to start.
               </p>
               <Button
@@ -1701,12 +1776,13 @@ export default function GalleryUploader({
                 onClick={() => openFolderWindow("")}
                 className="border-border text-foreground hover:bg-accent"
               >
-                <Plus className="h-4 w-4 mr-1.5 text-emerald-400" /> Open Root Folder
+                <Plus className="mr-1.5 h-4 w-4 text-emerald-400" /> Open Root
+                Folder
               </Button>
             </div>
           ) : (
             <div
-              className={`w-full h-full ${
+              className={`h-full w-full ${
                 isMobile ? "flex flex-col gap-4 overflow-y-auto" : "relative"
               }`}
             >
@@ -1714,7 +1790,7 @@ export default function GalleryUploader({
                 const windowFiles = getFilesForPath(w.path);
                 const windowFolders = getSubfoldersForPath(w.path);
                 const hasUploading = uploadingItems.some(
-                  (item) => item.targetFolder === w.path
+                  (item) => item.targetFolder === w.path,
                 );
 
                 return (
@@ -1733,38 +1809,40 @@ export default function GalleryUploader({
                           }
                     }
                     onClick={() => focusWindow(w.id)}
-                    className={`flex flex-col bg-card/95 border backdrop-blur-md rounded-2xl shadow-2xl overflow-hidden transition-shadow ${
-                      isMobile ? "w-full min-h-[420px] border-border" : ""
+                    className={`flex flex-col overflow-hidden rounded-2xl border bg-card/95 shadow-2xl backdrop-blur-md transition-shadow ${
+                      isMobile ? "min-h-[420px] w-full border-border" : ""
                     } ${
-                      w.isMaximized ? "rounded-none" : "border-border hover:border-emerald-500/20"
+                      w.isMaximized
+                        ? "rounded-none"
+                        : "border-border hover:border-emerald-500/20"
                     } ${
                       w.zIndex === nextZIndex - 1
-                        ? "ring-1 ring-emerald-500/20 border-emerald-500/30 shadow-emerald-500/5"
+                        ? "border-emerald-500/30 shadow-emerald-500/5 ring-1 ring-emerald-500/20"
                         : ""
                     }`}
                   >
                     {/* Window Title Bar */}
                     <div
                       onMouseDown={(e) => handleMouseDown(w.id, e)}
-                      className="flex items-center justify-between p-2.5 border-b border-border bg-muted/40 cursor-move select-none shrink-0"
+                      className="flex shrink-0 cursor-move select-none items-center justify-between border-b border-border bg-muted/40 p-2.5"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FolderOpen className="h-4 w-4 text-emerald-400 shrink-0" />
-                        <span className="text-xs font-semibold text-foreground truncate max-w-[180px] sm:max-w-[280px]">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <FolderOpen className="h-4 w-4 shrink-0 text-emerald-400" />
+                        <span className="max-w-[180px] truncate text-xs font-semibold text-foreground sm:max-w-[280px]">
                           {w.path === ""
                             ? "Root Folder"
                             : w.path === "__all_items__"
-                            ? "All Media Items"
-                            : w.path}
+                              ? "All Media Items"
+                              : w.path}
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex shrink-0 items-center gap-1.5">
                         {!isMobile && (
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 text-muted-foreground hover:text-foreground hover:bg-muted rounded-md"
+                            className="h-6 w-6 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggleMaximizeWindow(w.id);
@@ -1780,7 +1858,7 @@ export default function GalleryUploader({
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-md"
+                          className="h-6 w-6 rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                           onClick={(e) => {
                             e.stopPropagation();
                             closeWindow(w.id);
@@ -1792,13 +1870,13 @@ export default function GalleryUploader({
                     </div>
 
                     {/* Window Toolbar */}
-                    <div className="flex flex-wrap items-center justify-between p-2 border-b border-border bg-muted/15 gap-2 shrink-0 select-none">
+                    <div className="flex shrink-0 select-none flex-wrap items-center justify-between gap-2 border-b border-border bg-muted/15 p-2">
                       <div className="flex items-center gap-1.5">
                         {/* Back button */}
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-7 w-7 border-border bg-background hover:bg-accent text-foreground disabled:opacity-40"
+                          className="h-7 w-7 border-border bg-background text-foreground hover:bg-accent disabled:opacity-40"
                           disabled={w.path === "" || w.path === "__all_items__"}
                           onClick={() => {
                             const parts = w.path.split("/");
@@ -1817,24 +1895,24 @@ export default function GalleryUploader({
                         {w.path !== "__all_items__" && (
                           <div className="flex items-center">
                             {createFolderWindowId === w.id ? (
-                              <div className="flex items-center gap-1 bg-background p-0.5 rounded-lg border border-border">
+                              <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-0.5">
                                 <Input
                                   value={newFolderNameInline}
                                   onChange={(e) =>
                                     setNewFolderNameInline(e.target.value)
                                   }
                                   placeholder="Folder name"
-                                  className="h-6 w-28 text-xs bg-transparent border-0 focus-visible:ring-0 p-1"
+                                  className="h-6 w-28 border-0 bg-transparent p-1 text-xs focus-visible:ring-0"
                                   autoFocus
                                 />
                                 <Button
                                   size="icon"
                                   variant="ghost"
-                                  className="h-5 w-5 text-emerald-500 hover:text-emerald-600 hover:bg-muted"
+                                  className="h-5 w-5 text-emerald-500 hover:bg-muted hover:text-emerald-600"
                                   onClick={() => {
                                     void handleCreateFolderInPath(
                                       w.path,
-                                      newFolderNameInline
+                                      newFolderNameInline,
                                     );
                                     setCreateFolderWindowId(null);
                                     setNewFolderNameInline("");
@@ -1861,13 +1939,13 @@ export default function GalleryUploader({
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-7 text-xs border-border bg-background hover:bg-accent text-foreground"
+                                className="h-7 border-border bg-background text-xs text-foreground hover:bg-accent"
                                 onClick={() => {
                                   setCreateFolderWindowId(w.id);
                                   setNewFolderNameInline("");
                                 }}
                               >
-                                <FolderPlus className="h-3.5 w-3.5 mr-1 text-emerald-400" />{" "}
+                                <FolderPlus className="mr-1 h-3.5 w-3.5 text-emerald-400" />{" "}
                                 New Folder
                               </Button>
                             )}
@@ -1891,7 +1969,7 @@ export default function GalleryUploader({
                                 }
                               }}
                             />
-                            <span className="flex items-center justify-center h-7 px-2.5 text-xs font-medium border border-border bg-background hover:bg-accent text-foreground rounded-lg transition-colors gap-1.5">
+                            <span className="flex h-7 items-center justify-center gap-1.5 rounded-lg border border-border bg-background px-2.5 text-xs font-medium text-foreground transition-colors hover:bg-accent">
                               <Upload className="h-3.5 w-3.5 text-emerald-400" />{" "}
                               Upload
                             </span>
@@ -1902,7 +1980,7 @@ export default function GalleryUploader({
                         <Button
                           variant="outline"
                           size="icon"
-                          className="h-7 w-7 border-border bg-background hover:bg-accent text-foreground"
+                          className="h-7 w-7 border-border bg-background text-foreground hover:bg-accent"
                           onClick={() => void fetchImages()}
                           title="Refresh Folder"
                         >
@@ -1916,7 +1994,7 @@ export default function GalleryUploader({
                           size="sm"
                           className={`h-7 px-2 text-xs ${
                             selectionMode
-                              ? "bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600 shadow-md"
+                              ? "border-emerald-600 bg-emerald-600 text-white shadow-md hover:bg-emerald-700"
                               : "border-border bg-background text-foreground hover:bg-accent"
                           }`}
                           onClick={() => {
@@ -1933,15 +2011,15 @@ export default function GalleryUploader({
                     <div
                       onDragOver={handleDragOver}
                       onDrop={(e) => handleWindowDrop(e, w.path)}
-                      className="flex-1 overflow-y-auto p-3.5 space-y-4 bg-card/30"
+                      className="flex-1 space-y-4 overflow-y-auto bg-card/30 p-3.5"
                     >
                       {/* Active Uploads list */}
                       {hasUploading && (
                         <div className="space-y-2">
-                          <h4 className="text-[10px] font-bold text-muted-foreground/85 uppercase tracking-wider">
+                          <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/85">
                             Uploading files
                           </h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
                             {uploadingItems
                               .filter((item) => item.targetFolder === w.path)
                               .map(renderUploadingCard)}
@@ -1950,169 +2028,228 @@ export default function GalleryUploader({
                       )}
 
                       {/* Subfolders list */}
-                      {w.path !== "__all_items__" && windowFolders.length > 0 && (
-                        <div className="space-y-2">
-                          <h4 className="text-[10px] font-bold text-muted-foreground/85 uppercase tracking-wider">
-                            Folders
-                          </h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                            {windowFolders.map((subPath) => {
-                              const folderName =
-                                subPath.split("/").pop() ?? subPath;
-                              const count = getFilesCountForPath(subPath);
-                              const folderColor = getFolderColor(subPath);
+                      {w.path !== "__all_items__" &&
+                        windowFolders.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/85">
+                              Folders
+                            </h4>
+                            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+                              {windowFolders.map((subPath) => {
+                                const folderName =
+                                  subPath.split("/").pop() ?? subPath;
+                                const count = getFilesCountForPath(subPath);
+                                const folderColor = getFolderColor(subPath);
 
-                              return (
-                                <div
-                                  key={subPath}
-                                  onClick={() => navigateWindow(w.id, subPath)}
-                                  onDragOver={handleDragOver}
-                                  onDrop={(e) => handleFolderDrop(e, subPath)}
-                                  className={`flex items-center gap-2.5 p-2.5 rounded-xl border border-border bg-muted/30 ${folderColor.hoverBorder} hover:bg-muted/50 cursor-pointer transition-all duration-200 group relative select-none`}
-                                  title="Double click to open in new window"
-                                  onDoubleClick={(e) => {
-                                    e.stopPropagation();
-                                    openFolderWindow(subPath);
-                                  }}
-                                >
-                                  <Folder className={`h-6 w-6 ${folderColor.text} group-hover:scale-105 transition-transform shrink-0`} style={folderColor.isCustom ? { color: folderColor.hex } : undefined} />
-                                  <div className="min-w-0 flex-1">
-                                    <p className="text-xs font-semibold text-foreground truncate">
-                                      {folderName}
-                                    </p>
-                                    <p className="text-[10px] text-muted-foreground">
-                                      {count} items
-                                    </p>
-                                  </div>
+                                return (
+                                  <div
+                                    key={subPath}
+                                    onClick={() =>
+                                      navigateWindow(w.id, subPath)
+                                    }
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleFolderDrop(e, subPath)}
+                                    className={`flex items-center gap-2.5 rounded-xl border border-border bg-muted/30 p-2.5 ${folderColor.hoverBorder} group relative cursor-pointer select-none transition-all duration-200 hover:bg-muted/50`}
+                                    title="Double click to open in new window"
+                                    onDoubleClick={(e) => {
+                                      e.stopPropagation();
+                                      openFolderWindow(subPath);
+                                    }}
+                                  >
+                                    <Folder
+                                      className={`h-6 w-6 ${folderColor.text} shrink-0 transition-transform group-hover:scale-105`}
+                                      style={
+                                        folderColor.isCustom
+                                          ? { color: folderColor.hex }
+                                          : undefined
+                                      }
+                                    />
+                                    <div className="min-w-0 flex-1">
+                                      <p className="truncate text-xs font-semibold text-foreground">
+                                        {folderName}
+                                      </p>
+                                      <p className="text-[10px] text-muted-foreground">
+                                        {count} items
+                                      </p>
+                                    </div>
 
-                                  <div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                                    <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                        <Button
-                                          variant="ghost"
-                                          size="icon"
-                                          className="opacity-0 group-hover:opacity-100 h-6 w-6 hover:bg-muted text-muted-foreground hover:text-foreground rounded-md transition-all shrink-0"
-                                          title="Folder Actions"
+                                    <div
+                                      className="flex shrink-0 items-center gap-0.5"
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-6 w-6 shrink-0 rounded-md text-muted-foreground opacity-0 transition-all hover:bg-muted hover:text-foreground group-hover:opacity-100"
+                                            title="Folder Actions"
+                                          >
+                                            <MoreVertical className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                          align="end"
+                                          className="w-40 border-border bg-card text-foreground backdrop-blur-md"
                                         >
-                                          <MoreVertical className="h-3.5 w-3.5" />
-                                        </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end" className="w-40 bg-card border-border text-foreground backdrop-blur-md">
-                                        <DropdownMenuItem
-                                          className="cursor-pointer flex items-center gap-2 text-xs"
-                                          onClick={() => navigateWindow(w.id, subPath)}
-                                        >
-                                          <FolderOpen className="h-3.5 w-3.5 text-emerald-400" />
-                                          <span>Open here</span>
-                                        </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="flex cursor-pointer items-center gap-2 text-xs"
+                                            onClick={() =>
+                                              navigateWindow(w.id, subPath)
+                                            }
+                                          >
+                                            <FolderOpen className="h-3.5 w-3.5 text-emerald-400" />
+                                            <span>Open here</span>
+                                          </DropdownMenuItem>
 
-                                        <DropdownMenuItem
-                                          className="cursor-pointer flex items-center gap-2 text-xs"
-                                          onClick={() => openFolderWindow(subPath)}
-                                        >
-                                          <Maximize2 className="h-3.5 w-3.5 text-emerald-400" />
-                                          <span>Open new window</span>
-                                        </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="flex cursor-pointer items-center gap-2 text-xs"
+                                            onClick={() =>
+                                              openFolderWindow(subPath)
+                                            }
+                                          >
+                                            <Maximize2 className="h-3.5 w-3.5 text-emerald-400" />
+                                            <span>Open new window</span>
+                                          </DropdownMenuItem>
 
-                                        <DropdownMenuItem
-                                          className="cursor-pointer flex items-center gap-2 text-xs"
-                                          onClick={() => {
-                                            setFolderToRename(subPath);
-                                            setFolderRenameValue(folderName);
-                                            setIsFolderRenameDialogOpen(true);
-                                          }}
-                                        >
-                                          <Edit2 className="h-3.5 w-3.5 text-emerald-400" />
-                                          <span>Rename</span>
-                                        </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="flex cursor-pointer items-center gap-2 text-xs"
+                                            onClick={() => {
+                                              setFolderToRename(subPath);
+                                              setFolderRenameValue(folderName);
+                                              setIsFolderRenameDialogOpen(true);
+                                            }}
+                                          >
+                                            <Edit2 className="h-3.5 w-3.5 text-emerald-400" />
+                                            <span>Rename</span>
+                                          </DropdownMenuItem>
 
-                                        <DropdownMenuItem
-                                          className="cursor-pointer flex items-center gap-2 text-xs"
-                                          onClick={() => {
-                                            setFolderToMove(subPath);
-                                            setFolderMoveTargetFolder("root");
-                                            setIsFolderMoveDialogOpen(true);
-                                          }}
-                                        >
-                                          <MoveRight className="h-3.5 w-3.5 text-emerald-400" />
-                                          <span>Move</span>
-                                        </DropdownMenuItem>
+                                          <DropdownMenuItem
+                                            className="flex cursor-pointer items-center gap-2 text-xs"
+                                            onClick={() => {
+                                              setFolderToMove(subPath);
+                                              setFolderMoveTargetFolder("root");
+                                              setIsFolderMoveDialogOpen(true);
+                                            }}
+                                          >
+                                            <MoveRight className="h-3.5 w-3.5 text-emerald-400" />
+                                            <span>Move</span>
+                                          </DropdownMenuItem>
 
-                                        <DropdownMenuSub>
-                                          <DropdownMenuSubTrigger className="cursor-pointer flex items-center gap-2 text-xs focus:bg-accent focus:text-accent-foreground">
-                                            <span className={`h-3 w-3 rounded-full border ${folderColor.border} ${folderColor.bg}`} style={folderColor.isCustom ? { backgroundColor: folderColor.hex, borderColor: folderColor.hex } : undefined} />
-                                            <span>Change Color</span>
-                                          </DropdownMenuSubTrigger>
-                                          <DropdownMenuSubContent className="bg-card border-border text-foreground backdrop-blur-md">
-                                            <div className="grid grid-cols-5 gap-1.5 p-2 w-40">
-                                              {FOLDER_COLORS.map((c) => (
-                                                <button
-                                                  key={c.name}
-                                                  onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    saveFolderColor(subPath, c.name);
+                                          <DropdownMenuSub>
+                                            <DropdownMenuSubTrigger className="flex cursor-pointer items-center gap-2 text-xs focus:bg-accent focus:text-accent-foreground">
+                                              <span
+                                                className={`h-3 w-3 rounded-full border ${folderColor.border} ${folderColor.bg}`}
+                                                style={
+                                                  folderColor.isCustom
+                                                    ? {
+                                                        backgroundColor:
+                                                          folderColor.hex,
+                                                        borderColor:
+                                                          folderColor.hex,
+                                                      }
+                                                    : undefined
+                                                }
+                                              />
+                                              <span>Change Color</span>
+                                            </DropdownMenuSubTrigger>
+                                            <DropdownMenuSubContent className="border-border bg-card text-foreground backdrop-blur-md">
+                                              <div className="grid w-40 grid-cols-5 gap-1.5 p-2">
+                                                {FOLDER_COLORS.map((c) => (
+                                                  <button
+                                                    key={c.name}
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      saveFolderColor(
+                                                        subPath,
+                                                        c.name,
+                                                      );
+                                                    }}
+                                                    className={`h-6 w-6 rounded-full ${c.bg} ${c.border} flex items-center justify-center border transition-transform hover:scale-110 active:scale-95`}
+                                                    title={c.label}
+                                                  >
+                                                    <span
+                                                      className={`h-3 w-3 rounded-full ${c.text.replace("text-", "bg-")}`}
+                                                    />
+                                                  </button>
+                                                ))}
+                                                <div
+                                                  className="relative flex h-6 w-6 items-center justify-center overflow-hidden rounded-full border border-border transition-transform hover:scale-110 active:scale-95"
+                                                  style={{
+                                                    background:
+                                                      "conic-gradient(red, yellow, lime, aqua, blue, magenta, red)",
                                                   }}
-                                                  className={`h-6 w-6 rounded-full ${c.bg} ${c.border} border hover:scale-110 active:scale-95 transition-transform flex items-center justify-center`}
-                                                  title={c.label}
+                                                  title="Custom RGB Color"
                                                 >
-                                                  <span className={`h-3 w-3 rounded-full ${c.text.replace('text-', 'bg-')}`} />
-                                                </button>
-                                              ))}
-                                              <div className="relative h-6 w-6 rounded-full border border-border hover:scale-110 active:scale-95 transition-transform flex items-center justify-center overflow-hidden" style={{ background: 'conic-gradient(red, yellow, lime, aqua, blue, magenta, red)' }} title="Custom RGB Color">
-                                                <input 
-                                                  type="color" 
-                                                  value={folderColor.isCustom ? folderColor.hex : "#ffffff"} 
-                                                  onChange={(e) => saveFolderColor(subPath, e.target.value)}
-                                                  onClick={(e) => e.stopPropagation()}
-                                                  className="absolute -inset-2 opacity-0 cursor-pointer w-10 h-10"
-                                                />
+                                                  <input
+                                                    type="color"
+                                                    value={
+                                                      folderColor.isCustom
+                                                        ? folderColor.hex
+                                                        : "#ffffff"
+                                                    }
+                                                    onChange={(e) =>
+                                                      saveFolderColor(
+                                                        subPath,
+                                                        e.target.value,
+                                                      )
+                                                    }
+                                                    onClick={(e) =>
+                                                      e.stopPropagation()
+                                                    }
+                                                    className="absolute -inset-2 h-10 w-10 cursor-pointer opacity-0"
+                                                  />
+                                                </div>
                                               </div>
-                                            </div>
-                                          </DropdownMenuSubContent>
-                                        </DropdownMenuSub>
+                                            </DropdownMenuSubContent>
+                                          </DropdownMenuSub>
 
-                                        {canDelete && (
-                                          <>
-                                            <DropdownMenuSeparator className="bg-border" />
-                                            <DropdownMenuItem
-                                              className="cursor-pointer flex items-center gap-2 text-xs text-destructive focus:text-destructive focus:bg-destructive/10"
-                                              onClick={() => void triggerDeleteFolder(subPath)}
-                                            >
-                                              <Trash2 className="h-3.5 w-3.5" />
-                                              <span>Delete</span>
-                                            </DropdownMenuItem>
-                                          </>
-                                        )}
-                                      </DropdownMenuContent>
-                                    </DropdownMenu>
+                                          {canDelete && (
+                                            <>
+                                              <DropdownMenuSeparator className="bg-border" />
+                                              <DropdownMenuItem
+                                                className="flex cursor-pointer items-center gap-2 text-xs text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                                onClick={() =>
+                                                  void triggerDeleteFolder(
+                                                    subPath,
+                                                  )
+                                                }
+                                              >
+                                                <Trash2 className="h-3.5 w-3.5" />
+                                                <span>Delete</span>
+                                              </DropdownMenuItem>
+                                            </>
+                                          )}
+                                        </DropdownMenuContent>
+                                      </DropdownMenu>
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
 
                       {/* Files list */}
                       <div className="space-y-2">
                         {w.path !== "__all_items__" && (
-                          <h4 className="text-[10px] font-bold text-muted-foreground/85 uppercase tracking-wider">
+                          <h4 className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/85">
                             Files
                           </h4>
                         )}
                         {windowFiles.length === 0 &&
                         !uploadingItems.some(
-                          (item) => item.targetFolder === w.path
+                          (item) => item.targetFolder === w.path,
                         ) ? (
-                          <div className="flex flex-col items-center justify-center py-12 text-center border border-dashed border-border rounded-xl bg-muted/5">
-                            <p className="text-muted-foreground text-xs font-medium">
+                          <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-muted/5 py-12 text-center">
+                            <p className="text-xs font-medium text-muted-foreground">
                               No files here. Drag & drop files here to upload.
                             </p>
                           </div>
                         ) : (
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4">
                             {windowFiles.map((image) =>
-                              renderImageCard(image, w.path)
+                              renderImageCard(image, w.path),
                             )}
                           </div>
                         )}
@@ -2128,41 +2265,41 @@ export default function GalleryUploader({
 
       {/* Selection Action Bar */}
       {selectionMode && selectedKeys.length > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 rounded-full border border-border bg-card/95 backdrop-blur-lg px-6 py-3 shadow-2xl animate-in slide-in-from-bottom-10 select-none">
-          <span className="text-foreground font-semibold mr-4 text-sm tracking-wide">
+        <div className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 select-none items-center gap-2 rounded-full border border-border bg-card/95 px-6 py-3 shadow-2xl backdrop-blur-lg animate-in slide-in-from-bottom-10">
+          <span className="mr-4 text-sm font-semibold tracking-wide text-foreground">
             {selectedKeys.length} selected
           </span>
           <Button
             size="sm"
             variant="outline"
-            className="border-border bg-background hover:bg-accent text-foreground rounded-full text-xs"
+            className="rounded-full border-border bg-background text-xs text-foreground hover:bg-accent"
             onClick={() => {
               setActionTargetFolder("root");
               setIsMoveDialogOpen(true);
             }}
           >
-            <MoveRight className="h-3.5 w-3.5 mr-1.5 text-emerald-400" /> Move
+            <MoveRight className="mr-1.5 h-3.5 w-3.5 text-emerald-400" /> Move
           </Button>
           <Button
             size="sm"
             variant="outline"
-            className="border-border bg-background hover:bg-accent text-foreground rounded-full text-xs"
+            className="rounded-full border-border bg-background text-xs text-foreground hover:bg-accent"
             onClick={() => {
               setActionTargetFolder("root");
               setIsCopyDialogOpen(true);
             }}
           >
-            <Copy className="h-3.5 w-3.5 mr-1.5 text-emerald-400" /> Copy
+            <Copy className="mr-1.5 h-3.5 w-3.5 text-emerald-400" /> Copy
           </Button>
           {canDelete && (
             <Button
               size="sm"
               variant="destructive"
-              className="rounded-full bg-destructive hover:bg-destructive/90 text-destructive-foreground text-xs shadow-md shadow-red-900/10"
+              className="rounded-full bg-destructive text-xs text-destructive-foreground shadow-md shadow-red-900/10 hover:bg-destructive/90"
               onClick={() => void handleBulkDelete()}
               disabled={actionLoading}
             >
-              <Trash2 className="h-3.5 w-3.5 mr-1.5" /> Delete
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
             </Button>
           )}
         </div>
@@ -2173,34 +2310,34 @@ export default function GalleryUploader({
         open={isManageFoldersDialogOpen}
         onOpenChange={setIsManageFoldersDialogOpen}
       >
-        <DialogContent className="bg-card border-border text-foreground backdrop-blur-xl sm:max-w-md shadow-2xl select-none">
+        <DialogContent className="select-none border-border bg-card text-foreground shadow-2xl backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground font-semibold">
+            <DialogTitle className="font-semibold text-foreground">
               Manage Folders
             </DialogTitle>
           </DialogHeader>
-          <div className="py-4 max-h-[50vh] overflow-y-auto space-y-2 pr-1">
+          <div className="max-h-[50vh] space-y-2 overflow-y-auto py-4 pr-1">
             {existingFolders.length === 0 ? (
-              <p className="text-muted-foreground text-sm text-center py-4">
+              <p className="py-4 text-center text-sm text-muted-foreground">
                 No folders found.
               </p>
             ) : (
               existingFolders.map((folder) => (
                 <div
                   key={folder}
-                  className="flex items-center gap-3 p-2.5 rounded-xl border border-border bg-muted/30"
+                  className="flex items-center gap-3 rounded-xl border border-border bg-muted/30 p-2.5"
                 >
                   <div
-                    className={`h-5 w-5 rounded border flex items-center justify-center cursor-pointer transition-colors ${
+                    className={`flex h-5 w-5 cursor-pointer items-center justify-center rounded border transition-colors ${
                       selectedFolders.includes(folder)
-                        ? "bg-emerald-500 border-emerald-500"
+                        ? "border-emerald-500 bg-emerald-500"
                         : "border-border hover:border-emerald-400"
                     }`}
                     onClick={() => {
                       setSelectedFolders((prev) =>
                         prev.includes(folder)
                           ? prev.filter((f) => f !== folder)
-                          : [...prev, folder]
+                          : [...prev, folder],
                       );
                     }}
                   >
@@ -2209,7 +2346,7 @@ export default function GalleryUploader({
                     )}
                   </div>
                   <FolderOpen className="h-4 w-4 text-emerald-400" />
-                  <span className="text-xs font-medium flex-1 text-foreground">
+                  <span className="flex-1 text-xs font-medium text-foreground">
                     {folder}
                   </span>
                   <span className="text-xs text-muted-foreground">
@@ -2223,7 +2360,7 @@ export default function GalleryUploader({
             <Button
               variant="outline"
               onClick={() => setIsManageFoldersDialogOpen(false)}
-              className="border-border hover:bg-accent text-foreground bg-transparent"
+              className="border-border bg-transparent text-foreground hover:bg-accent"
             >
               Cancel
             </Button>
@@ -2231,12 +2368,12 @@ export default function GalleryUploader({
               onClick={() => void handleDeleteFolders()}
               disabled={selectedFolders.length === 0 || actionLoading}
               variant="destructive"
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Trash2 className="h-4 w-4 mr-2" />
+                <Trash2 className="mr-2 h-4 w-4" />
               )}
               Delete Selected
             </Button>
@@ -2255,9 +2392,9 @@ export default function GalleryUploader({
           }
         }}
       >
-        <DialogContent className="bg-card border-border text-foreground backdrop-blur-xl sm:max-w-md shadow-2xl select-none">
+        <DialogContent className="select-none border-border bg-card text-foreground shadow-2xl backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground font-semibold">
+            <DialogTitle className="font-semibold text-foreground">
               Rename Folder
             </DialogTitle>
           </DialogHeader>
@@ -2266,7 +2403,7 @@ export default function GalleryUploader({
               value={folderRenameValue}
               onChange={(e) => setFolderRenameValue(e.target.value)}
               placeholder="Enter new folder name"
-              className="bg-background border-border text-foreground placeholder-muted-foreground focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/30"
+              className="border-border bg-background text-foreground placeholder-muted-foreground focus-visible:border-emerald-500/30 focus-visible:ring-emerald-500/50"
               disabled={actionLoading}
             />
           </div>
@@ -2274,7 +2411,7 @@ export default function GalleryUploader({
             <Button
               variant="outline"
               onClick={() => setIsFolderRenameDialogOpen(false)}
-              className="border-border hover:bg-accent text-foreground bg-transparent"
+              className="border-border bg-transparent text-foreground hover:bg-accent"
               disabled={actionLoading}
             >
               Cancel
@@ -2282,10 +2419,10 @@ export default function GalleryUploader({
             <Button
               onClick={() => void handleFolderRename()}
               disabled={!folderRenameValue.trim() || actionLoading}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+              className="bg-emerald-600 text-white shadow-md hover:bg-emerald-700"
             >
               {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
               Rename
             </Button>
@@ -2304,27 +2441,32 @@ export default function GalleryUploader({
           }
         }}
       >
-        <DialogContent className="bg-card border-border text-foreground backdrop-blur-xl sm:max-w-md shadow-2xl select-none">
+        <DialogContent className="select-none border-border bg-card text-foreground shadow-2xl backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground font-semibold">
+            <DialogTitle className="font-semibold text-foreground">
               Move Folder &quot;{folderToMove?.split("/").pop()}&quot;
             </DialogTitle>
           </DialogHeader>
-          <div className="py-4 space-y-4">
-            <span className="text-xs text-muted-foreground">Select parent folder:</span>
+          <div className="space-y-4 py-4">
+            <span className="text-xs text-muted-foreground">
+              Select parent folder:
+            </span>
             <Select
               value={folderMoveTargetFolder}
               onValueChange={setFolderMoveTargetFolder}
             >
-              <SelectTrigger className="bg-background border-border text-foreground focus-visible:ring-emerald-500/50">
+              <SelectTrigger className="border-border bg-background text-foreground focus-visible:ring-emerald-500/50">
                 <SelectValue placeholder="Select target folder" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border text-foreground">
+              <SelectContent className="border-border bg-card text-foreground">
                 <SelectItem value="root" className="text-muted-foreground">
                   No Folder (Root)
                 </SelectItem>
                 {existingFolders
-                  .filter((f) => f !== folderToMove && !f.startsWith(folderToMove + "/"))
+                  .filter(
+                    (f) =>
+                      f !== folderToMove && !f.startsWith(folderToMove + "/"),
+                  )
                   .map((f) => {
                     const parts = f.split("/");
                     const depth = parts.length - 1;
@@ -2343,19 +2485,19 @@ export default function GalleryUploader({
             <Button
               variant="outline"
               onClick={() => setIsFolderMoveDialogOpen(false)}
-              className="border-border hover:bg-accent text-foreground bg-transparent"
+              className="border-border bg-transparent text-foreground hover:bg-accent"
             >
               Cancel
             </Button>
             <Button
               onClick={() => void handleFolderMove()}
               disabled={actionLoading}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
             >
               {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <MoveRight className="h-4 w-4 mr-2" />
+                <MoveRight className="mr-2 h-4 w-4" />
               )}
               Move
             </Button>
@@ -2375,13 +2517,13 @@ export default function GalleryUploader({
           }
         }}
       >
-        <DialogContent className="bg-card border-border text-foreground backdrop-blur-xl sm:max-w-md shadow-2xl select-none">
+        <DialogContent className="select-none border-border bg-card text-foreground shadow-2xl backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground font-semibold">
+            <DialogTitle className="font-semibold text-foreground">
               Move {activeItem ? "1 item" : `${selectedKeys.length} items`}
             </DialogTitle>
           </DialogHeader>
-          <div className="py-4 space-y-4">
+          <div className="space-y-4 py-4">
             <Select
               value={isNewActionFolder ? "new_folder" : actionTargetFolder}
               onValueChange={(v) => {
@@ -2392,17 +2534,17 @@ export default function GalleryUploader({
                 }
               }}
             >
-              <SelectTrigger className="bg-background border-border text-foreground focus-visible:ring-emerald-500/50">
+              <SelectTrigger className="border-border bg-background text-foreground focus-visible:ring-emerald-500/50">
                 <SelectValue placeholder="Select target folder" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border text-foreground">
+              <SelectContent className="border-border bg-card text-foreground">
                 <SelectItem value="root" className="text-muted-foreground">
                   No Folder (Root)
                 </SelectItem>
                 {renderFolderOptions()}
                 <SelectItem
                   value="new_folder"
-                  className="text-emerald-400 font-semibold"
+                  className="font-semibold text-emerald-400"
                 >
                   + Create New Folder
                 </SelectItem>
@@ -2413,7 +2555,7 @@ export default function GalleryUploader({
                 value={newActionFolderName}
                 onChange={(e) => setNewActionFolderName(e.target.value)}
                 placeholder="e.g. Sports/Football or videos/Events"
-                className="bg-background border-border text-foreground placeholder-muted-foreground focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/30"
+                className="border-border bg-background text-foreground placeholder-muted-foreground focus-visible:border-emerald-500/30 focus-visible:ring-emerald-500/50"
               />
             )}
           </div>
@@ -2421,7 +2563,7 @@ export default function GalleryUploader({
             <Button
               variant="outline"
               onClick={() => setIsMoveDialogOpen(false)}
-              className="border-border hover:bg-accent text-foreground bg-transparent"
+              className="border-border bg-transparent text-foreground hover:bg-accent"
             >
               Cancel
             </Button>
@@ -2431,12 +2573,12 @@ export default function GalleryUploader({
                 actionLoading ||
                 (isNewActionFolder && !newActionFolderName.trim())
               }
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
             >
               {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <MoveRight className="h-4 w-4 mr-2" />
+                <MoveRight className="mr-2 h-4 w-4" />
               )}
               Move
             </Button>
@@ -2455,13 +2597,13 @@ export default function GalleryUploader({
           }
         }}
       >
-        <DialogContent className="bg-card border-border text-foreground backdrop-blur-xl sm:max-w-md shadow-2xl select-none">
+        <DialogContent className="select-none border-border bg-card text-foreground shadow-2xl backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground font-semibold">
+            <DialogTitle className="font-semibold text-foreground">
               Copy {activeItem ? "1 item" : `${selectedKeys.length} items`}
             </DialogTitle>
           </DialogHeader>
-          <div className="py-4 space-y-4">
+          <div className="space-y-4 py-4">
             <Select
               value={isNewActionFolder ? "new_folder" : actionTargetFolder}
               onValueChange={(v) => {
@@ -2472,17 +2614,17 @@ export default function GalleryUploader({
                 }
               }}
             >
-              <SelectTrigger className="bg-background border-border text-foreground focus-visible:ring-emerald-500/50">
+              <SelectTrigger className="border-border bg-background text-foreground focus-visible:ring-emerald-500/50">
                 <SelectValue placeholder="Select target folder" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-border text-foreground">
+              <SelectContent className="border-border bg-card text-foreground">
                 <SelectItem value="root" className="text-muted-foreground">
                   No Folder (Root)
                 </SelectItem>
                 {renderFolderOptions()}
                 <SelectItem
                   value="new_folder"
-                  className="text-emerald-400 font-semibold"
+                  className="font-semibold text-emerald-400"
                 >
                   + Create New Folder
                 </SelectItem>
@@ -2493,7 +2635,7 @@ export default function GalleryUploader({
                 value={newActionFolderName}
                 onChange={(e) => setNewActionFolderName(e.target.value)}
                 placeholder="e.g. Sports/Football or videos/Events"
-                className="bg-background border-border text-foreground placeholder-muted-foreground focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/30"
+                className="border-border bg-background text-foreground placeholder-muted-foreground focus-visible:border-emerald-500/30 focus-visible:ring-emerald-500/50"
               />
             )}
           </div>
@@ -2501,7 +2643,7 @@ export default function GalleryUploader({
             <Button
               variant="outline"
               onClick={() => setIsCopyDialogOpen(false)}
-              className="border-border hover:bg-accent text-foreground bg-transparent"
+              className="border-border bg-transparent text-foreground hover:bg-accent"
             >
               Cancel
             </Button>
@@ -2511,12 +2653,12 @@ export default function GalleryUploader({
                 actionLoading ||
                 (isNewActionFolder && !newActionFolderName.trim())
               }
-              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
             >
               {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
-                <Copy className="h-4 w-4 mr-2" />
+                <Copy className="mr-2 h-4 w-4" />
               )}
               Copy
             </Button>
@@ -2535,9 +2677,9 @@ export default function GalleryUploader({
           }
         }}
       >
-        <DialogContent className="bg-card border-border text-foreground backdrop-blur-xl sm:max-w-md shadow-2xl select-none">
+        <DialogContent className="select-none border-border bg-card text-foreground shadow-2xl backdrop-blur-xl sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-foreground font-semibold">
+            <DialogTitle className="font-semibold text-foreground">
               Rename Item
             </DialogTitle>
           </DialogHeader>
@@ -2546,7 +2688,7 @@ export default function GalleryUploader({
               value={renameValue}
               onChange={(e) => setRenameValue(e.target.value)}
               placeholder="Enter new name"
-              className="bg-background border-border text-foreground placeholder-muted-foreground focus-visible:ring-emerald-500/50 focus-visible:border-emerald-500/30"
+              className="border-border bg-background text-foreground placeholder-muted-foreground focus-visible:border-emerald-500/30 focus-visible:ring-emerald-500/50"
               disabled={actionLoading}
             />
           </div>
@@ -2554,7 +2696,7 @@ export default function GalleryUploader({
             <Button
               variant="outline"
               onClick={() => setIsRenameDialogOpen(false)}
-              className="border-border hover:bg-accent text-foreground bg-transparent"
+              className="border-border bg-transparent text-foreground hover:bg-accent"
               disabled={actionLoading}
             >
               Cancel
@@ -2562,10 +2704,10 @@ export default function GalleryUploader({
             <Button
               onClick={() => void handleRename()}
               disabled={!renameValue.trim() || actionLoading}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white shadow-md"
+              className="bg-emerald-600 text-white shadow-md hover:bg-emerald-700"
             >
               {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
               Rename
             </Button>
@@ -2581,7 +2723,7 @@ export default function GalleryUploader({
           if (!open) setActiveItem(null);
         }}
       >
-        <AlertDialogContent className="bg-card border-border text-foreground backdrop-blur-md select-none">
+        <AlertDialogContent className="select-none border-border bg-card text-foreground backdrop-blur-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-foreground">
               Delete{" "}
@@ -2593,8 +2735,8 @@ export default function GalleryUploader({
               ?
             </AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              This action cannot be undone. This item will be permanently removed
-              from the school gallery.
+              This action cannot be undone. This item will be permanently
+              removed from the school gallery.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -2603,11 +2745,11 @@ export default function GalleryUploader({
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => activeItem && void handleDelete(activeItem.key)}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={deleting === activeItem?.key}
             >
               {deleting === activeItem?.key ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
               Delete
             </AlertDialogAction>
@@ -2623,14 +2765,15 @@ export default function GalleryUploader({
           if (!open) setFolderToDelete(null);
         }}
       >
-        <AlertDialogContent className="bg-card border-border text-foreground backdrop-blur-md select-none">
+        <AlertDialogContent className="select-none border-border bg-card text-foreground backdrop-blur-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="text-foreground">
               Delete Nested Folder &quot;{folderToDelete}&quot;?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-muted-foreground space-y-2">
+            <AlertDialogDescription className="space-y-2 text-muted-foreground">
               <p>
-                Warning: The folder is nested and contains media files. Deleting it will permanently remove all subfolders and media files.
+                Warning: The folder is nested and contains media files. Deleting
+                it will permanently remove all subfolders and media files.
               </p>
               <p className="font-semibold text-destructive">
                 This action cannot be undone.
@@ -2642,12 +2785,14 @@ export default function GalleryUploader({
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => folderToDelete && void executeFolderDelete(folderToDelete)}
-              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+              onClick={() =>
+                folderToDelete && void executeFolderDelete(folderToDelete)
+              }
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={actionLoading}
             >
               {actionLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
               Delete Folder
             </AlertDialogAction>
@@ -2657,18 +2802,16 @@ export default function GalleryUploader({
 
       {/* Lightbox Media Viewer */}
       {isLightboxOpen && activeMedia && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-black/95 backdrop-blur-md text-white select-none animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-50 flex select-none flex-col bg-black/95 text-white backdrop-blur-md duration-300 animate-in fade-in">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+          <div className="flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent p-4">
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold truncate max-w-xs sm:max-w-md md:max-w-lg">
-                {activeMedia.key
-                  .split("/")
-                  .pop()
-                  ?.replace(/^\d+_/, "") ?? "Media"}
+              <h3 className="max-w-xs truncate text-sm font-semibold sm:max-w-md md:max-w-lg">
+                {activeMedia.key.split("/").pop()?.replace(/^\d+_/, "") ??
+                  "Media"}
               </h3>
               {activeMedia.size && (
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {formatFileSize(activeMedia.size)}
                 </p>
               )}
@@ -2678,10 +2821,8 @@ export default function GalleryUploader({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() =>
-                  void handleDownload(activeMedia)
-                }
-                className="h-9 w-9 text-muted-foreground hover:text-white hover:bg-white/10"
+                onClick={() => void handleDownload(activeMedia)}
+                className="h-9 w-9 text-muted-foreground hover:bg-white/10 hover:text-white"
                 title="Download"
               >
                 <Download className="h-5 w-5" />
@@ -2689,15 +2830,13 @@ export default function GalleryUploader({
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() =>
-                  void handleShare(activeMedia)
-                }
-                className="h-9 w-9 text-muted-foreground hover:text-white hover:bg-white/10"
+                onClick={() => void handleShare(activeMedia)}
+                className="h-9 w-9 text-muted-foreground hover:bg-white/10 hover:text-white"
                 title="Share"
               >
                 <Share2 className="h-5 w-5" />
               </Button>
-              <div className="h-5 w-px bg-white/20 mx-1" />
+              <div className="mx-1 h-5 w-px bg-white/20" />
               <Button
                 variant="ghost"
                 size="icon"
@@ -2705,7 +2844,7 @@ export default function GalleryUploader({
                   setIsLightboxOpen(false);
                   setLightboxIndex(null);
                 }}
-                className="h-9 w-9 text-muted-foreground hover:text-white hover:bg-white/10"
+                className="h-9 w-9 text-muted-foreground hover:bg-white/10 hover:text-white"
                 title="Close"
               >
                 <X className="h-5 w-5" />
@@ -2714,39 +2853,39 @@ export default function GalleryUploader({
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 relative flex items-center justify-center p-4">
+          <div className="relative flex flex-1 items-center justify-center p-4">
             {/* Left Navigation Arrow */}
             {lightboxSourceList.length > 1 && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handlePrevMedia}
-                className="absolute left-4 z-10 h-12 w-12 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white shadow-xl hover:scale-105 transition-all duration-200"
+                className="absolute left-4 z-10 h-12 w-12 rounded-full border border-white/10 bg-white/5 text-white shadow-xl transition-all duration-200 hover:scale-105 hover:bg-white/10"
               >
                 <ChevronLeft className="h-6 w-6" />
               </Button>
             )}
 
             {/* Media Item Container */}
-            <div className="relative max-w-4xl max-h-[80vh] flex items-center justify-center overflow-hidden transition-all duration-300">
+            <div className="relative flex max-h-[80vh] max-w-4xl items-center justify-center overflow-hidden transition-all duration-300">
               {activeMedia &&
               (/\.(mp4|webm|ogg|mov)$/i.test(activeMedia.key) ||
                 activeMedia.key.startsWith("videos/")) ? (
                 <video
                   src={activeMedia.url}
-                  className="max-w-full max-h-[80vh] rounded-lg shadow-2xl border border-white/5"
+                  className="max-h-[80vh] max-w-full rounded-lg border border-white/5 shadow-2xl"
                   controls
                   autoPlay
                   playsInline
                 />
               ) : (
-                <div className="relative overflow-hidden flex items-center justify-center max-w-full max-h-[80vh]">
+                <div className="relative flex max-h-[80vh] max-w-full items-center justify-center overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={activeMedia.url}
                     alt="Lightbox View"
                     style={{ transform: `scale(${zoomScale})` }}
-                    className="max-w-full max-h-[80vh] rounded-lg shadow-2xl border border-white/5 object-contain transition-transform duration-200 select-none pointer-events-none"
+                    className="pointer-events-none max-h-[80vh] max-w-full select-none rounded-lg border border-white/5 object-contain shadow-2xl transition-transform duration-200"
                   />
                 </div>
               )}
@@ -2758,7 +2897,7 @@ export default function GalleryUploader({
                 variant="ghost"
                 size="icon"
                 onClick={handleNextMedia}
-                className="absolute right-4 z-10 h-12 w-12 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-white shadow-xl hover:scale-105 transition-all duration-200"
+                className="absolute right-4 z-10 h-12 w-12 rounded-full border border-white/10 bg-white/5 text-white shadow-xl transition-all duration-200 hover:scale-105 hover:bg-white/10"
               >
                 <ChevronRight className="h-6 w-6" />
               </Button>
@@ -2771,7 +2910,7 @@ export default function GalleryUploader({
               /\.(mp4|webm|ogg|mov)$/i.test(activeMedia.key) ||
               activeMedia.key.startsWith("videos/")
             ) && (
-              <div className="p-4 bg-gradient-to-t from-black/80 to-transparent flex justify-center items-center gap-4">
+              <div className="flex items-center justify-center gap-4 bg-gradient-to-t from-black/80 to-transparent p-4">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -2779,11 +2918,11 @@ export default function GalleryUploader({
                   onClick={() =>
                     setZoomScale((prev) => Math.max(0.5, prev - 0.25))
                   }
-                  className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10"
+                  className="h-8 w-8 text-muted-foreground hover:bg-white/10 hover:text-white"
                 >
                   <ZoomOut className="h-4 w-4" />
                 </Button>
-                <span className="text-xs font-semibold w-12 text-center text-muted-foreground">
+                <span className="w-12 text-center text-xs font-semibold text-muted-foreground">
                   {Math.round(zoomScale * 100)}%
                 </span>
                 <Button
@@ -2793,7 +2932,7 @@ export default function GalleryUploader({
                   onClick={() =>
                     setZoomScale((prev) => Math.min(4, prev + 0.25))
                   }
-                  className="h-8 w-8 text-muted-foreground hover:text-white hover:bg-white/10"
+                  className="h-8 w-8 text-muted-foreground hover:bg-white/10 hover:text-white"
                 >
                   <ZoomIn className="h-4 w-4" />
                 </Button>
@@ -2802,12 +2941,12 @@ export default function GalleryUploader({
 
           {/* Navigation Dot Indicators */}
           {lightboxSourceList.length > 1 && lightboxSourceList.length <= 15 && (
-            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 pb-2">
+            <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-1.5 pb-2">
               {lightboxSourceList.map((media, idx) => (
                 <div
                   key={media.key}
                   onClick={() => setLightboxIndex(idx)}
-                  className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
+                  className={`h-1.5 cursor-pointer rounded-full transition-all duration-300 ${
                     idx === lightboxIndex
                       ? "w-4 bg-emerald-500"
                       : "w-1.5 bg-white/30 hover:bg-white/50"

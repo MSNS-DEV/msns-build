@@ -330,7 +330,11 @@ export const subjectRouter = createTRPCRouter({
           });
         }
 
-        if (existingSubject.Marks.length > 0 || existingSubject.ReportCardDetail.length > 0 || existingSubject.ExamDatesheet.length > 0) {
+        if (
+          existingSubject.Marks.length > 0 ||
+          existingSubject.ReportCardDetail.length > 0 ||
+          existingSubject.ExamDatesheet.length > 0
+        ) {
           throw new TRPCError({
             code: "CONFLICT",
             message:

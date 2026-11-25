@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { pkDayEnd, pkDayStart } from "~/server/utils/pk-time";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, teacherProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  teacherProcedure,
+} from "../trpc";
 import {
   assertCanTeachClassSubject,
   requireSessionEmployee,
@@ -31,7 +35,11 @@ export const subjectDiaryRouter = createTRPCRouter({
           where: { csId: input.classSubjectId },
           select: { employeeId: true },
         });
-        if (!cs) throw new TRPCError({ code: "NOT_FOUND", message: "Class subject not found" });
+        if (!cs)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Class subject not found",
+          });
         teacherId = input.teacherId ?? cs.employeeId;
       }
       try {
@@ -50,11 +58,18 @@ export const subjectDiaryRouter = createTRPCRouter({
           try {
             const classSub = await ctx.db.classSubject.findUnique({
               where: { csId: input.classSubjectId },
-              select: { classId: true, sessionId: true, Subject: { select: { subjectName: true } } },
+              select: {
+                classId: true,
+                sessionId: true,
+                Subject: { select: { subjectName: true } },
+              },
             });
             if (classSub) {
               const students = await ctx.db.studentClass.findMany({
-                where: { classId: classSub.classId, sessionId: classSub.sessionId },
+                where: {
+                  classId: classSub.classId,
+                  sessionId: classSub.sessionId,
+                },
                 select: { studentId: true },
               });
               const studentIds = students.map((s) => s.studentId);
@@ -64,12 +79,13 @@ export const subjectDiaryRouter = createTRPCRouter({
               });
               const parentIds = parents.map((p) => p.guardentId);
               if (parentIds.length > 0) {
-                const { sendPushNotification } = await import("~/server/mobile/fcm");
+                const { sendPushNotification } =
+                  await import("~/server/mobile/fcm");
                 await sendPushNotification(
                   [],
                   parentIds,
                   "New Diary Published",
-                  `A new diary entry has been published for ${classSub.Subject.subjectName}.`
+                  `A new diary entry has been published for ${classSub.Subject.subjectName}.`,
                 );
               }
             }
@@ -98,7 +114,8 @@ export const subjectDiaryRouter = createTRPCRouter({
         where: { subjectDiaryId: input.subjectDiaryId },
         select: { classSubjectId: true },
       });
-      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Diary not found" });
+      if (!existing)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Diary not found" });
       await assertCanTeachClassSubject(ctx, existing.classSubjectId);
       try {
         return await ctx.db.subjectDiary.update({
@@ -121,7 +138,8 @@ export const subjectDiaryRouter = createTRPCRouter({
         where: { subjectDiaryId: input.subjectDiaryId },
         select: { classSubjectId: true },
       });
-      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Diary not found" });
+      if (!existing)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Diary not found" });
       await assertCanTeachClassSubject(ctx, existing.classSubjectId);
       try {
         await ctx.db.subjectDiary.delete({
@@ -143,7 +161,9 @@ export const subjectDiaryRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const whereClause: Prisma.SubjectDiaryWhereInput = { teacherId: input.teacherId };
+        const whereClause: Prisma.SubjectDiaryWhereInput = {
+          teacherId: input.teacherId,
+        };
 
         // If date is provided, match exactly by day
         if (input.date) {

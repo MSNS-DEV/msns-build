@@ -60,15 +60,18 @@ export const NavMain = ({ items }: UnifiedNavProps) => {
                   <SidebarMenuButton
                     tooltip={item.title}
                     isActive={isActive}
-                  className={cn(
+                    className={cn(
                       "font-medium text-slate-700 transition-colors hover:bg-emerald-500/10 hover:text-emerald-500 dark:text-slate-200 dark:hover:text-emerald-400",
-                      isActive && "font-semibold text-emerald-600 dark:text-emerald-400",
+                      isActive &&
+                        "font-semibold text-emerald-600 dark:text-emerald-400",
                     )}
                   >
                     {item.icon && (
                       <item.icon
                         className={cn(
-                          isActive ? "text-emerald-500 dark:text-emerald-400" : "text-slate-500 dark:text-slate-400",
+                          isActive
+                            ? "text-emerald-500 dark:text-emerald-400"
+                            : "text-slate-500 dark:text-slate-400",
                         )}
                       />
                     )}

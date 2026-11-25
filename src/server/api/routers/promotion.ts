@@ -1,5 +1,10 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, managementProcedure, officeProcedure, teacherProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  managementProcedure,
+  officeProcedure,
+  teacherProcedure,
+} from "../trpc";
 import { z } from "zod";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 import type { Prisma, PrismaClient } from "@prisma/client";
@@ -35,9 +40,15 @@ async function enrolPromotedStudent(
   a: { studentId: string; toClassId: string; toSessionId: string },
 ) {
   await db.studentClass.upsert({
-    where: { studentId_sessionId: { studentId: a.studentId, sessionId: a.toSessionId } },
+    where: {
+      studentId_sessionId: { studentId: a.studentId, sessionId: a.toSessionId },
+    },
     update: { classId: a.toClassId },
-    create: { studentId: a.studentId, classId: a.toClassId, sessionId: a.toSessionId },
+    create: {
+      studentId: a.studentId,
+      classId: a.toClassId,
+      sessionId: a.toSessionId,
+    },
   });
 }
 
@@ -422,7 +433,9 @@ export const promotionRouter = createTRPCRouter({
     }),
 
   getEligibilityRules: teacherProcedure.query(({ ctx }) =>
-    ctx.db.promotionEligibilityRule.findMany({ orderBy: { examTypeEnum: "asc" } }),
+    ctx.db.promotionEligibilityRule.findMany({
+      orderBy: { examTypeEnum: "asc" },
+    }),
   ),
 
   // FR-PRM-05/06/08: Compute and store eligibility results for all students in an exam
@@ -437,9 +450,15 @@ export const promotionRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const exam = await ctx.db.exam.findUnique({
         where: { examId: input.examId },
-        select: { examId: true, examTypeEnum: true, totalMarks: true, passingMarks: true },
+        select: {
+          examId: true,
+          examTypeEnum: true,
+          totalMarks: true,
+          passingMarks: true,
+        },
       });
-      if (!exam) throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
+      if (!exam)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
 
       // Get the eligibility rule for this exam type
       const rule = await ctx.db.promotionEligibilityRule.findFirst({
@@ -466,10 +485,18 @@ export const promotionRouter = createTRPCRouter({
           select: { subjectId: true, obtainedMarks: true, totalMarks: true },
         });
 
-        const totalObtained = studentMarks.reduce((s, m) => s + m.obtainedMarks, 0);
-        const totalPossible = studentMarks.reduce((s, m) => s + m.totalMarks, 0);
+        const totalObtained = studentMarks.reduce(
+          (s, m) => s + m.obtainedMarks,
+          0,
+        );
+        const totalPossible = studentMarks.reduce(
+          (s, m) => s + m.totalMarks,
+          0,
+        );
         const aggregatePercent =
-          totalPossible > 0 ? Math.round((totalObtained / totalPossible) * 100 * 100) / 100 : 0;
+          totalPossible > 0
+            ? Math.round((totalObtained / totalPossible) * 100 * 100) / 100
+            : 0;
 
         const passedSubjects = studentMarks.filter(
           (m) => m.obtainedMarks >= exam.passingMarks,
@@ -482,7 +509,8 @@ export const promotionRouter = createTRPCRouter({
         }));
 
         // Determine eligibility status using the rule
-        let eligibilityStatus: "Eligible" | "Conditional" | "Ineligible" = "Eligible";
+        let eligibilityStatus: "Eligible" | "Conditional" | "Ineligible" =
+          "Eligible";
 
         if (rule) {
           const meetsAggregate = aggregatePercent >= rule.minAggregatePercent;
@@ -536,9 +564,13 @@ export const promotionRouter = createTRPCRouter({
       return {
         success: true,
         processed: results.length,
-        eligible: results.filter((r) => r.eligibilityStatus === "Eligible").length,
-        conditional: results.filter((r) => r.eligibilityStatus === "Conditional").length,
-        ineligible: results.filter((r) => r.eligibilityStatus === "Ineligible").length,
+        eligible: results.filter((r) => r.eligibilityStatus === "Eligible")
+          .length,
+        conditional: results.filter(
+          (r) => r.eligibilityStatus === "Conditional",
+        ).length,
+        ineligible: results.filter((r) => r.eligibilityStatus === "Ineligible")
+          .length,
       };
     }),
 
@@ -599,7 +631,11 @@ export const promotionRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const initiatorEmployee = await getSessionEmployee(ctx);
-      if (!initiatorEmployee) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!initiatorEmployee)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       // Get eligibility results for override validation
       const eligibilityMap = new Map(
@@ -644,7 +680,10 @@ export const promotionRouter = createTRPCRouter({
             data: {
               batchId: batch.batchId,
               studentId: s.studentId,
-              eligibilityStatus: eligibility as "Eligible" | "Conditional" | "Ineligible",
+              eligibilityStatus: eligibility as
+                | "Eligible"
+                | "Conditional"
+                | "Ineligible",
               isOverridden: isOverride,
               overrideJustification: s.justification,
               outcome,
@@ -682,7 +721,11 @@ export const promotionRouter = createTRPCRouter({
 
         await tx.bulkPromotionBatch.update({
           where: { batchId: batch.batchId },
-          data: { totalPromoted: promoted, totalWithheld: withheld, totalOverrides: overrides },
+          data: {
+            totalPromoted: promoted,
+            totalWithheld: withheld,
+            totalOverrides: overrides,
+          },
         });
 
         return { batchId: batch.batchId, promoted, withheld, overrides };
@@ -720,7 +763,9 @@ export const promotionRouter = createTRPCRouter({
           ToClass: { select: { grade: true, section: true } },
           Items: {
             where: input.studentId ? { studentId: input.studentId } : undefined,
-            include: { Student: { select: { studentName: true, admissionNumber: true } } },
+            include: {
+              Student: { select: { studentName: true, admissionNumber: true } },
+            },
           },
         },
         orderBy: { executedAt: "desc" },
@@ -741,18 +786,26 @@ export const promotionRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const reversedBy = ctx.session?.user?.id;
-      if (!reversedBy) throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
+      if (!reversedBy)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
 
       const promotionRecord = await ctx.db.promotionHistory.findUnique({
         where: { promotionHistoryId: input.promotionHistoryId },
       });
       if (!promotionRecord) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Promotion record not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Promotion record not found",
+        });
       }
 
       // Check 30-day window
       const daysSincePromotion = Math.floor(
-        (Date.now() - promotionRecord.promotedAt.getTime()) / (1000 * 60 * 60 * 24),
+        (Date.now() - promotionRecord.promotedAt.getTime()) /
+          (1000 * 60 * 60 * 24),
       );
       if (daysSincePromotion > 30) {
         throw new TRPCError({
@@ -762,7 +815,11 @@ export const promotionRouter = createTRPCRouter({
       }
 
       const initiatorEmployee = await getSessionEmployee(ctx);
-      if (!initiatorEmployee) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!initiatorEmployee)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       await ctx.db.$transaction(async (tx) => {
         if (promotionRecord.fromSessionId === promotionRecord.toSessionId) {
@@ -784,8 +841,14 @@ export const promotionRouter = createTRPCRouter({
             select: { scId: true },
           });
           const scIds = promoted.map((p) => p.scId);
-          await assertNoPaidVouchers(tx, { studentClassId: { in: scIds } }, "reverse this promotion");
-          await tx.feeStudentClass.deleteMany({ where: { studentClassId: { in: scIds } } });
+          await assertNoPaidVouchers(
+            tx,
+            { studentClassId: { in: scIds } },
+            "reverse this promotion",
+          );
+          await tx.feeStudentClass.deleteMany({
+            where: { studentClassId: { in: scIds } },
+          });
           await tx.studentClass.deleteMany({ where: { scId: { in: scIds } } });
           await enrolPromotedStudent(tx, {
             studentId: input.studentId,

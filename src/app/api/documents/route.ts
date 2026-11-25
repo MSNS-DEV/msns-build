@@ -1,8 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { 
-  ListObjectsV2Command, 
-  PutObjectCommand, 
-  DeleteObjectCommand 
+import {
+  ListObjectsV2Command,
+  PutObjectCommand,
+  DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getS3Client, getBucket } from "~/lib/s3";
 import { auth } from "~/server/auth";
@@ -27,7 +27,7 @@ const ALLOWED_MIME_TYPES = [
   "text/csv",
   "image/jpeg",
   "image/png",
-  "image/webp"
+  "image/webp",
 ];
 
 // Well-known catalog of institutional documents and textbooks
@@ -65,26 +65,86 @@ const DOCUMENT_CATALOG: Record<string, { title: string; category: string }> = {
     category: "Policy",
   },
   // Textbooks
-  "pctb-class-9-physics.pdf": { title: "Class 9 Physics (PCTB E-Book)", category: "Academic" },
-  "pctb-class-9-chemistry.pdf": { title: "Class 9 Chemistry (PCTB E-Book)", category: "Academic" },
-  "pctb-class-9-biology.pdf": { title: "Class 9 Biology (PCTB E-Book)", category: "Academic" },
-  "pctb-class-9-computer-science.pdf": { title: "Class 9 Computer Science (PCTB E-Book)", category: "Academic" },
-  "pctb-class-9-mathematics.pdf": { title: "Class 9 Mathematics Science (PCTB E-Book)", category: "Academic" },
-  "pctb-class-9-english.pdf": { title: "Class 9 English Compulsory (PCTB E-Book)", category: "Academic" },
-  "pctb-class-9-urdu.pdf": { title: "Class 9 Urdu Compulsory (PCTB E-Book)", category: "Academic" },
-  "pctb-class-9-tarjuma-tul-quran.pdf": { title: "Class 9 Tarjuma-tul-Quran (PCTB E-Book)", category: "Academic" },
-  "pctb-class-9-islamiat.pdf": { title: "Class 9 Islamiat Compulsory (PCTB E-Book)", category: "Academic" },
-  "pctb-class-9-pakistan-studies.pdf": { title: "Class 9 Pakistan Studies (PCTB E-Book)", category: "Academic" },
-  "pctb-class-10-physics.pdf": { title: "Class 10 Physics (PCTB E-Book)", category: "Academic" },
-  "pctb-class-10-chemistry.pdf": { title: "Class 10 Chemistry (PCTB E-Book)", category: "Academic" },
-  "pctb-class-10-biology.pdf": { title: "Class 10 Biology (PCTB E-Book)", category: "Academic" },
-  "pctb-class-10-computer-science.pdf": { title: "Class 10 Computer Science (PCTB E-Book)", category: "Academic" },
-  "pctb-class-10-mathematics.pdf": { title: "Class 10 Mathematics Science (PCTB E-Book)", category: "Academic" },
-  "pctb-class-10-english.pdf": { title: "Class 10 English Compulsory (PCTB E-Book)", category: "Academic" },
-  "pctb-class-10-urdu.pdf": { title: "Class 10 Urdu Compulsory (PCTB E-Book)", category: "Academic" },
-  "pctb-class-10-tarjuma-tul-quran.pdf": { title: "Class 10 Tarjuma-tul-Quran (PCTB E-Book)", category: "Academic" },
-  "pctb-class-10-islamiat.pdf": { title: "Class 10 Islamiat Compulsory (PCTB E-Book)", category: "Academic" },
-  "pctb-class-10-pakistan-studies.pdf": { title: "Class 10 Pakistan Studies (PCTB E-Book)", category: "Academic" },
+  "pctb-class-9-physics.pdf": {
+    title: "Class 9 Physics (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-9-chemistry.pdf": {
+    title: "Class 9 Chemistry (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-9-biology.pdf": {
+    title: "Class 9 Biology (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-9-computer-science.pdf": {
+    title: "Class 9 Computer Science (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-9-mathematics.pdf": {
+    title: "Class 9 Mathematics Science (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-9-english.pdf": {
+    title: "Class 9 English Compulsory (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-9-urdu.pdf": {
+    title: "Class 9 Urdu Compulsory (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-9-tarjuma-tul-quran.pdf": {
+    title: "Class 9 Tarjuma-tul-Quran (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-9-islamiat.pdf": {
+    title: "Class 9 Islamiat Compulsory (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-9-pakistan-studies.pdf": {
+    title: "Class 9 Pakistan Studies (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-10-physics.pdf": {
+    title: "Class 10 Physics (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-10-chemistry.pdf": {
+    title: "Class 10 Chemistry (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-10-biology.pdf": {
+    title: "Class 10 Biology (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-10-computer-science.pdf": {
+    title: "Class 10 Computer Science (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-10-mathematics.pdf": {
+    title: "Class 10 Mathematics Science (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-10-english.pdf": {
+    title: "Class 10 English Compulsory (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-10-urdu.pdf": {
+    title: "Class 10 Urdu Compulsory (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-10-tarjuma-tul-quran.pdf": {
+    title: "Class 10 Tarjuma-tul-Quran (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-10-islamiat.pdf": {
+    title: "Class 10 Islamiat Compulsory (PCTB E-Book)",
+    category: "Academic",
+  },
+  "pctb-class-10-pakistan-studies.pdf": {
+    title: "Class 10 Pakistan Studies (PCTB E-Book)",
+    category: "Academic",
+  },
 };
 
 export interface DocumentResponseItem {
@@ -117,8 +177,13 @@ export async function GET() {
     const response = await s3.send(command);
     const seenFiles = new Set<string>();
     const filteredContents = (response.Contents ?? [])
-      .filter((obj) => obj.Key && !obj.Key.endsWith("/") && obj.Size && obj.Size > 0)
-      .sort((a, b) => (a.Key?.split("/").length ?? 0) - (b.Key?.split("/").length ?? 0))
+      .filter(
+        (obj) => obj.Key && !obj.Key.endsWith("/") && obj.Size && obj.Size > 0,
+      )
+      .sort(
+        (a, b) =>
+          (a.Key?.split("/").length ?? 0) - (b.Key?.split("/").length ?? 0),
+      )
       .filter((obj) => {
         const rawFilename = obj.Key!.replace(/^documents\//, "");
         const baseName = rawFilename.split("/").pop()!;
@@ -155,15 +220,22 @@ export async function GET() {
 
         // Fallback to catalog, smart pattern match, or clean basename
         if (!title) {
-          const catalogItem = DOCUMENT_CATALOG[rawFilename] ?? DOCUMENT_CATALOG[baseName];
+          const catalogItem =
+            DOCUMENT_CATALOG[rawFilename] ?? DOCUMENT_CATALOG[baseName];
           if (catalogItem) {
             title = catalogItem.title;
             category = catalogItem.category;
-          } else if (baseName.startsWith("msns-class-") && baseName.endsWith("-notes.pdf")) {
+          } else if (
+            baseName.startsWith("msns-class-") &&
+            baseName.endsWith("-notes.pdf")
+          ) {
             const match = /^msns-class-(\d+)-(.+)-notes\.pdf$/.exec(baseName);
             if (match) {
               const grade = match[1];
-              const sub = match[2]?.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) ?? "";
+              const sub =
+                match[2]
+                  ?.replace(/-/g, " ")
+                  .replace(/\b\w/g, (c) => c.toUpperCase()) ?? "";
               title = `Class ${grade} ${sub} (Syllabus & High-Yield Notes)`;
               category = "Academic";
             }
@@ -177,7 +249,8 @@ export async function GET() {
           }
         }
 
-        const lastModified = obj.LastModified?.toISOString() ?? new Date().toISOString();
+        const lastModified =
+          obj.LastModified?.toISOString() ?? new Date().toISOString();
 
         return {
           key,
@@ -193,7 +266,10 @@ export async function GET() {
       })
       .sort((a, b) => {
         // Priority to Official, Academic, Admissions, then newest
-        return new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime();
+        return (
+          new Date(b.lastModified).getTime() -
+          new Date(a.lastModified).getTime()
+        );
       });
 
     return NextResponse.json({ documents });
@@ -201,7 +277,7 @@ export async function GET() {
     console.error("Error listing documents from R2:", error);
     return NextResponse.json(
       { error: "Failed to list documents from Cloudflare bucket" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -212,47 +288,65 @@ export async function POST(request: NextRequest) {
     const session = await auth();
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized. Please sign in." }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized. Please sign in." },
+        { status: 401 },
+      );
     }
 
     const role = (session.user.accountType ?? "").toUpperCase();
     if (!UPLOAD_ROLES.includes(role)) {
       return NextResponse.json(
-        { error: "Forbidden. Only teachers, clerks, heads, principal and admin can upload documents." },
-        { status: 403 }
+        {
+          error:
+            "Forbidden. Only teachers, clerks, heads, principal and admin can upload documents.",
+        },
+        { status: 403 },
       );
     }
 
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const titleInput = (formData.get("title") as string | null)?.trim() ?? "";
-    const categoryInput = (formData.get("category") as string | null)?.trim() ?? "General";
+    const categoryInput =
+      (formData.get("category") as string | null)?.trim() ?? "General";
 
     if (!file) {
-      return NextResponse.json({ error: "No document file provided" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No document file provided" },
+        { status: 400 },
+      );
     }
 
     if (file.size > MAX_DOCUMENT_SIZE) {
       return NextResponse.json(
         { error: "File exceeds 250MB size limit" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
       return NextResponse.json(
-        { error: "Invalid document type. Allowed types: PDF, Word, Excel, PowerPoint, Text, CSV, Images." },
-        { status: 400 }
+        {
+          error:
+            "Invalid document type. Allowed types: PDF, Word, Excel, PowerPoint, Text, CSV, Images.",
+        },
+        { status: 400 },
       );
     }
 
     // Sanitize filename & title
     const timestamp = Date.now();
     const originalExt = file.name.split(".").pop()?.toLowerCase() ?? "pdf";
-    const baseName = file.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
-    const sanitizedTitle = (titleInput || baseName).replace(/[^a-zA-Z0-9_\s-]/g, "").trim().replace(/\s+/g, "_");
+    const baseName = file.name
+      .replace(/\.[^/.]+$/, "")
+      .replace(/[^a-zA-Z0-9_-]/g, "_");
+    const sanitizedTitle = (titleInput || baseName)
+      .replace(/[^a-zA-Z0-9_\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "_");
     const sanitizedCategory = categoryInput.replace(/[^a-zA-Z0-9_-]/g, "_");
-    
+
     // Construct structured key: documents/${timestamp}__${category}__${title}__${filename}
     const finalFilename = `${timestamp}__${sanitizedCategory}__${sanitizedTitle}__${baseName}.${originalExt}`;
     const key = `documents/${finalFilename}`;
@@ -300,7 +394,7 @@ export async function POST(request: NextRequest) {
     console.error("Error uploading document:", error);
     return NextResponse.json(
       { error: "Failed to upload document" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -311,25 +405,36 @@ export async function DELETE(request: NextRequest) {
     const session = await auth();
 
     if (!session?.user) {
-      return NextResponse.json({ error: "Unauthorized. Please sign in." }, { status: 401 });
+      return NextResponse.json(
+        { error: "Unauthorized. Please sign in." },
+        { status: 401 },
+      );
     }
 
     const role = (session.user.accountType ?? "").toUpperCase();
     if (!DELETE_ROLES.includes(role)) {
       return NextResponse.json(
-        { error: "Forbidden. Only administrators, principals, heads, and clerks can delete documents." },
-        { status: 403 }
+        {
+          error:
+            "Forbidden. Only administrators, principals, heads, and clerks can delete documents.",
+        },
+        { status: 403 },
       );
     }
 
-    const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
+    const body = (await request.json().catch(() => ({}))) as Record<
+      string,
+      unknown
+    >;
     const { searchParams } = new URL(request.url);
-    const key = (typeof body?.key === "string" ? body.key : undefined) ?? searchParams.get("key");
+    const key =
+      (typeof body?.key === "string" ? body.key : undefined) ??
+      searchParams.get("key");
 
     if (!key?.startsWith("documents/") || !isSafeKey(key)) {
       return NextResponse.json(
         { error: "Valid document key starting with 'documents/' is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -352,7 +457,7 @@ export async function DELETE(request: NextRequest) {
     console.error("Error deleting document:", error);
     return NextResponse.json(
       { error: "Failed to delete document" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

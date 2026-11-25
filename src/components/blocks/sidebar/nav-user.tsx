@@ -1,13 +1,7 @@
 "use client";
 
 import { signOut, useSession } from "next-auth/react";
-import {
-  ChevronsUpDown,
-  LogOut,
-  Settings,
-  Moon,
-  Sun,
-} from "lucide-react";
+import { ChevronsUpDown, LogOut, Settings, Moon, Sun } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,19 +28,22 @@ export const NavUser = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const session = useSession();
   const { theme, setTheme } = useTheme();
-  
+
   const { data: userProfile } = api.profile.getProfile.useQuery();
   const unregisterDevice = api.mobile.unregisterDevice.useMutation();
   const profilePic = userProfile?.profilePic;
-  const username = userProfile?.username ?? session.data?.user.username ?? "User";
+  const username =
+    userProfile?.username ?? session.data?.user.username ?? "User";
   const initials = username.charAt(0).toUpperCase();
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
     try {
       // Stop push alerts for this account on this device before clearing state.
-      const { getCurrentPushToken, resetDeviceRegistration } = await import("~/hooks/useDeviceRegistration");
-      const { unregisterPushNotifications } = await import("~/lib/mobile/native-service");
+      const { getCurrentPushToken, resetDeviceRegistration } =
+        await import("~/hooks/useDeviceRegistration");
+      const { unregisterPushNotifications } =
+        await import("~/lib/mobile/native-service");
       const token = getCurrentPushToken();
       if (token) {
         await unregisterDevice.mutateAsync({ token }).catch((err: unknown) => {
@@ -56,11 +53,16 @@ export const NavUser = () => {
       await resetDeviceRegistration();
       await unregisterPushNotifications();
     } catch (err) {
-      console.error("Failed to unregister push notifications during sign out:", err);
+      console.error(
+        "Failed to unregister push notifications during sign out:",
+        err,
+      );
     }
     try {
-      const { clearAllMobileState } = await import("~/lib/mobile/native-service");
-      const { clearDeviceAuthSession } = await import("~/lib/mobile/device-auth");
+      const { clearAllMobileState } =
+        await import("~/lib/mobile/native-service");
+      const { clearDeviceAuthSession } =
+        await import("~/lib/mobile/device-auth");
       await clearDeviceAuthSession();
       await clearAllMobileState();
     } catch (err) {
@@ -128,16 +130,16 @@ export const NavUser = () => {
                     session.data?.user.accountType === "CLERK"
                       ? "/clerk/users/profile"
                       : session.data?.user.accountType === "PRINCIPAL"
-                      ? "/principal/profile"
-                      : session.data?.user.accountType === "HEAD"
-                      ? "/head/profile"
-                      : session.data?.user.accountType === "TEACHER"
-                      ? "/teacher/profile"
-                      : session.data?.user.accountType === "WORKER"
-                      ? "/worker/profile"
-                      : session.data?.user.accountType === "STUDENT"
-                      ? "/student/profile"
-                      : "/admin/users/profile"
+                        ? "/principal/profile"
+                        : session.data?.user.accountType === "HEAD"
+                          ? "/head/profile"
+                          : session.data?.user.accountType === "TEACHER"
+                            ? "/teacher/profile"
+                            : session.data?.user.accountType === "WORKER"
+                              ? "/worker/profile"
+                              : session.data?.user.accountType === "STUDENT"
+                                ? "/student/profile"
+                                : "/admin/users/profile"
                   }
                 >
                   <Settings className="mr-2 size-4" />
@@ -162,9 +164,7 @@ export const NavUser = () => {
               className="text-red-500 focus:bg-red-50 focus:text-red-500 dark:focus:bg-red-950/50"
             >
               <LogOut className="mr-2 size-4" />
-              <span>
-                {isLoggingOut ? "/sign-in" : "Log out"}
-              </span>
+              <span>{isLoggingOut ? "/sign-in" : "Log out"}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

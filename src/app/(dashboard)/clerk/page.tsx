@@ -1,12 +1,7 @@
 "use client";
 
-
 import { motion } from "framer-motion";
-import {
-  Users,
-  BookOpen,
-  Wallet,
-} from "lucide-react";
+import { Users, BookOpen, Wallet } from "lucide-react";
 
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import { WelcomeSection } from "~/components/blocks/dashboard/welcome";
@@ -22,10 +17,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 
 // Chart code (recharts) is loaded on demand to keep the page bundle small.
 const RevenueAnalyticsChart = nextDynamic(
-  () => import("~/components/blocks/dashboard/AnalyticsCharts").then((m) => m.RevenueAnalyticsChart),
-  { loading: () => <div className="h-64 animate-pulse rounded-xl bg-muted/40" /> },
+  () =>
+    import("~/components/blocks/dashboard/AnalyticsCharts").then(
+      (m) => m.RevenueAnalyticsChart,
+    ),
+  {
+    loading: () => (
+      <div className="h-64 animate-pulse rounded-xl bg-muted/40" />
+    ),
+  },
 );
-
 
 export default function ClerkDashboard() {
   const breadcrumbs = [{ href: "/clerk", label: "Dashboard", current: true }];
@@ -34,7 +35,11 @@ export default function ClerkDashboard() {
     <div className="w-full space-y-6">
       {/* PageHeader in layout */}
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0, duration: 0.4, ease: "easeOut" }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0, duration: 0.4, ease: "easeOut" }}
+      >
         <WelcomeSection />
       </motion.div>
 
@@ -87,7 +92,11 @@ export default function ClerkDashboard() {
         </Tabs>
       </motion.section>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.16, duration: 0.4, ease: "easeOut" }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.16, duration: 0.4, ease: "easeOut" }}
+      >
         <StatsCards />
       </motion.div>
 
@@ -105,7 +114,11 @@ export default function ClerkDashboard() {
         </div>
       </motion.div>
 
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.32, duration: 0.4, ease: "easeOut" }}>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.32, duration: 0.4, ease: "easeOut" }}
+      >
         <ActivityFeed />
       </motion.div>
     </div>

@@ -11,9 +11,9 @@ async function main() {
           ClassSubject: true,
           Exam: true,
           ReportCard: true,
-        }
-      }
-    }
+        },
+      },
+    },
   });
   console.log("=== ALL SESSIONS ===");
   console.log(sessions);
@@ -21,8 +21,17 @@ async function main() {
   // Let's check some student names from Merged_Results_Data.md:
   // e.g. "ALI AHMAD", "M.AHMAD SHAHID", "M.HUZAIFA FARID", "FAIZ-UL-RASOOL", "ADAN QAISAR", "M. AHMAD", "JAWAD AHMED", "M. AHMAD AKBAR", "DAMAN FATIMA", "ARHAM DASTGIR", "HAIDER ALI"
   const sampleNames = [
-    "ALI AHMAD", "M.AHMAD SHAHID", "M.HUZAIFA FARID", "FAIZ-UL-RASOOL", "ADAN QAISAR", 
-    "M. AHMAD", "JAWAD AHMED", "M. AHMAD AKBAR", "DAMAN FATIMA", "ARHAM DASTGIR", "HAIDER ALI"
+    "ALI AHMAD",
+    "M.AHMAD SHAHID",
+    "M.HUZAIFA FARID",
+    "FAIZ-UL-RASOOL",
+    "ADAN QAISAR",
+    "M. AHMAD",
+    "JAWAD AHMED",
+    "M. AHMAD AKBAR",
+    "DAMAN FATIMA",
+    "ARHAM DASTGIR",
+    "HAIDER ALI",
   ];
 
   console.log("\n=== MATCHING STUDENTS ===");
@@ -31,22 +40,30 @@ async function main() {
       where: {
         studentName: {
           contains: name.split(" ")[0],
-          mode: "insensitive"
-        }
+          mode: "insensitive",
+        },
       },
       include: {
         StudentClass: {
-          include: { Grades: true, Sessions: true }
-        }
-      }
+          include: { Grades: true, Sessions: true },
+        },
+      },
     });
-    console.log(`Query "${name}" -> found ${matched.length} matches:`, matched.map(m => ({
-      id: m.studentId,
-      name: m.studentName,
-      father: m.fatherName,
-      classes: m.StudentClass.map(sc => `${sc.Grades.grade} ${sc.Grades.section} (${sc.Sessions.sessionName})`)
-    })));
+    console.log(
+      `Query "${name}" -> found ${matched.length} matches:`,
+      matched.map((m) => ({
+        id: m.studentId,
+        name: m.studentName,
+        father: m.fatherName,
+        classes: m.StudentClass.map(
+          (sc) =>
+            `${sc.Grades.grade} ${sc.Grades.section} (${sc.Sessions.sessionName})`,
+        ),
+      })),
+    );
   }
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

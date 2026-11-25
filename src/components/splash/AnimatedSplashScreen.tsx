@@ -62,7 +62,7 @@ export function AnimatedSplashScreen({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, transition: { duration: 0.6 } }}
-      className="fixed inset-0 z-[99999] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950/90 to-slate-900 font-sans text-white select-none"
+      className="fixed inset-0 z-[99999] flex select-none flex-col items-center justify-center overflow-hidden bg-gradient-to-br from-slate-950 via-emerald-950/90 to-slate-900 font-sans text-white"
     >
       {/* Dynamic Animated Ambient Glow */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
@@ -73,7 +73,7 @@ export function AnimatedSplashScreen({
             rotate: [0, 180, 360],
           }}
           transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
-          className="absolute -top-1/4 -left-1/4 h-[70vw] w-[70vw] rounded-full bg-emerald-600/30 blur-[130px]"
+          className="absolute -left-1/4 -top-1/4 h-[70vw] w-[70vw] rounded-full bg-emerald-600/30 blur-[130px]"
         />
         <motion.div
           animate={{
@@ -155,7 +155,7 @@ export function AnimatedSplashScreen({
               opacity: { duration: 0.5 },
               boxShadow: { duration: 3, repeat: Infinity, ease: "easeInOut" },
             }}
-            className="relative h-44 w-44 sm:h-52 sm:w-52 overflow-hidden rounded-full border-2 border-emerald-400/70 bg-slate-900/90 p-4 backdrop-blur-2xl"
+            className="relative h-44 w-44 overflow-hidden rounded-full border-2 border-emerald-400/70 bg-slate-900/90 p-4 backdrop-blur-2xl sm:h-52 sm:w-52"
           >
             {/* School Logo */}
             <div className="relative flex h-full w-full items-center justify-center">
@@ -178,7 +178,7 @@ export function AnimatedSplashScreen({
                   repeatDelay: 1.6,
                   ease: "easeInOut",
                 }}
-                className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent skew-x-12"
+                className="pointer-events-none absolute inset-0 skew-x-12 bg-gradient-to-r from-transparent via-white/25 to-transparent"
               />
             </div>
           </motion.div>
@@ -189,35 +189,35 @@ export function AnimatedSplashScreen({
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mt-8 flex flex-col items-center text-center space-y-2 max-w-sm"
+          className="mt-8 flex max-w-sm flex-col items-center space-y-2 text-center"
         >
           <div className="flex items-center gap-1.5">
-            <Sparkles className="h-4 w-4 text-emerald-400 animate-pulse" />
-            <h1 className="font-serif text-2xl sm:text-3xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_15px_rgba(16,185,129,0.6)]">
+            <Sparkles className="h-4 w-4 animate-pulse text-emerald-400" />
+            <h1 className="font-serif text-2xl font-extrabold tracking-tight text-white drop-shadow-[0_2px_15px_rgba(16,185,129,0.6)] sm:text-3xl">
               {title}
             </h1>
-            <Sparkles className="h-4 w-4 text-emerald-400 animate-pulse" />
+            <Sparkles className="h-4 w-4 animate-pulse text-emerald-400" />
           </div>
 
           <p className="text-xs font-semibold uppercase tracking-widest text-emerald-300/90">
             {subtitle}
           </p>
 
-          <span className="inline-block rounded-full bg-emerald-500/15 px-3 py-0.5 text-[11px] font-semibold text-emerald-300 border border-emerald-500/30">
+          <span className="inline-block rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3 py-0.5 text-[11px] font-semibold text-emerald-300">
             Pursuit of Excellence
           </span>
 
           {/* Progress Bar & Status */}
           {showProgress && (
             <div className="mt-6 w-64 space-y-2">
-              <div className="relative h-2 w-full overflow-hidden rounded-full bg-slate-800/90 border border-emerald-500/30 p-0.5 shadow-inner">
+              <div className="relative h-2 w-full overflow-hidden rounded-full border border-emerald-500/30 bg-slate-800/90 p-0.5 shadow-inner">
                 <motion.div
                   className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]"
                   style={{ width: `${progress}%` }}
                   transition={{ ease: "easeOut" }}
                 />
               </div>
-              <div className="flex justify-between text-[11px] font-medium text-emerald-400/90 px-1">
+              <div className="flex justify-between px-1 text-[11px] font-medium text-emerald-400/90">
                 <span>{getStatusText()}</span>
                 <span>{Math.round(progress)}%</span>
               </div>

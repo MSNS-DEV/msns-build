@@ -243,9 +243,10 @@ export function ExpensesTable({ onEdit, onDelete }: ExpensesTableProps) {
     }
   };
 
-  const yearsList = availableYears && availableYears.length > 0
-    ? availableYears
-    : [2024, 2025, 2026];
+  const yearsList =
+    availableYears && availableYears.length > 0
+      ? availableYears
+      : [2024, 2025, 2026];
 
   const filteredExpenses = expensesData;
   const totalAmount = meta?.totalAmount ?? 0;
@@ -459,7 +460,7 @@ export function ExpensesTable({ onEdit, onDelete }: ExpensesTableProps) {
                 setSearchTerm("");
                 setCurrentPage(1);
               }}
-              className="text-muted-foreground hover:text-foreground shrink-0"
+              className="shrink-0 text-muted-foreground hover:text-foreground"
             >
               Clear Filters
             </Button>
@@ -538,13 +539,13 @@ export function ExpensesTable({ onEdit, onDelete }: ExpensesTableProps) {
             </Table>
             {/* Pagination Controls */}
             {meta && meta.totalPages > 1 && (
-              <div className="flex items-center justify-between border-t border-slate-100 dark:border-border px-5 py-4">
+              <div className="flex items-center justify-between border-t border-slate-100 px-5 py-4 dark:border-border">
                 <Button
                   size="sm"
                   variant="outline"
                   disabled={currentPage <= 1}
                   onClick={() => setCurrentPage((p) => p - 1)}
-                  className="border-slate-200 dark:border-border text-slate-700 dark:text-foreground"
+                  className="border-slate-200 text-slate-700 dark:border-border dark:text-foreground"
                 >
                   Previous
                 </Button>
@@ -556,7 +557,7 @@ export function ExpensesTable({ onEdit, onDelete }: ExpensesTableProps) {
                   variant="outline"
                   disabled={currentPage >= meta.totalPages}
                   onClick={() => setCurrentPage((p) => p + 1)}
-                  className="border-slate-200 dark:border-border text-slate-700 dark:text-foreground"
+                  className="border-slate-200 text-slate-700 dark:border-border dark:text-foreground"
                 >
                   Next
                 </Button>

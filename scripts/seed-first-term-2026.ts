@@ -13,12 +13,18 @@ const prisma = new PrismaClient({
   },
 });
 
-async function runWithRetry<T>(fn: () => Promise<T>, retries = 5, delay = 2000): Promise<T> {
+async function runWithRetry<T>(
+  fn: () => Promise<T>,
+  retries = 5,
+  delay = 2000,
+): Promise<T> {
   for (let i = 0; i < retries; i++) {
     try {
       return await fn();
     } catch (err: any) {
-      console.log(`[DB Retry] Attempt ${i + 1} failed: ${err.message}. Retrying in ${delay}ms...`);
+      console.log(
+        `[DB Retry] Attempt ${i + 1} failed: ${err.message}. Retrying in ${delay}ms...`,
+      );
       if (i === retries - 1) throw err;
       await new Promise((res) => setTimeout(res, delay));
     }
@@ -44,229 +50,726 @@ const SESSION_ID = "cmlbxf0gz0000kw04wrflwvgw";
 // Start time: 08:30 AM, End time: 12:00 PM
 const DATESHEET_SCHEDULES: Record<
   string,
-  Array<{ subjectName: string; date: string; maxMarks: number; startTime?: string; endTime?: string }>
+  Array<{
+    subjectName: string;
+    date: string;
+    maxMarks: number;
+    startTime?: string;
+    endTime?: string;
+  }>
 > = {
   PLAYGROUP_ROSE: [
-    { subjectName: "English Written", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English Reading", date: "2026-05-13T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Urdu Reading", date: "2026-05-14T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Urdu Written", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "World Around Me", date: "2026-05-18T08:30:00.000Z", maxMarks: 50 },
+    {
+      subjectName: "English Written",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "English Reading",
+      date: "2026-05-13T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Urdu Reading",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Urdu Written",
+      date: "2026-05-16T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "World Around Me",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 50,
+    },
     { subjectName: "Drawing", date: "2026-05-19T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Spoken English", date: "2026-05-20T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Mathematics Oral", date: "2026-05-21T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Mathematics Written", date: "2026-05-23T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Islamiyat Oral", date: "2026-05-25T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Spoken English",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Mathematics Oral",
+      date: "2026-05-21T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Mathematics Written",
+      date: "2026-05-23T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Islamiyat Oral",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 100,
+    },
   ],
   NURSERY_ROSE: [
-    { subjectName: "Urdu Written", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Urdu Reading", date: "2026-05-13T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "English Reading", date: "2026-05-14T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "English Written", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "World Around Me", date: "2026-05-18T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Spoken English", date: "2026-05-19T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Urdu Written",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Urdu Reading",
+      date: "2026-05-13T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "English Reading",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "English Written",
+      date: "2026-05-16T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "World Around Me",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Spoken English",
+      date: "2026-05-19T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Drawing", date: "2026-05-20T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Mathematics Oral", date: "2026-05-21T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Mathematics Written", date: "2026-05-23T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Islamiyat Oral", date: "2026-05-25T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Mathematics Oral",
+      date: "2026-05-21T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Mathematics Written",
+      date: "2026-05-23T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Islamiyat Oral",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 100,
+    },
   ],
   PREP_ROSE: [
-    { subjectName: "English Written", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English Reading", date: "2026-05-13T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Urdu Reading", date: "2026-05-14T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Urdu Written", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English Written",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "English Reading",
+      date: "2026-05-13T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Urdu Reading",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Urdu Written",
+      date: "2026-05-16T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Drawing", date: "2026-05-18T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Islamiyat Oral", date: "2026-05-19T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "World Around Me", date: "2026-05-20T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Spoken English", date: "2026-05-21T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Mathematics Written", date: "2026-05-23T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Mathematics Oral", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
+    {
+      subjectName: "Islamiyat Oral",
+      date: "2026-05-19T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "World Around Me",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Spoken English",
+      date: "2026-05-21T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Mathematics Written",
+      date: "2026-05-23T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Mathematics Oral",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 50,
+    },
   ],
   ONE_ROSE: [
-    { subjectName: "English A", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English A",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Urdu A", date: "2026-05-13T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Islamiyat", date: "2026-05-14T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English B", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Mathematics", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Spoken English", date: "2026-05-19T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Primary History", date: "2026-05-20T08:30:00.000Z", maxMarks: 50 },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "English B",
+      date: "2026-05-16T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Spoken English",
+      date: "2026-05-19T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Primary History",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 50,
+    },
     { subjectName: "Urdu B", date: "2026-05-21T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Meri Duniya", date: "2026-05-23T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Meri Duniya",
+      date: "2026-05-23T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Drawing", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
     { subjectName: "Computer", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
   ],
   TWO_ROSE: [
-    { subjectName: "English A", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English A",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Urdu A", date: "2026-05-13T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Islamiyat", date: "2026-05-14T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English B", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "English B",
+      date: "2026-05-16T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Urdu B", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Primary History", date: "2026-05-19T08:30:00.000Z", maxMarks: 50 },
+    {
+      subjectName: "Primary History",
+      date: "2026-05-19T08:30:00.000Z",
+      maxMarks: 50,
+    },
     { subjectName: "Computer", date: "2026-05-20T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Mathematics", date: "2026-05-21T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Meri Duniya", date: "2026-05-23T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Spoken English", date: "2026-05-25T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-21T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Meri Duniya",
+      date: "2026-05-23T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Spoken English",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Drawing", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
   ],
   THREE_ROSE: [
-    { subjectName: "English A", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English A",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Urdu A", date: "2026-05-13T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Islamiyat", date: "2026-05-14T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English B", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Mathematics", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "English B",
+      date: "2026-05-16T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Computer", date: "2026-05-19T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Primary History", date: "2026-05-20T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Meri Duniya", date: "2026-05-21T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Primary History",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Meri Duniya",
+      date: "2026-05-21T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Urdu B", date: "2026-05-23T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Drawing", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
   ],
   FOUR_ROSE: [
-    { subjectName: "English A", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Islamiyat", date: "2026-05-13T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Computer", date: "2026-05-14T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Mathematics", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English A",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-13T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Computer",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-16T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Urdu A", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Social Studies", date: "2026-05-20T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Social Studies",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Urdu B", date: "2026-05-21T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Science", date: "2026-05-23T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English B", date: "2026-05-25T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English B",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 100,
+    },
   ],
   FIVE_ROSE: [
-    { subjectName: "English A", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English A",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Urdu B", date: "2026-05-13T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Computer", date: "2026-05-14T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Mathematics", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English B", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Computer",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-16T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "English B",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Science", date: "2026-05-20T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Urdu A", date: "2026-05-21T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Islamiyat", date: "2026-05-23T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Social Studies", date: "2026-05-25T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-23T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Social Studies",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 100,
+    },
   ],
   SIX_ROSE: [
     { subjectName: "Science", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Urdu A", date: "2026-05-13T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Urdu B", date: "2026-05-14T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English A", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Mathematics", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Tarjama-tul-Quran", date: "2026-05-19T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Computer", date: "2026-05-20T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English B", date: "2026-05-21T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English A",
+      date: "2026-05-16T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Tarjama-tul-Quran",
+      date: "2026-05-19T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Computer",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "English B",
+      date: "2026-05-21T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "History", date: "2026-05-22T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Geography", date: "2026-05-23T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Islamiyat", date: "2026-05-25T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Geography",
+      date: "2026-05-23T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 100,
+    },
   ],
   SIX_TULIP: [
     { subjectName: "Science", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Urdu A", date: "2026-05-13T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Urdu B", date: "2026-05-14T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English A", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Mathematics", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Tarjama-tul-Quran", date: "2026-05-19T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Computer", date: "2026-05-20T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English B", date: "2026-05-21T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English A",
+      date: "2026-05-16T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Tarjama-tul-Quran",
+      date: "2026-05-19T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Computer",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "English B",
+      date: "2026-05-21T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "History", date: "2026-05-22T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Geography", date: "2026-05-23T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Islamiyat", date: "2026-05-25T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Geography",
+      date: "2026-05-23T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 100,
+    },
   ],
   SEVEN_ROSE: [
-    { subjectName: "Mathematics", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Urdu A", date: "2026-05-13T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Science", date: "2026-05-14T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Urdu B", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English A", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Tarjama-tul-Quran", date: "2026-05-19T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Islamiyat", date: "2026-05-20T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Computer", date: "2026-05-21T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English A",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Tarjama-tul-Quran",
+      date: "2026-05-19T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Computer",
+      date: "2026-05-21T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "History", date: "2026-05-22T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Geography", date: "2026-05-23T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "English B", date: "2026-05-25T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Geography",
+      date: "2026-05-23T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "English B",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 100,
+    },
   ],
   SEVEN_TULIP: [
-    { subjectName: "Mathematics", date: "2026-05-12T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "Urdu A", date: "2026-05-13T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Science", date: "2026-05-14T08:30:00.000Z", maxMarks: 100 },
     { subjectName: "Urdu B", date: "2026-05-16T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "English A", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Tarjama-tul-Quran", date: "2026-05-19T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Islamiyat", date: "2026-05-20T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Computer", date: "2026-05-21T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "English A",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Tarjama-tul-Quran",
+      date: "2026-05-19T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Computer",
+      date: "2026-05-21T08:30:00.000Z",
+      maxMarks: 100,
+    },
     { subjectName: "History", date: "2026-05-22T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "Geography", date: "2026-05-23T08:30:00.000Z", maxMarks: 50 },
-    { subjectName: "English B", date: "2026-05-25T08:30:00.000Z", maxMarks: 100 },
+    {
+      subjectName: "Geography",
+      date: "2026-05-23T08:30:00.000Z",
+      maxMarks: 50,
+    },
+    {
+      subjectName: "English B",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 100,
+    },
   ],
   PRE_9_ROSE: [
-    { subjectName: "Mathematics", date: "2026-05-12T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Biology/Computer", date: "2026-05-14T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 75,
+    },
+    {
+      subjectName: "Biology/Computer",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "English", date: "2026-05-16T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Islamiyat", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Chemistry", date: "2026-05-20T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Chemistry",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "Urdu", date: "2026-05-21T08:30:00.000Z", maxMarks: 75 },
     { subjectName: "Physics", date: "2026-05-23T08:30:00.000Z", maxMarks: 60 },
-    { subjectName: "Tarjama-tul-Quran", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
+    {
+      subjectName: "Tarjama-tul-Quran",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 50,
+    },
   ],
   PRE_9_TULIP: [
-    { subjectName: "Mathematics", date: "2026-05-12T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Biology/Computer", date: "2026-05-14T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 75,
+    },
+    {
+      subjectName: "Biology/Computer",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "English", date: "2026-05-16T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Islamiyat", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Chemistry", date: "2026-05-20T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Chemistry",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "Urdu", date: "2026-05-21T08:30:00.000Z", maxMarks: 75 },
     { subjectName: "Physics", date: "2026-05-23T08:30:00.000Z", maxMarks: 60 },
-    { subjectName: "Tarjama-tul-Quran", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
+    {
+      subjectName: "Tarjama-tul-Quran",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 50,
+    },
   ],
   NINE_ROSE: [
-    { subjectName: "Mathematics", date: "2026-05-12T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Biology/Computer", date: "2026-05-14T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 75,
+    },
+    {
+      subjectName: "Biology/Computer",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "English", date: "2026-05-16T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Islamiyat", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Chemistry", date: "2026-05-20T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Chemistry",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "Urdu", date: "2026-05-21T08:30:00.000Z", maxMarks: 75 },
     { subjectName: "Physics", date: "2026-05-23T08:30:00.000Z", maxMarks: 60 },
-    { subjectName: "Tarjama-tul-Quran", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
+    {
+      subjectName: "Tarjama-tul-Quran",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 50,
+    },
   ],
   NINE_TULIP: [
-    { subjectName: "Mathematics", date: "2026-05-12T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Biology/Computer", date: "2026-05-14T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 75,
+    },
+    {
+      subjectName: "Biology/Computer",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "English", date: "2026-05-16T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Islamiyat", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Chemistry", date: "2026-05-20T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Chemistry",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "Urdu", date: "2026-05-21T08:30:00.000Z", maxMarks: 75 },
     { subjectName: "Physics", date: "2026-05-23T08:30:00.000Z", maxMarks: 60 },
-    { subjectName: "Tarjama-tul-Quran", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
+    {
+      subjectName: "Tarjama-tul-Quran",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 50,
+    },
   ],
   TEN_ROSE: [
-    { subjectName: "Mathematics", date: "2026-05-12T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Biology/Computer", date: "2026-05-14T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 75,
+    },
+    {
+      subjectName: "Biology/Computer",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "English", date: "2026-05-16T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Islamiyat", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Chemistry", date: "2026-05-20T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Chemistry",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "Urdu", date: "2026-05-21T08:30:00.000Z", maxMarks: 75 },
     { subjectName: "Physics", date: "2026-05-23T08:30:00.000Z", maxMarks: 60 },
-    { subjectName: "Tarjama-tul-Quran", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
+    {
+      subjectName: "Tarjama-tul-Quran",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 50,
+    },
   ],
   TEN_TULIP: [
-    { subjectName: "Mathematics", date: "2026-05-12T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Biology/Computer", date: "2026-05-14T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Mathematics",
+      date: "2026-05-12T08:30:00.000Z",
+      maxMarks: 75,
+    },
+    {
+      subjectName: "Biology/Computer",
+      date: "2026-05-14T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "English", date: "2026-05-16T08:30:00.000Z", maxMarks: 75 },
-    { subjectName: "Islamiyat", date: "2026-05-18T08:30:00.000Z", maxMarks: 100 },
-    { subjectName: "Chemistry", date: "2026-05-20T08:30:00.000Z", maxMarks: 60 },
+    {
+      subjectName: "Islamiyat",
+      date: "2026-05-18T08:30:00.000Z",
+      maxMarks: 100,
+    },
+    {
+      subjectName: "Chemistry",
+      date: "2026-05-20T08:30:00.000Z",
+      maxMarks: 60,
+    },
     { subjectName: "Urdu", date: "2026-05-21T08:30:00.000Z", maxMarks: 75 },
     { subjectName: "Physics", date: "2026-05-23T08:30:00.000Z", maxMarks: 60 },
-    { subjectName: "Tarjama-tul-Quran", date: "2026-05-25T08:30:00.000Z", maxMarks: 50 },
+    {
+      subjectName: "Tarjama-tul-Quran",
+      date: "2026-05-25T08:30:00.000Z",
+      maxMarks: 50,
+    },
   ],
 };
 
 async function main() {
   console.log("=== STEP 1: VERIFY/CREATE SUBJECTS ===");
   const requiredSubjects = [
-    "English", "English A", "English B", "Urdu", "Urdu A", "Urdu B",
-    "Math", "Mathematics", "Science", "Social Studies", "Computer",
-    "Islamiyat", "Tarjama-tul-Quran", "History", "Geography",
-    "Primary History", "Meri Duniya", "Drawing", "Spoken English",
-    "World Around Me", "English Reading", "English Written",
-    "Urdu Reading", "Urdu Written", "Mathematics Oral", "Mathematics Written",
-    "Islamiyat Oral", "Physics", "Chemistry", "Biology/Computer",
-    "Summer Vacation Task"
+    "English",
+    "English A",
+    "English B",
+    "Urdu",
+    "Urdu A",
+    "Urdu B",
+    "Math",
+    "Mathematics",
+    "Science",
+    "Social Studies",
+    "Computer",
+    "Islamiyat",
+    "Tarjama-tul-Quran",
+    "History",
+    "Geography",
+    "Primary History",
+    "Meri Duniya",
+    "Drawing",
+    "Spoken English",
+    "World Around Me",
+    "English Reading",
+    "English Written",
+    "Urdu Reading",
+    "Urdu Written",
+    "Mathematics Oral",
+    "Mathematics Written",
+    "Islamiyat Oral",
+    "Physics",
+    "Chemistry",
+    "Biology/Computer",
+    "Summer Vacation Task",
   ];
 
   const subjectMap = new Map<string, string>();
@@ -274,13 +777,13 @@ async function main() {
     let sub = await runWithRetry(() =>
       prisma.subject.findFirst({
         where: { subjectName: { equals: name, mode: "insensitive" } },
-      })
+      }),
     );
     if (!sub) {
       sub = await runWithRetry(() =>
         prisma.subject.create({
           data: { subjectName: name },
-        })
+        }),
       );
       console.log(`Created new subject: "${name}" [${sub.subjectId}]`);
     }
@@ -293,7 +796,7 @@ async function main() {
   let examType = await runWithRetry(() =>
     prisma.examType.findFirst({
       where: { name: "FIRST_TIME" },
-    })
+    }),
   );
   if (!examType) {
     examType = await runWithRetry(() =>
@@ -303,14 +806,16 @@ async function main() {
           description: "First Term Examination 2026",
           category: "STANDARD",
         },
-      })
+      }),
     );
     console.log(`Created ExamType FIRST_TIME [${examType.examTypeId}]`);
   } else {
     console.log(`Found ExamType FIRST_TIME [${examType.examTypeId}]`);
   }
 
-  console.log("\n=== STEP 3: ENSURE 18 CLASSES & CLASS_SUBJECT MAPPINGS & EXAMS ===");
+  console.log(
+    "\n=== STEP 3: ENSURE 18 CLASSES & CLASS_SUBJECT MAPPINGS & EXAMS ===",
+  );
   const allGrades = await runWithRetry(() => prisma.grades.findMany());
   const gradeKeyMap = new Map<string, string>();
   for (const g of allGrades) {
@@ -367,7 +872,7 @@ async function main() {
             subjectId,
             sessionId: SESSION_ID,
           },
-        })
+        }),
       );
 
       if (!cs) {
@@ -379,9 +884,11 @@ async function main() {
               employeeId: teacherId,
               sessionId: SESSION_ID,
             },
-          })
+          }),
         );
-        console.log(`Created ClassSubject for ${classKey} - ${item.subjectName} [${cs.csId}]`);
+        console.log(
+          `Created ClassSubject for ${classKey} - ${item.subjectName} [${cs.csId}]`,
+        );
       }
       classSubjectLookup.set(`${classId}_${subjectId}`, cs.csId);
     }
@@ -394,7 +901,7 @@ async function main() {
           classId,
           examTypeEnum: "FIRST_TIME",
         },
-      })
+      }),
     );
 
     // Calculate total max marks for this class from schedule
@@ -415,9 +922,11 @@ async function main() {
             passingMarks: passingMarks,
             status: "COMPLETED",
           },
-        })
+        }),
       );
-      console.log(`Created Exam for ${classKey} [${exam.examId}], Total: ${totalMaxMarks}`);
+      console.log(
+        `Created Exam for ${classKey} [${exam.examId}], Total: ${totalMaxMarks}`,
+      );
     } else {
       exam = await runWithRetry(() =>
         prisma.exam.update({
@@ -427,7 +936,7 @@ async function main() {
             passingMarks: passingMarks,
             status: "COMPLETED",
           },
-        })
+        }),
       );
       console.log(`Updated Exam for ${classKey} [${exam.examId}]`);
     }
@@ -442,7 +951,7 @@ async function main() {
             examId: exam.examId,
             subjectId,
           },
-        })
+        }),
       );
 
       if (!existingDs) {
@@ -455,7 +964,7 @@ async function main() {
               startTime: "08:30 AM",
               endTime: "12:00 PM",
             },
-          })
+          }),
         );
       } else {
         await runWithRetry(() =>
@@ -466,14 +975,18 @@ async function main() {
               startTime: "08:30 AM",
               endTime: "12:00 PM",
             },
-          })
+          }),
         );
       }
     }
-    console.log(`Populated datesheet (${schedule.length} subjects) for ${classKey}`);
+    console.log(
+      `Populated datesheet (${schedule.length} subjects) for ${classKey}`,
+    );
   }
 
-  console.log("\n=== STEP 4: PARSE AND INGEST STUDENT MARKS & REPORT CARDS ===");
+  console.log(
+    "\n=== STEP 4: PARSE AND INGEST STUDENT MARKS & REPORT CARDS ===",
+  );
   await ingestResultsData(subjectMap, gradeKeyMap, examMap, classSubjectLookup);
 
   console.log("\n=== FIRST TERM 2026 SETUP COMPLETED SUCCESSFULLY ===");
@@ -483,9 +996,12 @@ async function ingestResultsData(
   subjectMap: Map<string, string>,
   gradeKeyMap: Map<string, string>,
   examMap: Map<string, string>,
-  classSubjectLookup: Map<string, string>
+  classSubjectLookup: Map<string, string>,
 ) {
-  const content = fs.readFileSync("prisma/private/Merged_Results_Data.md", "utf-8");
+  const content = fs.readFileSync(
+    "prisma/private/Merged_Results_Data.md",
+    "utf-8",
+  );
   const sections = content.split(/## File:\s*/g).filter(Boolean);
 
   const allDbStudents = await runWithRetry(() =>
@@ -495,16 +1011,19 @@ async function ingestResultsData(
           include: { Grades: true, Sessions: true },
         },
       },
-    })
+    }),
   );
 
   let nextRegCounter = 3250;
 
   for (const sec of sections) {
-    const lines = sec.split("\n").map((l) => l.trim()).filter(Boolean);
+    const lines = sec
+      .split("\n")
+      .map((l) => l.trim())
+      .filter(Boolean);
     const fileName = lines[0];
     const classLine = lines.find((l) => l.includes("CLASS:")) || "";
-    
+
     // Determine target class key
     let classKey = "";
     let teacherId = TEACHER_MAP.DEFAULT_ADMIN;
@@ -524,7 +1043,10 @@ async function ingestResultsData(
     } else if (fileName.includes("TWO") || classLine.includes("TWO")) {
       classKey = "TWO_ROSE";
       teacherId = TEACHER_MAP.MEHRAB_TABASSUM;
-    } else if (fileName.includes("9TH SENIOR") || classLine.includes("9th  SENIOR")) {
+    } else if (
+      fileName.includes("9TH SENIOR") ||
+      classLine.includes("9th  SENIOR")
+    ) {
       classKey = "NINE_ROSE"; // 9th Senior mapped to NINE_ROSE
       teacherId = TEACHER_MAP.AMINAH_NOOR;
     } else if (fileName.includes("FIVE") || classLine.includes("FIVE")) {
@@ -541,17 +1063,30 @@ async function ingestResultsData(
     const examId = examMap.get(classKey)!;
 
     console.log(`\n--------------------------------------------------`);
-    console.log(`Processing ${fileName} -> Target Class: ${classKey} [${classId}], Exam: [${examId}]`);
+    console.log(
+      `Processing ${fileName} -> Target Class: ${classKey} [${classId}], Exam: [${examId}]`,
+    );
 
     const tableLines = lines.filter((l) => l.startsWith("|"));
-    const headerIdx = tableLines.findIndex((l) => l.toUpperCase().includes("NAME") && l.toUpperCase().includes("STUDENT"));
+    const headerIdx = tableLines.findIndex(
+      (l) =>
+        l.toUpperCase().includes("NAME") && l.toUpperCase().includes("STUDENT"),
+    );
     if (headerIdx === -1) continue;
 
-    const headerCols = tableLines[headerIdx].split("|").map((c) => c.trim()).filter(Boolean);
+    const headerCols = tableLines[headerIdx]
+      .split("|")
+      .map((c) => c.trim())
+      .filter(Boolean);
 
     // Identify subject column indices
     // Find where subjects start and where total/summary starts
-    const subjectCols: Array<{ index: number; colName: string; subjectName: string; maxMarks: number }> = [];
+    const subjectCols: Array<{
+      index: number;
+      colName: string;
+      subjectName: string;
+      maxMarks: number;
+    }> = [];
 
     headerCols.forEach((col, idx) => {
       const up = col.toUpperCase();
@@ -576,18 +1111,29 @@ async function ingestResultsData(
       let maxMarks = 100;
 
       if (up === "ENGLISH" || up === "ENGLISH A" || up === "ENGLISH(A)") {
-        subName = up.includes("A") ? "English A" : (classKey.startsWith("PRE_9") || classKey.startsWith("NINE") ? "English" : "English A");
-        if (classKey.startsWith("PRE_9") || classKey.startsWith("NINE")) maxMarks = 75;
+        subName = up.includes("A")
+          ? "English A"
+          : classKey.startsWith("PRE_9") || classKey.startsWith("NINE")
+            ? "English"
+            : "English A";
+        if (classKey.startsWith("PRE_9") || classKey.startsWith("NINE"))
+          maxMarks = 75;
       } else if (up === "ENGLISH B" || up === "ENGLISH(B)") {
         subName = "English B";
       } else if (up === "URDU" || up === "URDU A" || up === "URDU(A)") {
-        subName = up.includes("A") ? "Urdu A" : (classKey.startsWith("PRE_9") || classKey.startsWith("NINE") ? "Urdu" : "Urdu A");
-        if (classKey.startsWith("PRE_9") || classKey.startsWith("NINE")) maxMarks = 75;
+        subName = up.includes("A")
+          ? "Urdu A"
+          : classKey.startsWith("PRE_9") || classKey.startsWith("NINE")
+            ? "Urdu"
+            : "Urdu A";
+        if (classKey.startsWith("PRE_9") || classKey.startsWith("NINE"))
+          maxMarks = 75;
       } else if (up === "URDU B" || up === "URDU(B)") {
         subName = "Urdu B";
       } else if (up === "MATH" || up === "MATHEMATICS") {
         subName = "Mathematics";
-        if (classKey.startsWith("PRE_9") || classKey.startsWith("NINE")) maxMarks = 75;
+        if (classKey.startsWith("PRE_9") || classKey.startsWith("NINE"))
+          maxMarks = 75;
       } else if (up === "ISLAMIYAT" || up === "ISLAMYAT") {
         subName = "Islamiyat";
       } else if (up.includes("TARJAMA") || up.includes("TARJUMA")) {
@@ -598,17 +1144,30 @@ async function ingestResultsData(
       } else if (up.includes("GEOGRAPHY") && !up.includes("HISTORY")) {
         subName = "Geography";
         maxMarks = 50;
-      } else if (up.includes("HISTORY") && !up.includes("PRIMARY") && !up.includes("GEOGRAPHY")) {
+      } else if (
+        up.includes("HISTORY") &&
+        !up.includes("PRIMARY") &&
+        !up.includes("GEOGRAPHY")
+      ) {
         subName = "History";
         maxMarks = 50;
       } else if (up.includes("PRIMARY HISTORY")) {
         subName = "Primary History";
         maxMarks = 50;
-      } else if (up.includes("MERI DUNIYA") || up.includes("MERI DUNYIA") || col.includes("میری دنیا")) {
+      } else if (
+        up.includes("MERI DUNIYA") ||
+        up.includes("MERI DUNYIA") ||
+        col.includes("میری دنیا")
+      ) {
         subName = "Meri Duniya";
       } else if (up.includes("COMPUTER")) {
         subName = "Computer";
-        if (classKey === "ONE_ROSE" || classKey === "TWO_ROSE" || classKey === "THREE_ROSE") maxMarks = 50;
+        if (
+          classKey === "ONE_ROSE" ||
+          classKey === "TWO_ROSE" ||
+          classKey === "THREE_ROSE"
+        )
+          maxMarks = 50;
       } else if (up === "DRAWING") {
         subName = "Drawing";
         maxMarks = 50;
@@ -640,15 +1199,31 @@ async function ingestResultsData(
       }
     });
 
-    console.log(`Mapped ${subjectCols.length} subjects for table:`, subjectCols.map((s) => `${s.colName} -> ${s.subjectName} (${s.maxMarks})`));
+    console.log(
+      `Mapped ${subjectCols.length} subjects for table:`,
+      subjectCols.map(
+        (s) => `${s.colName} -> ${s.subjectName} (${s.maxMarks})`,
+      ),
+    );
 
     // Process rows
     for (let i = headerIdx + 1; i < tableLines.length; i++) {
       const rowLine = tableLines[i];
       if (rowLine.includes("---") || rowLine.includes(":---")) continue;
-      const cols = rowLine.split("|").map((c) => c.trim()).filter(Boolean);
+      const cols = rowLine
+        .split("|")
+        .map((c) => c.trim())
+        .filter(Boolean);
       if (cols.length < 3) continue;
-      if (cols.some((c) => c.toUpperCase().includes("GRAND TOTAL") || c.toUpperCase().includes("TOTAL") || c.toUpperCase().includes("SIGNATURE"))) continue;
+      if (
+        cols.some(
+          (c) =>
+            c.toUpperCase().includes("GRAND TOTAL") ||
+            c.toUpperCase().includes("TOTAL") ||
+            c.toUpperCase().includes("SIGNATURE"),
+        )
+      )
+        continue;
 
       // Extract Student Name
       let studentName = cols[1];
@@ -656,7 +1231,12 @@ async function ingestResultsData(
         studentName = cols[2];
       }
       if (!isNaN(Number(studentName))) {
-        const alpha = cols.find((c) => /[a-zA-Z]/.test(c) && !c.match(/^\d+(st|nd|rd|th)$/i) && !c.match(/^[A-F][\+\-]?$/));
+        const alpha = cols.find(
+          (c) =>
+            /[a-zA-Z]/.test(c) &&
+            !c.match(/^\d+(st|nd|rd|th)$/i) &&
+            !c.match(/^[A-F][\+\-]?$/),
+        );
         if (alpha) studentName = alpha;
       }
 
@@ -683,10 +1263,12 @@ async function ingestResultsData(
                 include: { Grades: true, Sessions: true },
               },
             },
-          })
+          }),
         );
         allDbStudents.push(student as any);
-        console.log(`Created new student: "${studentName}" [Reg: ${regNum}, ID: ${student.studentId}]`);
+        console.log(
+          `Created new student: "${studentName}" [Reg: ${regNum}, ID: ${student.studentId}]`,
+        );
       }
 
       // Ensure StudentClass enrollment for 2026 - 2027
@@ -697,7 +1279,7 @@ async function ingestResultsData(
             classId,
             sessionId: SESSION_ID,
           },
-        })
+        }),
       );
 
       if (!sc) {
@@ -708,22 +1290,34 @@ async function ingestResultsData(
               classId,
               sessionId: SESSION_ID,
             },
-          })
+          }),
         );
-        console.log(`Enrolled "${studentName}" into ${classKey} [scId: ${sc.scId}]`);
+        console.log(
+          `Enrolled "${studentName}" into ${classKey} [scId: ${sc.scId}]`,
+        );
       }
 
       // Record Marks
       let totalObtained = 0;
       let totalMax = 0;
-      const reportDetailsData: Array<{ subjectId: string; obtainedMarks: number; totalMarks: number; percentage: number; remarks: string }> = [];
+      const reportDetailsData: Array<{
+        subjectId: string;
+        obtainedMarks: number;
+        totalMarks: number;
+        percentage: number;
+        remarks: string;
+      }> = [];
 
       for (const scItem of subjectCols) {
         // Look up column value
         let rawVal = cols[scItem.index] || "0";
         // Clean value (e.g. "17*", "A", "Absent", "44.5")
         let marksObtained = 0;
-        if (rawVal.toUpperCase() === "A" || rawVal.toUpperCase() === "ABSENT" || rawVal.trim() === "") {
+        if (
+          rawVal.toUpperCase() === "A" ||
+          rawVal.toUpperCase() === "ABSENT" ||
+          rawVal.trim() === ""
+        ) {
           marksObtained = 0;
         } else {
           const parsed = parseFloat(rawVal.replace(/[^0-9\.]/g, ""));
@@ -731,7 +1325,7 @@ async function ingestResultsData(
         }
 
         const subjectId = subjectMap.get(scItem.subjectName.toLowerCase())!;
-        
+
         // Ensure ClassSubject exists for this class & subject
         let csId = classSubjectLookup.get(`${classId}_${subjectId}`);
         if (!csId) {
@@ -743,7 +1337,7 @@ async function ingestResultsData(
                 employeeId: teacherId,
                 sessionId: SESSION_ID,
               },
-            })
+            }),
           );
           csId = newCs.csId;
           classSubjectLookup.set(`${classId}_${subjectId}`, csId);
@@ -757,7 +1351,7 @@ async function ingestResultsData(
               studentId: student.studentId,
               subjectId,
             },
-          })
+          }),
         );
 
         if (!existingMark) {
@@ -772,7 +1366,7 @@ async function ingestResultsData(
                 totalMarks: scItem.maxMarks,
                 uploadedBy: teacherId,
               },
-            })
+            }),
           );
         } else {
           await runWithRetry(() =>
@@ -784,7 +1378,7 @@ async function ingestResultsData(
                 classSubjectId: csId,
                 uploadedBy: teacherId,
               },
-            })
+            }),
           );
         }
 
@@ -801,7 +1395,8 @@ async function ingestResultsData(
       }
 
       // Upsert Report Card
-      const overallPercentage = totalMax > 0 ? (totalObtained / totalMax) * 100 : 0;
+      const overallPercentage =
+        totalMax > 0 ? (totalObtained / totalMax) * 100 : 0;
       const status = overallPercentage >= 40 ? "PASSED" : "FAILED";
 
       const existingReport = await runWithRetry(() =>
@@ -810,7 +1405,7 @@ async function ingestResultsData(
             studentId: student.studentId,
             examId,
           },
-        })
+        }),
       );
 
       if (existingReport) {
@@ -827,7 +1422,7 @@ async function ingestResultsData(
                 create: reportDetailsData,
               },
             },
-          })
+          }),
         );
       } else {
         await runWithRetry(() =>
@@ -845,24 +1440,36 @@ async function ingestResultsData(
                 create: reportDetailsData,
               },
             },
-          })
+          }),
         );
       }
 
-      console.log(`✓ Report Card generated for "${studentName}" (${student.studentId}): ${totalObtained}/${totalMax} (${overallPercentage.toFixed(1)}%) -> ${status}`);
+      console.log(
+        `✓ Report Card generated for "${studentName}" (${student.studentId}): ${totalObtained}/${totalMax} (${overallPercentage.toFixed(1)}%) -> ${status}`,
+      );
     }
   }
 }
 
-function resolveStudent(allDbStudents: any[], name: string, classKey: string): any {
+function resolveStudent(
+  allDbStudents: any[],
+  name: string,
+  classKey: string,
+): any {
   const norm = name.toUpperCase().replace(/[^A-Z]/g, "");
 
   // 1. Exact match on normalized name
-  const exact = allDbStudents.filter((s) => s.studentName.toUpperCase().replace(/[^A-Z]/g, "") === norm);
+  const exact = allDbStudents.filter(
+    (s) => s.studentName.toUpperCase().replace(/[^A-Z]/g, "") === norm,
+  );
   if (exact.length === 1) return exact[0];
   if (exact.length > 1) {
     // Pick the one enrolled in corresponding class or active session
-    const matchedClass = exact.find((s) => s.StudentClass.some((sc: any) => sc.Grades.grade.toUpperCase().includes(classKey.split("_")[0])));
+    const matchedClass = exact.find((s) =>
+      s.StudentClass.some((sc: any) =>
+        sc.Grades.grade.toUpperCase().includes(classKey.split("_")[0]),
+      ),
+    );
     if (matchedClass) return matchedClass;
     return exact[0];
   }
@@ -874,7 +1481,11 @@ function resolveStudent(allDbStudents: any[], name: string, classKey: string): a
   });
   if (partial.length === 1) return partial[0];
   if (partial.length > 1) {
-    const matchedClass = partial.find((s) => s.StudentClass.some((sc: any) => sc.Grades.grade.toUpperCase().includes(classKey.split("_")[0])));
+    const matchedClass = partial.find((s) =>
+      s.StudentClass.some((sc: any) =>
+        sc.Grades.grade.toUpperCase().includes(classKey.split("_")[0]),
+      ),
+    );
     if (matchedClass) return matchedClass;
     return partial[0];
   }

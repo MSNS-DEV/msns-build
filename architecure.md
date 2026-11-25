@@ -1,4 +1,5 @@
 # MSNS LMS v2.0 — ERP Edition
+
 ## Technical Architecture & System Documentation
 
 ---
@@ -215,7 +216,7 @@ This workflow initializes systemic salary distributions for the entire employee 
     {
       "employeeId": "clw09jx78000208ju8w2be89c",
       "employeeName": "Zahid Khan",
-      "attemptedValue": -12500.00,
+      "attemptedValue": -12500.0,
       "reason": "CRITICAL_VIOLATION: Base salary calculations cannot yield a negative monetary balance."
     }
   ]
@@ -296,13 +297,13 @@ This core ledger subsystem processes all transactional mutations throughout the 
 
 #### 2.1.1 Route Authentication Matrix
 
-| Target Route Path Pattern | Allowed Role Enumerations | Active Token Scope Guard | Core UI Layout |
-|---|---|---|---|
-| `/login` | ALL | None (Public Guest Ingress) | Central Minimalist Card Frame |
-| `/(dashboard)/admin/*` | ADMIN, PRINCIPAL | ADMIN_ADMINISTRATIVE_SCOPE | Sidebar navigation, administrative command view |
-| `/(dashboard)/clerk/*` | CLERK, ADMIN, PRINCIPAL | ADMIN_ADMINISTRATIVE_SCOPE | Clerk data entry interface, operational tools |
-| `/(dashboard)/teacher/*` | TEACHER, HEAD, ADMIN | ADMIN_ADMINISTRATIVE_SCOPE | Teacher portal, classroom and marking utilities |
-| `/parent/*` | ParentGuardian | PARENT_PORTAL_SCOPE | Read-only simplified view, student tracking portal |
+| Target Route Path Pattern | Allowed Role Enumerations | Active Token Scope Guard    | Core UI Layout                                     |
+| ------------------------- | ------------------------- | --------------------------- | -------------------------------------------------- |
+| `/login`                  | ALL                       | None (Public Guest Ingress) | Central Minimalist Card Frame                      |
+| `/(dashboard)/admin/*`    | ADMIN, PRINCIPAL          | ADMIN_ADMINISTRATIVE_SCOPE  | Sidebar navigation, administrative command view    |
+| `/(dashboard)/clerk/*`    | CLERK, ADMIN, PRINCIPAL   | ADMIN_ADMINISTRATIVE_SCOPE  | Clerk data entry interface, operational tools      |
+| `/(dashboard)/teacher/*`  | TEACHER, HEAD, ADMIN      | ADMIN_ADMINISTRATIVE_SCOPE  | Teacher portal, classroom and marking utilities    |
+| `/parent/*`               | ParentGuardian            | PARENT_PORTAL_SCOPE         | Read-only simplified view, student tracking portal |
 
 #### 2.1.2 Layout Composition & Loading State Architecture
 
@@ -543,14 +544,14 @@ interface StudentMarkRow {
 
 #### 3.1.1 Implementation Mapping: Requirements to Technical Solutions
 
-| SRS Requirement Group | Reference IDs | Technical Solution |
-|---|---|---|
-| Per-Student Subject Marking | FR-EXM-26 to 37 | Spreadsheet-Style Examination Marking Grid UI and `saveAllMarks` tRPC execution pipeline |
-| Exam-Based Promotion Workflows | FR-PRM-05 to 16 | Interactive Bulk Promotion Workflow Dashboard and automatic background eligibility engines |
-| Bulk Salary Creation & Carry-Forward | FR-SAL-01 to 10 | Salary Bulk Initializer Workspace UI and individual multi-row data population pipelines |
-| ERP Expense Management | FR-ERP-01 to 46 | Cost Center Tracking, Multi-Stage PO Verification Pipelines, Stock Reconciliations, Asset Depreciation Schedules, Petty Cash Balancing, and Immutable Append-Only Ledger Entry Architectures |
-| Strategic Proposed Features | FR-AST-01 to FR-HRM-05 | QR-Code Asset Layouts, Teacher Dashboard Effectiveness Analytics, Isolated Parent Portal Layout Guards, and Leave Application Approval Streams |
-| Dual Image Optimization Pipeline | FR-IMG-01 to 04 | Ingress Sharp upload compression (auto-orient, 2048px bounding, mozjpeg/webp compression) and egress Next.js edge AVIF/WebP dynamic caching with 1-year immutable TTL |
+| SRS Requirement Group                | Reference IDs          | Technical Solution                                                                                                                                                                           |
+| ------------------------------------ | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Per-Student Subject Marking          | FR-EXM-26 to 37        | Spreadsheet-Style Examination Marking Grid UI and `saveAllMarks` tRPC execution pipeline                                                                                                     |
+| Exam-Based Promotion Workflows       | FR-PRM-05 to 16        | Interactive Bulk Promotion Workflow Dashboard and automatic background eligibility engines                                                                                                   |
+| Bulk Salary Creation & Carry-Forward | FR-SAL-01 to 10        | Salary Bulk Initializer Workspace UI and individual multi-row data population pipelines                                                                                                      |
+| ERP Expense Management               | FR-ERP-01 to 46        | Cost Center Tracking, Multi-Stage PO Verification Pipelines, Stock Reconciliations, Asset Depreciation Schedules, Petty Cash Balancing, and Immutable Append-Only Ledger Entry Architectures |
+| Strategic Proposed Features          | FR-AST-01 to FR-HRM-05 | QR-Code Asset Layouts, Teacher Dashboard Effectiveness Analytics, Isolated Parent Portal Layout Guards, and Leave Application Approval Streams                                               |
+| Dual Image Optimization Pipeline     | FR-IMG-01 to 04        | Ingress Sharp upload compression (auto-orient, 2048px bounding, mozjpeg/webp compression) and egress Next.js edge AVIF/WebP dynamic caching with 1-year immutable TTL                        |
 
 #### 3.1.2 Performance and Security Target Verification
 
@@ -645,6 +646,7 @@ interface StudentMarkRow {
 ## SECTION 4: MOBILE ERP EDITION (v2.1) CAPACITOR BRIDGING ARCHITECTURE
 
 ### 4.1 Hybrid Remote-URL Architecture & Bridge Layer
+
 The v2.1 Mobile ERP Edition implements mobile support as a high-performance Capacitor 8 hybrid wrapper layered over the existing Next.js App Router/tRPC monolithic application (`com.msns.lms`), maintaining zero duplicate UI codebase divergence between web and mobile platforms.
 
 ```
@@ -672,11 +674,13 @@ The v2.1 Mobile ERP Edition implements mobile support as a high-performance Capa
 - **Compilation Safety:** All native module imports are dynamically loaded (`await import(...)`), ensuring that Next.js server-side rendering (SSR) builds execute without `window is not defined` errors.
 
 ### 4.2 Security, Biometrics & Local Storage
+
 - **Local SQLite Encryption:** Encrypted offline storage using `@capacitor-community/sqlite` SQLCipher engines. Passphrases are stored within Android EncryptedSharedPreferences via `@capacitor/preferences`.
 - **Biometric Unlock Gate:** Gated by `@capacitor-community/sqlite` native `androidBiometric` prompt configurations (`biometricAuth: true`).
 - **Token Silent-Refresh & Purging:** `src/trpc/react.tsx` fetch interceptor handles HTTP 401 response codes, attempting silent session refresh or executing full local storage/database purging on failure or explicit sign-out.
 
 ### 4.3 Offline Synchronization Engine & Push Notifications
+
 - **Service Worker Asset Resilience:** `public/sw.js` caches static app shell resources (`/`, CSS, JS bundles) to avoid blank offline pages.
 - **Local Queue Storage:** Offline mutations (`SAVE_MARKS`, `CREATE_DIARY`) append tasks into the local SQLite `sync_queue` table.
 - **Network & State Reconnect Triggers:** `useSyncEngine.ts` processes queue execution upon network restoration (`@capacitor/network`) or app foregrounding (`@capacitor/app`).
@@ -685,4 +689,4 @@ The v2.1 Mobile ERP Edition implements mobile support as a high-performance Capa
 
 ---
 
-*Document generated for MSNS LMS v2.1 — Mobile ERP Edition | lms.msns.edu.pk | BISE Gujranwala Affiliated*
+_Document generated for MSNS LMS v2.1 — Mobile ERP Edition | lms.msns.edu.pk | BISE Gujranwala Affiliated_

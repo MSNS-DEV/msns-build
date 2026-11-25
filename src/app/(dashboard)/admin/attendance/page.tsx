@@ -3,7 +3,13 @@
 import { useMemo } from "react";
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import { GradientStatCard } from "~/components/shared/GradientStatCard";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { api } from "~/trpc/react";
@@ -14,18 +20,20 @@ import {
   UserMinus,
   ClipboardCheck,
   ArrowRight,
-  ShieldAlert
+  ShieldAlert,
 } from "lucide-react";
 import Link from "next/link";
 import dayjs from "dayjs";
 
 function StudentAttendanceDashboardContent() {
-  const { data: activeSession, isLoading: sessionLoading } = api.session.getActiveSession.useQuery();
+  const { data: activeSession, isLoading: sessionLoading } =
+    api.session.getActiveSession.useQuery();
 
-  const { data: classesData, isLoading: classesLoading } = api.class.getClassesWithStudentCount.useQuery(
-    { sessionId: activeSession?.sessionId ?? "" },
-    { enabled: !!activeSession?.sessionId }
-  );
+  const { data: classesData, isLoading: classesLoading } =
+    api.class.getClassesWithStudentCount.useQuery(
+      { sessionId: activeSession?.sessionId ?? "" },
+      { enabled: !!activeSession?.sessionId },
+    );
 
   const stats = useMemo(() => {
     let totalStudents = 0;
@@ -49,9 +57,12 @@ function StudentAttendanceDashboardContent() {
     return (
       <div className="w-full space-y-4">
         <div className="h-10 w-48 animate-pulse rounded-md bg-slate-200 dark:bg-emerald-900/20" />
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+        <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-20 sm:h-32 animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20" />
+            <div
+              key={i}
+              className="h-20 animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20 sm:h-32"
+            />
           ))}
         </div>
         <div className="h-96 w-full animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20" />
@@ -69,9 +80,13 @@ function StudentAttendanceDashboardContent() {
           No Active Academic Session
         </h3>
         <p className="mb-6 max-w-xs text-sm text-muted-foreground">
-          Please set an active session in Session Management before viewing student attendance.
+          Please set an active session in Session Management before viewing
+          student attendance.
         </p>
-        <Button asChild className="bg-emerald-600 hover:bg-emerald-700 text-white">
+        <Button
+          asChild
+          className="bg-emerald-600 text-white hover:bg-emerald-700"
+        >
           <Link href="/admin/sessions">Manage Sessions</Link>
         </Button>
       </div>
@@ -104,7 +119,7 @@ function StudentAttendanceDashboardContent() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+      <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
         <GradientStatCard
           title="Total Students"
           value={stats.totalStudents}
@@ -134,7 +149,7 @@ function StudentAttendanceDashboardContent() {
       {/* Classes List */}
       <Card className="border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card">
         <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-6 py-4 dark:border-border dark:bg-white/5">
-          <CardTitle className="text-lg font-bold text-slate-900 dark:text-foreground flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg font-bold text-slate-900 dark:text-foreground">
             <ClipboardCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             Class Registers
           </CardTitle>
@@ -155,21 +170,36 @@ function StudentAttendanceDashboardContent() {
                     <th className="px-6 py-3 font-semibold">Class / Grade</th>
                     <th className="px-6 py-3 font-semibold">Section</th>
                     <th className="px-6 py-3 font-semibold">Category</th>
-                    <th className="px-6 py-3 text-center font-semibold">Enrolled Students</th>
-                    <th className="px-6 py-3 text-center font-semibold">{"Today's Register"}</th>
-                    <th className="px-6 py-3 text-right font-semibold">Action</th>
+                    <th className="px-6 py-3 text-center font-semibold">
+                      Enrolled Students
+                    </th>
+                    <th className="px-6 py-3 text-center font-semibold">
+                      {"Today's Register"}
+                    </th>
+                    <th className="px-6 py-3 text-right font-semibold">
+                      Action
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-border">
                   {classesData.map((c) => {
-                    const hasAttendanceMarked = c.presentCount > 0 || c.absentCount > 0 || c.leaveCount > 0;
+                    const hasAttendanceMarked =
+                      c.presentCount > 0 ||
+                      c.absentCount > 0 ||
+                      c.leaveCount > 0;
                     return (
-                      <tr key={c.classId} className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02]">
+                      <tr
+                        key={c.classId}
+                        className="hover:bg-slate-50/50 dark:hover:bg-white/[0.02]"
+                      >
                         <td className="px-6 py-4 font-bold text-slate-900 dark:text-foreground">
                           {c.grade}
                         </td>
                         <td className="px-6 py-4">
-                          <Badge variant="outline" className="border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400">
+                          <Badge
+                            variant="outline"
+                            className="border-emerald-500/20 bg-emerald-500/5 text-emerald-600 dark:text-emerald-400"
+                          >
                             {c.section}
                           </Badge>
                         </td>
@@ -182,21 +212,34 @@ function StudentAttendanceDashboardContent() {
                         <td className="px-6 py-4">
                           {hasAttendanceMarked ? (
                             <div className="flex items-center justify-center gap-2 text-xs font-semibold">
-                              <span className="text-emerald-600 dark:text-emerald-400">{c.presentCount} P</span>
+                              <span className="text-emerald-600 dark:text-emerald-400">
+                                {c.presentCount} P
+                              </span>
                               <span className="text-slate-400">/</span>
-                              <span className="text-red-500">{c.absentCount} A</span>
+                              <span className="text-red-500">
+                                {c.absentCount} A
+                              </span>
                               <span className="text-slate-400">/</span>
-                              <span className="text-amber-500">{c.leaveCount} L</span>
+                              <span className="text-amber-500">
+                                {c.leaveCount} L
+                              </span>
                             </div>
                           ) : (
-                            <div className="text-center text-xs text-muted-foreground italic">
+                            <div className="text-center text-xs italic text-muted-foreground">
                               Not Marked
                             </div>
                           )}
                         </td>
                         <td className="px-6 py-4 text-right">
-                          <Button size="sm" variant="ghost" className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-emerald-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-950/20 gap-1.5" asChild>
-                            <Link href={`/admin/sessions/class/?classId=${c.classId}&sessionId=${activeSession.sessionId}&tab=attendance`}>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="gap-1.5 text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 dark:text-emerald-400 dark:hover:bg-emerald-950/20 dark:hover:text-emerald-300"
+                            asChild
+                          >
+                            <Link
+                              href={`/admin/sessions/class/?classId=${c.classId}&sessionId=${activeSession.sessionId}&tab=attendance`}
+                            >
                               Manage Register
                               <ArrowRight className="h-4 w-4" />
                             </Link>

@@ -41,7 +41,9 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
   const urlReport = searchParams.get("report");
   const urlCategory = searchParams.get("category") as ReportCategory | null;
 
-  const [activeCategory, setActiveCategory] = useState<ReportCategory | "all">("all");
+  const [activeCategory, setActiveCategory] = useState<ReportCategory | "all">(
+    "all",
+  );
   const [selectedReportId, setSelectedReportId] = useState<string>(
     urlReport && REPORT_DEFINITIONS[urlReport]
       ? urlReport
@@ -55,7 +57,10 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
       setSelectedReportId(urlReport);
       const def = REPORT_DEFINITIONS[urlReport];
       if (def) setActiveCategory(def.category);
-    } else if (urlCategory && ["students", "admissions", "academics", "finance"].includes(urlCategory)) {
+    } else if (
+      urlCategory &&
+      ["students", "admissions", "academics", "finance"].includes(urlCategory)
+    ) {
       setActiveCategory(urlCategory);
     }
   }, [urlReport, urlCategory]);
@@ -64,7 +69,9 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
   const [selectedSessionId, setSelectedSessionId] = useState<string>("");
   const [selectedClassId, setSelectedClassId] = useState<string>("");
   const [selectedSection, setSelectedSection] = useState<string>("");
-  const [selectedGender, setSelectedGender] = useState<"ALL" | "MALE" | "FEMALE">("ALL");
+  const [selectedGender, setSelectedGender] = useState<
+    "ALL" | "MALE" | "FEMALE"
+  >("ALL");
   const [selectedMonth, setSelectedMonth] = useState<number | "">("");
   const [selectedYear, setSelectedYear] = useState<number | "">("");
   const [startDate, setStartDate] = useState<string>("");
@@ -79,10 +86,14 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
 
   // Export State
   const [isExporting, setIsExporting] = useState(false);
-  const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(null);
+  const [exportingFormat, setExportingFormat] = useState<ExportFormat | null>(
+    null,
+  );
 
   // Active Definition
-  const currentDef = REPORT_DEFINITIONS[selectedReportId] ?? REPORT_DEFINITIONS["enrolled-students"]!;
+  const currentDef =
+    REPORT_DEFINITIONS[selectedReportId] ??
+    REPORT_DEFINITIONS["enrolled-students"]!;
 
   // Load Filter Options
   const { data: filterOptions } = api.report.getFilterOptions.useQuery();
@@ -92,7 +103,8 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
     if (filterOptions?.sessions && !selectedSessionId) {
       const active = filterOptions.sessions.find((s) => s.isActive);
       if (active) setSelectedSessionId(active.sessionId);
-      else if (filterOptions.sessions[0]) setSelectedSessionId(filterOptions.sessions[0].sessionId);
+      else if (filterOptions.sessions[0])
+        setSelectedSessionId(filterOptions.sessions[0].sessionId);
     }
   }, [filterOptions, selectedSessionId]);
 
@@ -186,9 +198,12 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
-      toast.success(`${currentDef.title} downloaded as ${format.toUpperCase()}`, {
-        description: `Exported ${res.totalRows} records successfully`,
-      });
+      toast.success(
+        `${currentDef.title} downloaded as ${format.toUpperCase()}`,
+        {
+          description: `Exported ${res.totalRows} records successfully`,
+        },
+      );
     } catch (err) {
       console.error("Export error:", err);
       toast.error("Export generation failed. Please try again.");
@@ -201,11 +216,14 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
   // Filtered Catalog
   const filteredCatalog = useMemo(() => {
     return ALL_REPORTS_LIST.filter((rep) => {
-      const matchCat = activeCategory === "all" || rep.category === activeCategory;
+      const matchCat =
+        activeCategory === "all" || rep.category === activeCategory;
       const matchSearch =
         !searchCatalogQuery ||
         rep.title.toLowerCase().includes(searchCatalogQuery.toLowerCase()) ||
-        rep.description.toLowerCase().includes(searchCatalogQuery.toLowerCase());
+        rep.description
+          .toLowerCase()
+          .includes(searchCatalogQuery.toLowerCase());
       return matchCat && matchSearch;
     });
   }, [activeCategory, searchCatalogQuery]);
@@ -214,9 +232,12 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
   const categoryCounts = useMemo(() => {
     return {
       all: ALL_REPORTS_LIST.length,
-      students: ALL_REPORTS_LIST.filter((r) => r.category === "students").length,
-      admissions: ALL_REPORTS_LIST.filter((r) => r.category === "admissions").length,
-      academics: ALL_REPORTS_LIST.filter((r) => r.category === "academics").length,
+      students: ALL_REPORTS_LIST.filter((r) => r.category === "students")
+        .length,
+      admissions: ALL_REPORTS_LIST.filter((r) => r.category === "admissions")
+        .length,
+      academics: ALL_REPORTS_LIST.filter((r) => r.category === "academics")
+        .length,
       finance: ALL_REPORTS_LIST.filter((r) => r.category === "finance").length,
     };
   }, []);
@@ -224,29 +245,36 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
   return (
     <div className="w-full space-y-6">
       {/* 1. Header Banner */}
-      <div className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-900/40 via-teal-950/30 to-slate-900/60 p-6 sm:p-8 backdrop-blur-2xl shadow-xl">
+      <div className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-900/40 via-teal-950/30 to-slate-900/60 p-6 shadow-xl backdrop-blur-2xl sm:p-8">
         <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/30">
+              <Badge className="border-emerald-500/30 bg-emerald-500/20 text-emerald-300 hover:bg-emerald-500/30">
                 <ShieldCheck className="mr-1.5 h-3.5 w-3.5" />
                 M.S. Naz High School ERP
               </Badge>
-              <Badge variant="outline" className="text-slate-300 border-white/10">
+              <Badge
+                variant="outline"
+                className="border-white/10 text-slate-300"
+              >
                 Regulatory & Academic Vault
               </Badge>
-              <span className="text-xs font-semibold text-emerald-400/80">32 Comprehensive Reports</span>
+              <span className="text-xs font-semibold text-emerald-400/80">
+                32 Comprehensive Reports
+              </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            <h1 className="text-2xl font-black tracking-tight text-white sm:text-3xl">
               Reports & Regulatory Center
             </h1>
-            <p className="max-w-3xl text-sm text-slate-300/80 leading-relaxed">
-              Official school registers, student enrollment lists, admission form tracking, examination rankings, and
-              revenue balance sheets. Download instantly in{" "}
-              <span className="text-emerald-400 font-semibold">PDF</span>,{" "}
-              <span className="text-teal-400 font-semibold">Excel (XLSX)</span>,{" "}
-              <span className="text-blue-400 font-semibold">CSV</span>, and{" "}
-              <span className="text-purple-400 font-semibold">Word (DOCX)</span>.
+            <p className="max-w-3xl text-sm leading-relaxed text-slate-300/80">
+              Official school registers, student enrollment lists, admission
+              form tracking, examination rankings, and revenue balance sheets.
+              Download instantly in{" "}
+              <span className="font-semibold text-emerald-400">PDF</span>,{" "}
+              <span className="font-semibold text-teal-400">Excel (XLSX)</span>,{" "}
+              <span className="font-semibold text-blue-400">CSV</span>, and{" "}
+              <span className="font-semibold text-purple-400">Word (DOCX)</span>
+              .
             </p>
           </div>
 
@@ -258,7 +286,9 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
               disabled={reportFetching}
               className="border-emerald-500/30 bg-emerald-950/40 text-emerald-200 hover:bg-emerald-900/50 hover:text-white"
             >
-              <RotateCcw className={`mr-2 h-3.5 w-3.5 ${reportFetching ? "animate-spin" : ""}`} />
+              <RotateCcw
+                className={`mr-2 h-3.5 w-3.5 ${reportFetching ? "animate-spin" : ""}`}
+              />
               Refresh
             </Button>
             <Button
@@ -275,16 +305,16 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
 
         {/* Ambient Decorative Accents */}
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute -left-20 -bottom-20 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl" />
+        <div className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-teal-500/10 blur-3xl" />
       </div>
 
       {/* 2. Catalog Selector Bar (Tabs & Quick Search) */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {/* Category Pills */}
-        <div className="flex flex-wrap gap-1.5 p-1 rounded-2xl border border-slate-200/80 bg-white/70 dark:border-border dark:bg-card/70 backdrop-blur-md shadow-sm">
+        <div className="flex flex-wrap gap-1.5 rounded-2xl border border-slate-200/80 bg-white/70 p-1 shadow-sm backdrop-blur-md dark:border-border dark:bg-card/70">
           <button
             onClick={() => setActiveCategory("all")}
-            className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+            className={`rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
               activeCategory === "all"
                 ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -294,7 +324,7 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
           </button>
           <button
             onClick={() => setActiveCategory("students")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
               activeCategory === "students"
                 ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -305,7 +335,7 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
           </button>
           <button
             onClick={() => setActiveCategory("admissions")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
               activeCategory === "admissions"
                 ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -316,7 +346,7 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
           </button>
           <button
             onClick={() => setActiveCategory("academics")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
               activeCategory === "academics"
                 ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -327,7 +357,7 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
           </button>
           <button
             onClick={() => setActiveCategory("finance")}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all ${
+            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-bold transition-all ${
               activeCategory === "finance"
                 ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
                 : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white"
@@ -345,14 +375,14 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
             placeholder="Search report titles..."
             value={searchCatalogQuery}
             onChange={(e) => setSearchCatalogQuery(e.target.value)}
-            className="pl-9 h-9 text-xs rounded-xl bg-white/70 dark:bg-card/70 border-slate-200 dark:border-border"
+            className="h-9 rounded-xl border-slate-200 bg-white/70 pl-9 text-xs dark:border-border dark:bg-card/70"
           />
         </div>
       </div>
 
       {/* 3. Horizontal Report Selector Carousel / Quick Pick */}
-      <div className="overflow-x-auto pb-2 scrollbar-thin">
-        <div className="flex gap-2 min-w-max">
+      <div className="scrollbar-thin overflow-x-auto pb-2">
+        <div className="flex min-w-max gap-2">
           {filteredCatalog.map((rep) => {
             const isSelected = rep.id === selectedReportId;
             return (
@@ -362,20 +392,26 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                   setSelectedReportId(rep.id);
                   setCurrentPage(1);
                 }}
-                className={`flex flex-col text-left p-3 rounded-2xl border transition-all duration-200 max-w-[220px] ${
+                className={`flex max-w-[220px] flex-col rounded-2xl border p-3 text-left transition-all duration-200 ${
                   isSelected
-                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-950 dark:text-emerald-100 shadow-md ring-1 ring-emerald-500/30"
-                    : "border-slate-200/80 bg-white/60 hover:bg-slate-50 text-slate-700 dark:border-border dark:bg-card/60 dark:text-slate-300 dark:hover:bg-card"
+                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-950 shadow-md ring-1 ring-emerald-500/30 dark:text-emerald-100"
+                    : "border-slate-200/80 bg-white/60 text-slate-700 hover:bg-slate-50 dark:border-border dark:bg-card/60 dark:text-slate-300 dark:hover:bg-card"
                 }`}
               >
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-emerald-600 dark:text-emerald-400">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
                     {rep.category}
                   </span>
-                  {isSelected && <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />}
+                  {isSelected && (
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+                  )}
                 </div>
-                <span className="text-xs font-bold line-clamp-1 leading-snug">{rep.title}</span>
-                <span className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{rep.shortTitle}</span>
+                <span className="line-clamp-1 text-xs font-bold leading-snug">
+                  {rep.title}
+                </span>
+                <span className="mt-0.5 line-clamp-1 text-[10px] text-muted-foreground">
+                  {rep.shortTitle}
+                </span>
               </button>
             );
           })}
@@ -383,19 +419,22 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
       </div>
 
       {/* 4. Active Report Workspace */}
-      <div className="rounded-3xl border border-slate-200/90 bg-white/80 dark:border-border dark:bg-card/90 shadow-xl backdrop-blur-xl overflow-hidden">
+      <div className="overflow-hidden rounded-3xl border border-slate-200/90 bg-white/80 shadow-xl backdrop-blur-xl dark:border-border dark:bg-card/90">
         {/* 4.1 Report Control Bar: Title & 4-Format Export Action Buttons */}
-        <div className="border-b border-slate-200 dark:border-border bg-slate-50/70 dark:bg-black/30 p-5 sm:p-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex flex-col gap-4 border-b border-slate-200 bg-slate-50/70 p-5 dark:border-border dark:bg-black/30 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <div className="flex items-center gap-2">
-              <Badge variant="outline" className="border-emerald-500/30 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 text-[10px] font-bold">
+              <Badge
+                variant="outline"
+                className="border-emerald-500/30 bg-emerald-50 text-[10px] font-bold text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400"
+              >
                 {currentDef.category.toUpperCase()}
               </Badge>
               <h2 className="text-xl font-black text-slate-900 dark:text-foreground">
                 {currentDef.title}
               </h2>
             </div>
-            <p className="text-xs text-muted-foreground mt-1 max-w-2xl leading-relaxed">
+            <p className="mt-1 max-w-2xl text-xs leading-relaxed text-muted-foreground">
               {currentDef.description}
             </p>
           </div>
@@ -407,10 +446,12 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
               onClick={() => handleExport("pdf")}
               disabled={isExporting}
               size="sm"
-              className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-600/20"
+              className="bg-rose-600 text-xs font-bold text-white shadow-md shadow-rose-600/20 hover:bg-rose-700"
             >
               <FileText className="mr-1.5 h-3.5 w-3.5" />
-              {isExporting && exportingFormat === "pdf" ? "Exporting..." : "PDF"}
+              {isExporting && exportingFormat === "pdf"
+                ? "Exporting..."
+                : "PDF"}
             </Button>
 
             {/* XLSX Button */}
@@ -418,10 +459,12 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
               onClick={() => handleExport("xlsx")}
               disabled={isExporting}
               size="sm"
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20"
+              className="bg-emerald-600 text-xs font-bold text-white shadow-md shadow-emerald-600/20 hover:bg-emerald-700"
             >
               <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
-              {isExporting && exportingFormat === "xlsx" ? "Exporting..." : "Excel (XLSX)"}
+              {isExporting && exportingFormat === "xlsx"
+                ? "Exporting..."
+                : "Excel (XLSX)"}
             </Button>
 
             {/* CSV Button */}
@@ -429,10 +472,12 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
               onClick={() => handleExport("csv")}
               disabled={isExporting}
               size="sm"
-              className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-bold shadow-md shadow-cyan-600/20"
+              className="bg-cyan-600 text-xs font-bold text-white shadow-md shadow-cyan-600/20 hover:bg-cyan-700"
             >
               <Download className="mr-1.5 h-3.5 w-3.5" />
-              {isExporting && exportingFormat === "csv" ? "Exporting..." : "CSV"}
+              {isExporting && exportingFormat === "csv"
+                ? "Exporting..."
+                : "CSV"}
             </Button>
 
             {/* DOCX Button */}
@@ -440,27 +485,31 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
               onClick={() => handleExport("docx")}
               disabled={isExporting}
               size="sm"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20"
+              className="bg-indigo-600 text-xs font-bold text-white shadow-md shadow-indigo-600/20 hover:bg-indigo-700"
             >
               <FileCheck2 className="mr-1.5 h-3.5 w-3.5" />
-              {isExporting && exportingFormat === "docx" ? "Exporting..." : "Word (DOCX)"}
+              {isExporting && exportingFormat === "docx"
+                ? "Exporting..."
+                : "Word (DOCX)"}
             </Button>
           </div>
         </div>
 
         {/* 4.2 Dynamic Filters Bar */}
-        <div className="p-4 sm:p-6 bg-slate-50/40 dark:bg-card/40 border-b border-slate-200 dark:border-border">
+        <div className="border-b border-slate-200 bg-slate-50/40 p-4 dark:border-border dark:bg-card/40 sm:p-6">
           <div className="flex flex-wrap items-center gap-3">
             {/* Session Selector */}
             {currentDef.filters.session && (
-              <div className="flex flex-col gap-1 min-w-[150px]">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <div className="flex min-w-[150px] flex-col gap-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Academic Session
                 </label>
                 <select
                   value={selectedSessionId}
-                  onChange={(e) => handleFilterChange(setSelectedSessionId, e.target.value)}
-                  className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white dark:border-border dark:bg-card/90 font-medium focus:ring-1 focus:ring-emerald-500 outline-none"
+                  onChange={(e) =>
+                    handleFilterChange(setSelectedSessionId, e.target.value)
+                  }
+                  className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card/90"
                 >
                   <option value="">All Sessions</option>
                   {filterOptions?.sessions?.map((s) => (
@@ -474,14 +523,16 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
 
             {/* Class / Grade Selector */}
             {currentDef.filters.class && (
-              <div className="flex flex-col gap-1 min-w-[140px]">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <div className="flex min-w-[140px] flex-col gap-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Class / Grade
                 </label>
                 <select
                   value={selectedClassId}
-                  onChange={(e) => handleFilterChange(setSelectedClassId, e.target.value)}
-                  className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white dark:border-border dark:bg-card/90 font-medium focus:ring-1 focus:ring-emerald-500 outline-none"
+                  onChange={(e) =>
+                    handleFilterChange(setSelectedClassId, e.target.value)
+                  }
+                  className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card/90"
                 >
                   <option value="">All Classes</option>
                   {filterOptions?.classes?.map((c) => (
@@ -495,14 +546,16 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
 
             {/* Section Selector */}
             {currentDef.filters.section && (
-              <div className="flex flex-col gap-1 min-w-[120px]">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <div className="flex min-w-[120px] flex-col gap-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Section
                 </label>
                 <select
                   value={selectedSection}
-                  onChange={(e) => handleFilterChange(setSelectedSection, e.target.value)}
-                  className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white dark:border-border dark:bg-card/90 font-medium focus:ring-1 focus:ring-emerald-500 outline-none"
+                  onChange={(e) =>
+                    handleFilterChange(setSelectedSection, e.target.value)
+                  }
+                  className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card/90"
                 >
                   <option value="">All Sections</option>
                   {filterOptions?.sections?.map((sec) => (
@@ -516,14 +569,19 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
 
             {/* Gender Selector */}
             {currentDef.filters.gender && (
-              <div className="flex flex-col gap-1 min-w-[110px]">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <div className="flex min-w-[110px] flex-col gap-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Gender
                 </label>
                 <select
                   value={selectedGender}
-                  onChange={(e) => handleFilterChange(setSelectedGender, e.target.value as "ALL" | "MALE" | "FEMALE")}
-                  className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white dark:border-border dark:bg-card/90 font-medium focus:ring-1 focus:ring-emerald-500 outline-none"
+                  onChange={(e) =>
+                    handleFilterChange(
+                      setSelectedGender,
+                      e.target.value as "ALL" | "MALE" | "FEMALE",
+                    )
+                  }
+                  className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card/90"
                 >
                   <option value="ALL">All Genders</option>
                   <option value="MALE">Boys Only</option>
@@ -534,14 +592,16 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
 
             {/* City Selector */}
             {currentDef.filters.city && (
-              <div className="flex flex-col gap-1 min-w-[130px]">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <div className="flex min-w-[130px] flex-col gap-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   City / Town
                 </label>
                 <select
                   value={selectedCity}
-                  onChange={(e) => handleFilterChange(setSelectedCity, e.target.value)}
-                  className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white dark:border-border dark:bg-card/90 font-medium focus:ring-1 focus:ring-emerald-500 outline-none"
+                  onChange={(e) =>
+                    handleFilterChange(setSelectedCity, e.target.value)
+                  }
+                  className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card/90"
                 >
                   <option value="">All Catchments</option>
                   {filterOptions?.cities?.map((city) => (
@@ -555,14 +615,16 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
 
             {/* Exam Selector */}
             {currentDef.filters.exam && (
-              <div className="flex flex-col gap-1 min-w-[160px]">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <div className="flex min-w-[160px] flex-col gap-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Exam Term
                 </label>
                 <select
                   value={selectedExamId}
-                  onChange={(e) => handleFilterChange(setSelectedExamId, e.target.value)}
-                  className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white dark:border-border dark:bg-card/90 font-medium focus:ring-1 focus:ring-emerald-500 outline-none"
+                  onChange={(e) =>
+                    handleFilterChange(setSelectedExamId, e.target.value)
+                  }
+                  className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card/90"
                 >
                   <option value="">All Terms / Latest</option>
                   {filterOptions?.exams?.map((ex) => (
@@ -576,8 +638,8 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
 
             {/* Month Selector */}
             {currentDef.filters.month && (
-              <div className="flex flex-col gap-1 min-w-[120px]">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <div className="flex min-w-[120px] flex-col gap-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Month
                 </label>
                 <select
@@ -588,7 +650,7 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                       e.target.value ? Number(e.target.value) : "",
                     )
                   }
-                  className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white dark:border-border dark:bg-card/90 font-medium focus:ring-1 focus:ring-emerald-500 outline-none"
+                  className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card/90"
                 >
                   <option value="">All Months</option>
                   <option value={1}>January</option>
@@ -609,8 +671,8 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
 
             {/* Year Selector */}
             {currentDef.filters.year && (
-              <div className="flex flex-col gap-1 min-w-[110px]">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+              <div className="flex min-w-[110px] flex-col gap-1">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                   Year
                 </label>
                 <select
@@ -621,7 +683,7 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                       e.target.value ? Number(e.target.value) : "",
                     )
                   }
-                  className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white dark:border-border dark:bg-card/90 font-medium focus:ring-1 focus:ring-emerald-500 outline-none"
+                  className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card/90"
                 >
                   <option value="">All Years</option>
                   {[2023, 2024, 2025, 2026, 2027].map((yr) => (
@@ -637,33 +699,37 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
             {currentDef.filters.dateRange && (
               <>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                     From Date
                   </label>
                   <input
                     type="date"
                     value={startDate}
-                    onChange={(e) => handleFilterChange(setStartDate, e.target.value)}
-                    className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white dark:border-border dark:bg-card/90 font-medium focus:ring-1 focus:ring-emerald-500 outline-none"
+                    onChange={(e) =>
+                      handleFilterChange(setStartDate, e.target.value)
+                    }
+                    className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card/90"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                  <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                     To Date
                   </label>
                   <input
                     type="date"
                     value={endDate}
-                    onChange={(e) => handleFilterChange(setEndDate, e.target.value)}
-                    className="h-9 px-3 text-xs rounded-xl border border-slate-200 bg-white dark:border-border dark:bg-card/90 font-medium focus:ring-1 focus:ring-emerald-500 outline-none"
+                    onChange={(e) =>
+                      handleFilterChange(setEndDate, e.target.value)
+                    }
+                    className="h-9 rounded-xl border border-slate-200 bg-white px-3 text-xs font-medium outline-none focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card/90"
                   />
                 </div>
               </>
             )}
 
             {/* Search within Report */}
-            <div className="flex flex-col gap-1 min-w-[180px] ml-auto">
-              <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+            <div className="ml-auto flex min-w-[180px] flex-col gap-1">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
                 Filter Records
               </label>
               <div className="relative">
@@ -671,8 +737,10 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                 <Input
                   placeholder="Keyword search..."
                   value={filterSearch}
-                  onChange={(e) => handleFilterChange(setFilterSearch, e.target.value)}
-                  className="pl-8 h-9 text-xs rounded-xl bg-white dark:bg-card/90 border-slate-200 dark:border-border"
+                  onChange={(e) =>
+                    handleFilterChange(setFilterSearch, e.target.value)
+                  }
+                  className="h-9 rounded-xl border-slate-200 bg-white pl-8 text-xs dark:border-border dark:bg-card/90"
                 />
               </div>
             </div>
@@ -693,54 +761,63 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
         </div>
 
         {/* 4.3 KPI Metrics Summary Cards */}
-        {reportResult?.summaryMetrics && reportResult.summaryMetrics.length > 0 && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 sm:p-6 bg-slate-50/20 dark:bg-black/10 border-b border-slate-200 dark:border-border">
-            {reportResult.summaryMetrics.map((metric, idx) => (
-              <div
-                key={idx}
-                className="p-3.5 rounded-2xl border border-slate-200/80 bg-white/70 dark:border-border dark:bg-card/70 backdrop-blur-md shadow-sm"
-              >
-                <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
-                  {metric.label}
+        {reportResult?.summaryMetrics &&
+          reportResult.summaryMetrics.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 border-b border-slate-200 bg-slate-50/20 p-4 dark:border-border dark:bg-black/10 sm:p-6 md:grid-cols-4">
+              {reportResult.summaryMetrics.map((metric, idx) => (
+                <div
+                  key={idx}
+                  className="rounded-2xl border border-slate-200/80 bg-white/70 p-3.5 shadow-sm backdrop-blur-md dark:border-border dark:bg-card/70"
+                >
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    {metric.label}
+                  </div>
+                  <div className="mt-0.5 text-xl font-black text-slate-900 dark:text-emerald-400 sm:text-2xl">
+                    {metric.value}
+                  </div>
                 </div>
-                <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-emerald-400 mt-0.5">
-                  {metric.value}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
 
         {/* 4.4 Data Table Preview */}
         <div className="overflow-x-auto">
           {reportLoading ? (
-            <div className="p-16 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+            <div className="flex flex-col items-center justify-center gap-3 p-16 text-muted-foreground">
               <RotateCcw className="h-8 w-8 animate-spin text-emerald-600" />
-              <p className="text-sm font-semibold">Generating report records from database...</p>
+              <p className="text-sm font-semibold">
+                Generating report records from database...
+              </p>
             </div>
           ) : !reportResult?.rows || reportResult.rows.length === 0 ? (
-            <div className="p-16 flex flex-col items-center justify-center gap-3 text-center">
-              <div className="p-4 rounded-full bg-amber-500/10 text-amber-500">
+            <div className="flex flex-col items-center justify-center gap-3 p-16 text-center">
+              <div className="rounded-full bg-amber-500/10 p-4 text-amber-500">
                 <AlertCircle className="h-8 w-8" />
               </div>
               <h3 className="text-base font-bold text-slate-800 dark:text-foreground">
                 No matching records found
               </h3>
-              <p className="text-xs text-muted-foreground max-w-sm">
-                No data matched the active filters for {currentDef.title}. Try loosening your session, class, or date parameters.
+              <p className="max-w-sm text-xs text-muted-foreground">
+                No data matched the active filters for {currentDef.title}. Try
+                loosening your session, class, or date parameters.
               </p>
-              <Button size="sm" variant="outline" onClick={handleResetFilters} className="mt-2 text-xs">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleResetFilters}
+                className="mt-2 text-xs"
+              >
                 Reset All Filters
               </Button>
             </div>
           ) : (
-            <table className="w-full text-left border-collapse text-xs">
+            <table className="w-full border-collapse text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 dark:border-border bg-slate-100/70 dark:bg-slate-900/60 text-slate-700 dark:text-slate-300">
+                <tr className="border-b border-slate-200 bg-slate-100/70 text-slate-700 dark:border-border dark:bg-slate-900/60 dark:text-slate-300">
                   {currentDef.columns.map((col) => (
                     <th
                       key={col.key}
-                      className={`p-3 font-bold uppercase tracking-wider text-[10px] ${
+                      className={`p-3 text-[10px] font-bold uppercase tracking-wider ${
                         col.align === "right"
                           ? "text-right"
                           : col.align === "center"
@@ -760,7 +837,9 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                     <tr
                       key={rowIdx}
                       className={`transition-colors hover:bg-emerald-50/40 dark:hover:bg-emerald-950/20 ${
-                        isEven ? "bg-white dark:bg-card" : "bg-slate-50/40 dark:bg-card/40"
+                        isEven
+                          ? "bg-white dark:bg-card"
+                          : "bg-slate-50/40 dark:bg-card/40"
                       }`}
                     >
                       {currentDef.columns.map((col) => {
@@ -770,7 +849,8 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                         if (col.format === "badge") {
                           const str =
                             val !== null && val !== undefined
-                              ? typeof val === "string" || typeof val === "number"
+                              ? typeof val === "string" ||
+                                typeof val === "number"
                                 ? String(val)
                                 : JSON.stringify(val)
                               : "-";
@@ -796,10 +876,10 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                                 variant="outline"
                                 className={`text-[10px] font-bold ${
                                   isSuccess
-                                    ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:text-emerald-400"
+                                    ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                                     : isWarning
-                                      ? "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:text-amber-400"
-                                      : "bg-rose-500/10 text-rose-600 border-rose-500/20 dark:text-rose-400"
+                                      ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                      : "border-rose-500/20 bg-rose-500/10 text-rose-600 dark:text-rose-400"
                                 }`}
                               >
                                 {str}
@@ -817,7 +897,10 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                                 ? parseFloat(val)
                                 : NaN;
                           return (
-                            <td key={col.key} className="p-3 font-semibold text-right text-slate-800 dark:text-slate-200">
+                            <td
+                              key={col.key}
+                              className="p-3 text-right font-semibold text-slate-800 dark:text-slate-200"
+                            >
                               {isNaN(num) ? "-" : `Rs. ${num.toLocaleString()}`}
                             </td>
                           );
@@ -832,7 +915,10 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                                 ? parseFloat(val)
                                 : NaN;
                           return (
-                            <td key={col.key} className="p-3 font-semibold text-right text-emerald-600 dark:text-emerald-400">
+                            <td
+                              key={col.key}
+                              className="p-3 text-right font-semibold text-emerald-600 dark:text-emerald-400"
+                            >
                               {isNaN(num) ? "-" : `${num.toFixed(1)}%`}
                             </td>
                           );
@@ -842,7 +928,10 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                         if (val !== null && val !== undefined) {
                           if (typeof val === "string") {
                             displayVal = val;
-                          } else if (typeof val === "number" || typeof val === "boolean") {
+                          } else if (
+                            typeof val === "number" ||
+                            typeof val === "boolean"
+                          ) {
                             displayVal = String(val);
                           } else if (val instanceof Date) {
                             displayVal = val.toLocaleDateString("en-PK");
@@ -875,10 +964,11 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
         </div>
 
         {/* 4.5 Pagination Controls */}
-        <div className="p-4 sm:p-5 border-t border-slate-200 dark:border-border bg-slate-50/50 dark:bg-card flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-200 bg-slate-50/50 p-4 dark:border-border dark:bg-card sm:flex-row sm:p-5">
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             <span>
-              Showing {reportResult?.rows?.length ?? 0} of {reportResult?.allRowsCount ?? 0} records
+              Showing {reportResult?.rows?.length ?? 0} of{" "}
+              {reportResult?.allRowsCount ?? 0} records
             </span>
             <span className="hidden sm:inline">•</span>
             <div className="flex items-center gap-1.5">
@@ -889,7 +979,7 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="h-7 px-2 text-xs rounded-lg border border-slate-200 bg-white dark:border-border dark:bg-card font-medium outline-none"
+                className="h-7 rounded-lg border border-slate-200 bg-white px-2 text-xs font-medium outline-none dark:border-border dark:bg-card"
               >
                 <option value={25}>25</option>
                 <option value={50}>50</option>
@@ -910,14 +1000,16 @@ function ReportsHubContent({ role: _role = "admin", defaultReportId }: Props) {
               <ChevronLeft className="mr-1 h-3.5 w-3.5" />
               Previous
             </Button>
-            <span className="text-xs font-bold px-2 text-slate-600 dark:text-slate-300">
+            <span className="px-2 text-xs font-bold text-slate-600 dark:text-slate-300">
               Page {currentPage} of {reportResult?.totalPages ?? 1}
             </span>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setCurrentPage((p) => p + 1)}
-              disabled={currentPage >= (reportResult?.totalPages ?? 1) || reportLoading}
+              disabled={
+                currentPage >= (reportResult?.totalPages ?? 1) || reportLoading
+              }
               className="h-8 text-xs font-bold"
             >
               Next
@@ -937,7 +1029,9 @@ export function ReportsHub(props: Props) {
         <div className="flex h-96 items-center justify-center">
           <div className="flex items-center gap-3 text-slate-500">
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
-            <span className="text-sm font-medium">Loading reports workspace...</span>
+            <span className="text-sm font-medium">
+              Loading reports workspace...
+            </span>
           </div>
         </div>
       }

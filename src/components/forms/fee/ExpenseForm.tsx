@@ -129,9 +129,15 @@ export function ExpenseForm({
       return;
     }
 
-    void import("~/lib/mobile/notification-service").then(({ sendModuleActionNotification }) => {
-      void sendModuleActionNotification("Fee & Finance", "Expense Form Submitted", `${formData.title} - PKR ${formData.amount}`);
-    });
+    void import("~/lib/mobile/notification-service").then(
+      ({ sendModuleActionNotification }) => {
+        void sendModuleActionNotification(
+          "Fee & Finance",
+          "Expense Form Submitted",
+          `${formData.title} - PKR ${formData.amount}`,
+        );
+      },
+    );
 
     onSubmit(formData);
   };

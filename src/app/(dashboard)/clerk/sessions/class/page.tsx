@@ -1,14 +1,29 @@
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
-import { ClassTimetableTab, ClassAttendanceTab, ClassExamsTab, ClassDiariesTab, ClassSubjectsTab } from "~/components/blocks/class/lazy-tabs";
+import {
+  ClassTimetableTab,
+  ClassAttendanceTab,
+  ClassExamsTab,
+  ClassDiariesTab,
+  ClassSubjectsTab,
+} from "~/components/blocks/class/lazy-tabs";
 import { ClassAllotmentTable } from "~/components/tables/ClassAlotment";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Users, Library, Clock, FileText, BookOpen, ClipboardCheck } from "lucide-react";
+import {
+  Users,
+  Library,
+  Clock,
+  FileText,
+  BookOpen,
+  ClipboardCheck,
+} from "lucide-react";
 
 type PageProps = {
   searchParams: Promise<{ classId: string; sessionId: string; tab?: string }>;
 };
 
-export default async function ClerkClassDetailsPage({ searchParams }: PageProps) {
+export default async function ClerkClassDetailsPage({
+  searchParams,
+}: PageProps) {
   const searchProps = await searchParams;
 
   const breadcrumbs = [

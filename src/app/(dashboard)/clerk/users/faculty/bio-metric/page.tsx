@@ -2,9 +2,9 @@ import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import { RegisterEmployeeBioMetric } from "~/components/attendance/register-bio";
 import { ScrollArea } from "~/components/ui/scroll-area";
 
-export default async function EmployeeRegistration(
-  props: { searchParams: Promise<Record<string, string | string[] | undefined>> },
-) {
+export default async function EmployeeRegistration(props: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { employeeId, employeeName } = (await props.searchParams) as {
     employeeId: string;
     employeeName: string;

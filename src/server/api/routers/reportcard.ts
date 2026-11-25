@@ -1,5 +1,10 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, officeProcedure, teacherProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  officeProcedure,
+  teacherProcedure,
+} from "../trpc";
 import { z } from "zod";
 import { assertCanReadStudent, assertCanTeachClass } from "~/server/api/access";
 
@@ -23,7 +28,8 @@ export const reportCardRouter = createTRPCRouter({
         const exam = await ctx.db.exam.findUnique({
           where: { examId: input.examId },
         });
-        if (!exam) throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
+        if (!exam)
+          throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
 
         // Get class subjects
         const classSubjects = await ctx.db.classSubject.findMany({
@@ -45,7 +51,12 @@ export const reportCardRouter = createTRPCRouter({
         });
 
         if (students.length === 0) {
-          return { success: true, message: "No students in this class", generatedCount: 0, skippedCount: 0 };
+          return {
+            success: true,
+            message: "No students in this class",
+            generatedCount: 0,
+            skippedCount: 0,
+          };
         }
 
         let generatedCount = 0;
@@ -61,7 +72,10 @@ export const reportCardRouter = createTRPCRouter({
 
           // Check if marks exist and if all subjects are uploaded
           const uploadedSubjects = new Set(marks.map((m) => m.subjectId));
-          if (marks.length === 0 || uploadedSubjects.size !== classSubjects.length) {
+          if (
+            marks.length === 0 ||
+            uploadedSubjects.size !== classSubjects.length
+          ) {
             skippedCount++;
             continue;
           }
@@ -146,12 +160,24 @@ export const reportCardRouter = createTRPCRouter({
             });
             for (const parent of parents) {
               const matchedStudent = await ctx.db.students.findFirst({
-                where: { studentId: { in: parent.linkedStudentIds.filter((id) => studentIds.includes(id)) } },
+                where: {
+                  studentId: {
+                    in: parent.linkedStudentIds.filter((id) =>
+                      studentIds.includes(id),
+                    ),
+                  },
+                },
                 select: { studentName: true },
               });
               const name = matchedStudent?.studentName ?? "Student";
-              const { sendPushNotification } = await import("~/server/mobile/fcm");
-              await sendPushNotification([], [parent.guardentId], "Report Card Published", `The report card for ${name} has been published for ${exam.examTypeEnum}.`);
+              const { sendPushNotification } =
+                await import("~/server/mobile/fcm");
+              await sendPushNotification(
+                [],
+                [parent.guardentId],
+                "Report Card Published",
+                `The report card for ${name} has been published for ${exam.examTypeEnum}.`,
+              );
             }
           } catch (err) {
             console.error("Failed to send report card push notification:", err);
@@ -260,8 +286,7 @@ export const reportCardRouter = createTRPCRouter({
         });
 
         const overallPercentage = (totalObtained / totalMax) * 100;
-        const status =
-          overallPercentage >= 45 ? "PASSED" : "FAILED";
+        const status = overallPercentage >= 45 ? "PASSED" : "FAILED";
 
         // Check if report card already exists
         const existingReport = await ctx.db.reportCard.findFirst({
@@ -334,8 +359,14 @@ export const reportCardRouter = createTRPCRouter({
             });
             const parentIds = parents.map((p) => p.guardentId);
             if (parentIds.length > 0) {
-              const { sendPushNotification } = await import("~/server/mobile/fcm");
-              await sendPushNotification([], parentIds, "Report Card Published", `The report card for ${name} has been published for ${exam.examTypeEnum}.`);
+              const { sendPushNotification } =
+                await import("~/server/mobile/fcm");
+              await sendPushNotification(
+                [],
+                parentIds,
+                "Report Card Published",
+                `The report card for ${name} has been published for ${exam.examTypeEnum}.`,
+              );
             }
           } catch (err) {
             console.error("Failed to send report card push notification:", err);
@@ -399,14 +430,12 @@ export const reportCardRouter = createTRPCRouter({
             obtainedMarks: detail.obtainedMarks,
             totalMarks: detail.totalMarks,
             percentage,
-            remarks:
-              percentage >= 45 ? "Passed" : "Failed",
+            remarks: percentage >= 45 ? "Passed" : "Failed",
           };
         });
 
         const overallPercentage = (totalObtained / totalMax) * 100;
-        const status =
-          overallPercentage >= 45 ? "PASSED" : "FAILED";
+        const status = overallPercentage >= 45 ? "PASSED" : "FAILED";
 
         const updatedReportCard = await ctx.db.$transaction([
           ctx.db.reportCardDetail.deleteMany({

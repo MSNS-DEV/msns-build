@@ -1,4 +1,8 @@
-import { createTRPCRouter, managementProcedure, financeProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  managementProcedure,
+  financeProcedure,
+} from "../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { type Prisma } from "@prisma/client";

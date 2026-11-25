@@ -18,7 +18,8 @@ const REVALIDATE_MS = 5 * 60 * 1000;
  * bcrypt hash of a random value, compared against when the account doesn't
  * exist so that response time doesn't reveal which emails are registered.
  */
-const DUMMY_HASH = "$2b$10$L3yLEiqImnCQ3/e0kmwTbu0PYY0vpQJtNr8d.lO1HpLJLpvgxvZw.";
+const DUMMY_HASH =
+  "$2b$10$L3yLEiqImnCQ3/e0kmwTbu0PYY0vpQJtNr8d.lO1HpLJLpvgxvZw.";
 
 declare module "next-auth" {
   interface Session extends DefaultSession {
@@ -56,7 +57,9 @@ type AppToken = {
  * Re-read the account behind a session token. Returns null when the account
  * was removed, deactivated or had its sessions revoked (tokenVersion bump).
  */
-async function revalidateToken<T extends AppToken>(token: T): Promise<T | null> {
+async function revalidateToken<T extends AppToken>(
+  token: T,
+): Promise<T | null> {
   if (!token.id) return null;
   if (token.accountType === "PARENT") {
     const parent = await db.parentGuardian.findUnique({

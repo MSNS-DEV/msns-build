@@ -16,7 +16,12 @@ export const ledgerRouter = createTRPCRouter({
           .array(
             z.object({
               entryType: z.enum(["DEBIT", "CREDIT"]),
-              accountType: z.enum(["Income", "Expenditure", "Asset", "Liability"]),
+              accountType: z.enum([
+                "Income",
+                "Expenditure",
+                "Asset",
+                "Liability",
+              ]),
               accountCode: z.string().min(1),
               amount: z.number().positive(),
               description: z.string().min(1),
@@ -28,8 +33,12 @@ export const ledgerRouter = createTRPCRouter({
           .min(2)
           .refine(
             (entries) => {
-              const debits = entries.filter((e) => e.entryType === "DEBIT").reduce((s, e) => s + e.amount, 0);
-              const credits = entries.filter((e) => e.entryType === "CREDIT").reduce((s, e) => s + e.amount, 0);
+              const debits = entries
+                .filter((e) => e.entryType === "DEBIT")
+                .reduce((s, e) => s + e.amount, 0);
+              const credits = entries
+                .filter((e) => e.entryType === "CREDIT")
+                .reduce((s, e) => s + e.amount, 0);
               return Math.abs(debits - credits) < 0.01; // float tolerance
             },
             { message: "Double-entry: total debits must equal total credits" },
@@ -38,7 +47,11 @@ export const ledgerRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       const created = await ctx.db.$transaction(
         input.entries.map((entry) =>
@@ -57,7 +70,9 @@ export const ledgerRouter = createTRPCRouter({
       z.object({
         fromDate: z.date().optional(),
         toDate: z.date().optional(),
-        accountType: z.enum(["Income", "Expenditure", "Asset", "Liability"]).optional(),
+        accountType: z
+          .enum(["Income", "Expenditure", "Asset", "Liability"])
+          .optional(),
         sourceType: z.string().optional(),
         page: z.number().default(1),
         pageSize: z.number().default(50),
@@ -105,7 +120,12 @@ export const ledgerRouter = createTRPCRouter({
 
       const entries = await ctx.db.financialLedgerEntry.findMany({
         where,
-        select: { entryType: true, accountCode: true, accountType: true, amount: true },
+        select: {
+          entryType: true,
+          accountCode: true,
+          accountType: true,
+          amount: true,
+        },
       });
 
       const byAccount = entries.reduce(
@@ -123,7 +143,15 @@ export const ledgerRouter = createTRPCRouter({
           }
           return acc;
         },
-        {} as Record<string, { accountCode: string; accountType: string; totalDebit: number; totalCredit: number }>,
+        {} as Record<
+          string,
+          {
+            accountCode: string;
+            accountType: string;
+            totalDebit: number;
+            totalCredit: number;
+          }
+        >,
       );
 
       const accounts = Object.values(byAccount);
@@ -147,7 +175,11 @@ export const ledgerRouter = createTRPCRouter({
       const session = await ctx.db.sessions.findUnique({
         where: { sessionId: input.sessionId },
       });
-      if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
+      if (!session)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Session not found",
+        });
 
       // Everything is scoped to the session's dates (or the requested window inside it).
       const window = sessionWindow(session);
@@ -156,7 +188,10 @@ export const ledgerRouter = createTRPCRouter({
       const explicitWindow = !!(input.fromDate ?? input.toDate);
       const inWindow = (d: Date | null | undefined) =>
         !!d && (!from || d >= from) && (!to || d <= to);
-      const dateFilter = { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) };
+      const dateFilter = {
+        ...(from ? { gte: from } : {}),
+        ...(to ? { lte: to } : {}),
+      };
 
       // Fee income: amounts collected on this session's vouchers, each component counted
       // once (annual components once per student-year), net of discounts.

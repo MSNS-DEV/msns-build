@@ -46,22 +46,32 @@ export const LoginForm = () => {
   useEffect(() => {
     if (session.data) {
       const user = session.data.user;
-      void import("~/lib/mobile/device-auth").then(({ saveDeviceAuthSession }) => {
-        void saveDeviceAuthSession({
-          id: user.id,
-          email: user.email,
-          username: user.username,
-          accountType: user.accountType,
-          accountId: user.accountId,
-        });
-      });
+      void import("~/lib/mobile/device-auth").then(
+        ({ saveDeviceAuthSession }) => {
+          void saveDeviceAuthSession({
+            id: user.id,
+            email: user.email,
+            username: user.username,
+            accountType: user.accountType,
+            accountId: user.accountId,
+          });
+        },
+      );
 
       const sessionKey = `msns_welcome_notified_${user.id || user.email}`;
-      if (typeof window !== "undefined" && !sessionStorage.getItem(sessionKey)) {
+      if (
+        typeof window !== "undefined" &&
+        !sessionStorage.getItem(sessionKey)
+      ) {
         sessionStorage.setItem(sessionKey, "true");
-        void import("~/lib/mobile/notification-service").then(({ sendWelcomeNotification }) => {
-          void sendWelcomeNotification(user.name ?? user.email ?? "User", user.accountType);
-        });
+        void import("~/lib/mobile/notification-service").then(
+          ({ sendWelcomeNotification }) => {
+            void sendWelcomeNotification(
+              user.name ?? user.email ?? "User",
+              user.accountType,
+            );
+          },
+        );
       }
       router.push(RedirectMap[session.data?.user.accountType ?? "NONE"] ?? "/");
     }
@@ -79,16 +89,20 @@ export const LoginForm = () => {
       if (signInData?.error) {
         setAlert(true);
       } else {
-        void import("~/lib/mobile/device-auth").then(({ saveDeviceAuthSession }) => {
-          void saveDeviceAuthSession({
-            email: values.email,
-            username: values.email,
-            accountType: "ADMIN",
-          });
-        });
-        void import("~/lib/mobile/notification-service").then(({ sendWelcomeNotification }) => {
-          void sendWelcomeNotification(values.email, "Chief");
-        });
+        void import("~/lib/mobile/device-auth").then(
+          ({ saveDeviceAuthSession }) => {
+            void saveDeviceAuthSession({
+              email: values.email,
+              username: values.email,
+              accountType: "ADMIN",
+            });
+          },
+        );
+        void import("~/lib/mobile/notification-service").then(
+          ({ sendWelcomeNotification }) => {
+            void sendWelcomeNotification(values.email, "Chief");
+          },
+        );
       }
     } finally {
       setSubmitting(false);

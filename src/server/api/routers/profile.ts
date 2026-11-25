@@ -74,7 +74,14 @@ export const ProfileRouter = createTRPCRouter({
     .input(updateProfileSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const { username, email, bio, profilePic, currentPassword, newPassword } = input;
+        const {
+          username,
+          email,
+          bio,
+          profilePic,
+          currentPassword,
+          newPassword,
+        } = input;
 
         const updateData: {
           username: string;
@@ -122,7 +129,8 @@ export const ProfileRouter = createTRPCRouter({
           if (newPassword === currentPassword) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: "New password must be different from the current password",
+              message:
+                "New password must be different from the current password",
             });
           }
 

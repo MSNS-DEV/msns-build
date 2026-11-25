@@ -221,7 +221,10 @@ export function MonthlyReportTab({
       const dayStatuses = Array.from({ length: daysInMonth }, (_, i) =>
         getAttendanceStatus(emp.id, i + 1),
       );
-      const extra = emp as { name?: string | null; designation?: string | null };
+      const extra = emp as {
+        name?: string | null;
+        designation?: string | null;
+      };
       const empName = extra.name ?? emp.username;
       const empDesig = extra.designation ?? emp.accountType;
       return [

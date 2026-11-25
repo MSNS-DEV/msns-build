@@ -11,7 +11,15 @@ import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { GradientStatCard } from "~/components/shared/GradientStatCard";
 import { PageExportButton } from "~/components/shared/PageExportButton";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 // --- Icons ---
 import {
@@ -25,7 +33,7 @@ import {
   List,
   Plus,
   UploadCloud,
-  FileText
+  FileText,
 } from "lucide-react";
 
 const LazySessionList = lazy(() =>
@@ -75,14 +83,36 @@ export default function SessionFeePage() {
   ];
 
   const queryOptions = { staleTime: 5 * 60 * 1000 };
-  const { data: sessionData } = api.session.getActiveSession.useQuery(undefined, queryOptions);
-  const { data: allSessions } = api.session.getSessions.useQuery(undefined, queryOptions);
-  const { data: classData } = api.class.getClasses.useQuery(undefined, queryOptions);
-  const { data: employeeData } = api.employee.getEmployees.useQuery(undefined, queryOptions);
-  const { data: feeData } = api.fee.getAllFees.useQuery(undefined, queryOptions);
-  const { data: studentData, isLoading: isInitialLoading, error } = api.student.getStudents.useQuery(undefined, queryOptions);
+  const { data: sessionData } = api.session.getActiveSession.useQuery(
+    undefined,
+    queryOptions,
+  );
+  const { data: allSessions } = api.session.getSessions.useQuery(
+    undefined,
+    queryOptions,
+  );
+  const { data: classData } = api.class.getClasses.useQuery(
+    undefined,
+    queryOptions,
+  );
+  const { data: employeeData } = api.employee.getEmployees.useQuery(
+    undefined,
+    queryOptions,
+  );
+  const { data: feeData } = api.fee.getAllFees.useQuery(
+    undefined,
+    queryOptions,
+  );
+  const {
+    data: studentData,
+    isLoading: isInitialLoading,
+    error,
+  } = api.student.getStudents.useQuery(undefined, queryOptions);
 
-  const totalRevenue = useMemo(() => feeData?.reduce((acc, fee) => acc + fee.tuitionFee, 0) ?? 0, [feeData]);
+  const totalRevenue = useMemo(
+    () => feeData?.reduce((acc, fee) => acc + fee.tuitionFee, 0) ?? 0,
+    [feeData],
+  );
 
   const exportData = useMemo(() => {
     if (!allSessions) return undefined;
@@ -90,8 +120,18 @@ export default function SessionFeePage() {
       columns: [
         { key: "sessionName", label: "Session Name", width: 20 },
         { key: "year", label: "Year", width: 15 },
-        { key: "startDate", label: "Start Date", width: 15, format: "date" as const },
-        { key: "endDate", label: "End Date", width: 15, format: "date" as const },
+        {
+          key: "startDate",
+          label: "Start Date",
+          width: 15,
+          format: "date" as const,
+        },
+        {
+          key: "endDate",
+          label: "End Date",
+          width: 15,
+          format: "date" as const,
+        },
         { key: "status", label: "Status", width: 15 },
       ],
       rows: allSessions.map((s) => ({
@@ -108,7 +148,7 @@ export default function SessionFeePage() {
 
   const chartData = useMemo(() => {
     if (!allSessions) return [];
-    return allSessions.map(s => {
+    return allSessions.map((s) => {
       const start = new Date(s.sessionFrom).getTime();
       const end = new Date(s.sessionTo).getTime();
       const durationDays = Math.round((end - start) / (1000 * 60 * 60 * 24));
@@ -120,7 +160,11 @@ export default function SessionFeePage() {
   }, [allSessions]);
 
   if (error) {
-    return <div className="p-8 text-center text-red-500 dark:text-red-400">Error loading data.</div>;
+    return (
+      <div className="p-8 text-center text-red-500 dark:text-red-400">
+        Error loading data.
+      </div>
+    );
   }
   if (isInitialLoading) return <DashboardSkeleton />;
 
@@ -148,7 +192,8 @@ export default function SessionFeePage() {
             )}
           </div>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground dark:text-muted-foreground">
-            Manage academic terms, view enrollment statistics, and compare sessions.
+            Manage academic terms, view enrollment statistics, and compare
+            sessions.
           </p>
         </div>
 
@@ -161,7 +206,10 @@ export default function SessionFeePage() {
             <UploadCloud className="h-4 w-4" />
             Import
           </Button>
-          <Button size="sm" className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white">
+          <Button
+            size="sm"
+            className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+          >
             <Plus className="h-4 w-4" />
             Create Session
           </Button>
@@ -169,7 +217,7 @@ export default function SessionFeePage() {
       </div>
 
       {/* --- 1. Key Metrics Grid --- */}
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+      <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
         <GradientStatCard
           title="Total Students"
           value={studentData?.length ?? 0}
@@ -202,21 +250,33 @@ export default function SessionFeePage() {
       {/* --- Tabs --- */}
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="h-auto flex-wrap justify-start gap-1 border border-slate-200 bg-slate-100 p-1 dark:border-border dark:bg-card">
-          <TabsTrigger value="overview" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground">
+          <TabsTrigger
+            value="overview"
+            className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground"
+          >
             <List className="h-4 w-4" />
             Overview
           </TabsTrigger>
-          <TabsTrigger value="calendar" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground">
+          <TabsTrigger
+            value="calendar"
+            className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground"
+          >
             <CalendarIcon className="h-4 w-4" />
             Academic Calendar
           </TabsTrigger>
-          <TabsTrigger value="comparison" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground">
+          <TabsTrigger
+            value="comparison"
+            className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground"
+          >
             <BarChart3 className="h-4 w-4" />
             Session Comparison
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="duration-300 animate-in fade-in-50">
+        <TabsContent
+          value="overview"
+          className="duration-300 animate-in fade-in-50"
+        >
           <Card className="overflow-hidden border border-slate-200 bg-white shadow-sm backdrop-blur-xl dark:border-emerald-500/10 dark:bg-card dark:shadow-2xl">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-4 py-3 dark:border-border dark:bg-white/5">
               <div className="flex items-center justify-between">
@@ -228,7 +288,11 @@ export default function SessionFeePage() {
                     Session Registry
                   </CardTitle>
                 </div>
-                <PageExportButton exportData={exportData} csvFilename="sessions-export" pdfReportType="sessions" />
+                <PageExportButton
+                  exportData={exportData}
+                  csvFilename="sessions-export"
+                  pdfReportType="sessions"
+                />
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -241,11 +305,17 @@ export default function SessionFeePage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="calendar" className="duration-300 animate-in fade-in-50">
+        <TabsContent
+          value="calendar"
+          className="duration-300 animate-in fade-in-50"
+        >
           <AcademicCalendarTab />
         </TabsContent>
 
-        <TabsContent value="comparison" className="duration-300 animate-in fade-in-50">
+        <TabsContent
+          value="comparison"
+          className="duration-300 animate-in fade-in-50"
+        >
           <Card className="border border-slate-200 bg-white shadow-sm dark:border-emerald-500/10 dark:bg-card">
             <CardHeader>
               <CardTitle>Session Duration Comparison</CardTitle>
@@ -253,15 +323,42 @@ export default function SessionFeePage() {
             <CardContent>
               <div className="h-80 w-full pt-4">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} />
-                    <Tooltip 
-                      cursor={{ fill: 'rgba(16, 185, 129, 0.1)' }}
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  <BarChart
+                    data={chartData}
+                    margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  >
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#e2e8f0"
                     />
-                    <Bar dataKey="duration" name="Duration (Days)" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: "#64748b" }}
+                      dy={10}
+                    />
+                    <YAxis
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 12, fill: "#64748b" }}
+                    />
+                    <Tooltip
+                      cursor={{ fill: "rgba(16, 185, 129, 0.1)" }}
+                      contentStyle={{
+                        borderRadius: "8px",
+                        border: "none",
+                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                      }}
+                    />
+                    <Bar
+                      dataKey="duration"
+                      name="Duration (Days)"
+                      fill="#10b981"
+                      radius={[4, 4, 0, 0]}
+                      barSize={40}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

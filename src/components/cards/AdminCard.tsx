@@ -54,7 +54,8 @@ const services: Services[] = [
       {
         label: "Active Details",
         href: "/admin/sessions",
-        dynamicHref: (activeId) => (activeId ? `/admin/sessions/${activeId}` : "/admin/sessions"),
+        dynamicHref: (activeId) =>
+          activeId ? `/admin/sessions/${activeId}` : "/admin/sessions",
       },
       { label: "Timetable", href: "/admin/sessions/timetable" },
       { label: "Fee Ledger", href: "/admin/sessions/fee" },
@@ -152,7 +153,7 @@ export default function AdminCards() {
               {/* Sub-actions area and Main Link */}
               <CardContent className="relative z-10 mt-auto flex flex-col gap-4 p-5 pt-0">
                 {service.subActions && (
-                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-slate-100 dark:border-white/5">
+                  <div className="flex flex-wrap gap-1.5 border-t border-slate-100 pt-2 dark:border-white/5">
                     {service.subActions.map((subAction) => {
                       const href = subAction.dynamicHref
                         ? subAction.dynamicHref(activeSession?.sessionId)
@@ -161,12 +162,12 @@ export default function AdminCards() {
                         <Link
                           key={subAction.label}
                           href={href}
-                          className={`px-2 py-1 text-[10px] font-bold rounded-md border bg-white hover:bg-slate-50 transition-all duration-200 shadow-sm hover:shadow dark:bg-black/20 dark:hover:bg-white/5 ${
+                          className={`rounded-md border bg-white px-2 py-1 text-[10px] font-bold shadow-sm transition-all duration-200 hover:bg-slate-50 hover:shadow dark:bg-black/20 dark:hover:bg-white/5 ${
                             service.baseColor === "emerald"
-                              ? "border-emerald-500/20 text-emerald-600 dark:text-emerald-400 hover:border-emerald-500/50"
+                              ? "border-emerald-500/20 text-emerald-600 hover:border-emerald-500/50 dark:text-emerald-400"
                               : service.baseColor === "cyan"
-                                ? "border-cyan-500/20 text-cyan-600 dark:text-cyan-400 hover:border-cyan-500/50"
-                                : "border-amber-500/20 text-amber-600 dark:text-amber-400 hover:border-amber-500/50"
+                                ? "border-cyan-500/20 text-cyan-600 hover:border-cyan-500/50 dark:text-cyan-400"
+                                : "border-amber-500/20 text-amber-600 hover:border-amber-500/50 dark:text-amber-400"
                           }`}
                         >
                           {subAction.label}

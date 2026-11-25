@@ -16,7 +16,6 @@ import {
 } from "docx";
 import type { ReportColumn, ExportFormat } from "./report-types";
 
-
 /**
  * Neutralise spreadsheet formula injection: text starting with = + - @ (or a
  * tab/CR) is executed by Excel/Sheets, so prefix it with an apostrophe.
@@ -37,7 +36,10 @@ export interface ExportReportOptions {
 }
 
 // ================= UTILITIES =================
-export function formatCellValue(value: unknown, format?: ReportColumn["format"]): string {
+export function formatCellValue(
+  value: unknown,
+  format?: ReportColumn["format"],
+): string {
   if (value === null || value === undefined) return "-";
   if (typeof value === "boolean") return value ? "Yes" : "No";
 
@@ -65,7 +67,11 @@ export function formatCellValue(value: unknown, format?: ReportColumn["format"])
     if (format === "date") {
       const d = new Date(value);
       if (!isNaN(d.getTime()) && value.length >= 8) {
-        return d.toLocaleDateString("en-PK", { year: "numeric", month: "short", day: "numeric" });
+        return d.toLocaleDateString("en-PK", {
+          year: "numeric",
+          month: "short",
+          day: "numeric",
+        });
       }
     }
     return value;
@@ -73,7 +79,11 @@ export function formatCellValue(value: unknown, format?: ReportColumn["format"])
 
   if (value instanceof Date) {
     if (format === "date") {
-      return value.toLocaleDateString("en-PK", { year: "numeric", month: "short", day: "numeric" });
+      return value.toLocaleDateString("en-PK", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
     }
     return value.toLocaleDateString("en-PK");
   }
@@ -118,7 +128,9 @@ export function sanitizeForPdf(text: string): string {
 }
 
 // ================= 1. PDF EXPORTER =================
-export async function generatePdfReport(options: ExportReportOptions): Promise<Uint8Array> {
+export async function generatePdfReport(
+  options: ExportReportOptions,
+): Promise<Uint8Array> {
   const { title, subtitle, filterSummary, columns, rows } = options;
   const isLandscape = options.orientation === "landscape" || columns.length > 6;
   const pageWidth = isLandscape ? 841.89 : 595.28;
@@ -160,13 +172,17 @@ export async function generatePdfReport(options: ExportReportOptions): Promise<U
       color: rgb(0.04, 0.45, 0.35), // emerald-700
     });
 
-    safeDraw(page, "Affiliated with BISE Gujranwala | School ERP Academic System", {
-      x: margin,
-      y: pageHeight - 48,
-      size: 8,
-      font,
-      color: rgb(0.35, 0.4, 0.45),
-    });
+    safeDraw(
+      page,
+      "Affiliated with BISE Gujranwala | School ERP Academic System",
+      {
+        x: margin,
+        y: pageHeight - 48,
+        size: 8,
+        font,
+        color: rgb(0.35, 0.4, 0.45),
+      },
+    );
 
     // Report Title
     safeDraw(page, title.toUpperCase(), {
@@ -178,9 +194,10 @@ export async function generatePdfReport(options: ExportReportOptions): Promise<U
     });
 
     // Subtitle / Filters
-    const filterText = filterSummary && filterSummary.length > 0
-      ? `Filters: ${filterSummary.join(" | ")}`
-      : subtitle ?? "";
+    const filterText =
+      filterSummary && filterSummary.length > 0
+        ? `Filters: ${filterSummary.join(" | ")}`
+        : (subtitle ?? "");
 
     if (filterText) {
       safeDraw(page, filterText.slice(0, 120), {
@@ -211,19 +228,25 @@ export async function generatePdfReport(options: ExportReportOptions): Promise<U
       font,
       color: rgb(0.5, 0.5, 0.5),
     });
-    safeDraw(page, "Confidential - For M.S. Naz High School Administration & Regulatory Filing", {
-      x: margin,
-      y: margin - 15,
-      size: 7,
-      font,
-      color: rgb(0.5, 0.5, 0.5),
-    });
+    safeDraw(
+      page,
+      "Confidential - For M.S. Naz High School Administration & Regulatory Filing",
+      {
+        x: margin,
+        y: margin - 15,
+        size: 7,
+        font,
+        color: rgb(0.5, 0.5, 0.5),
+      },
+    );
   };
 
   // Table setup
   const totalUsableWidth = pageWidth - margin * 2;
   const totalWeight = columns.reduce((acc, col) => acc + (col.width ?? 100), 0);
-  const colWidths = columns.map((col) => ((col.width ?? 100) / totalWeight) * totalUsableWidth);
+  const colWidths = columns.map(
+    (col) => ((col.width ?? 100) / totalWeight) * totalUsableWidth,
+  );
 
   const startY = pageHeight - 95;
   const rowHeight = 18;
@@ -382,7 +405,12 @@ export function generateCsvReport(options: ExportReportOptions): string {
 
   const escapeCsv = (raw: string): string => {
     const val = neutraliseFormula(raw);
-    if (val.includes(",") || val.includes('"') || val.includes("\n") || val.includes("\r")) {
+    if (
+      val.includes(",") ||
+      val.includes('"') ||
+      val.includes("\n") ||
+      val.includes("\r")
+    ) {
       return `"${val.replace(/"/g, '""')}"`;
     }
     return val;
@@ -403,13 +431,16 @@ export function generateCsvReport(options: ExportReportOptions): string {
 }
 
 // ================= 4. DOCX EXPORTER =================
-export async function generateDocxReport(options: ExportReportOptions): Promise<Uint8Array> {
+export async function generateDocxReport(
+  options: ExportReportOptions,
+): Promise<Uint8Array> {
   const { title, subtitle, filterSummary, columns, rows } = options;
   const isLandscape = options.orientation === "landscape" || columns.length > 6;
 
-  const filterText = filterSummary && filterSummary.length > 0
-    ? `Filters Applied: ${filterSummary.join(" | ")}`
-    : subtitle ?? "";
+  const filterText =
+    filterSummary && filterSummary.length > 0
+      ? `Filters Applied: ${filterSummary.join(" | ")}`
+      : (subtitle ?? "");
 
   const doc = new Document({
     sections: [
@@ -417,7 +448,9 @@ export async function generateDocxReport(options: ExportReportOptions): Promise<
         properties: {
           page: {
             size: {
-              orientation: isLandscape ? PageOrientation.LANDSCAPE : PageOrientation.PORTRAIT,
+              orientation: isLandscape
+                ? PageOrientation.LANDSCAPE
+                : PageOrientation.PORTRAIT,
             },
             margin: { top: 720, bottom: 720, left: 720, right: 720 },
           },
@@ -445,7 +478,12 @@ export async function generateDocxReport(options: ExportReportOptions): Promise<
             ? [
                 new Paragraph({
                   children: [
-                    new TextRun({ text: filterText, italics: true, size: 18, color: "555555" }),
+                    new TextRun({
+                      text: filterText,
+                      italics: true,
+                      size: 18,
+                      color: "555555",
+                    }),
                   ],
                   spacing: { after: 120 },
                 }),
@@ -476,9 +514,17 @@ export async function generateDocxReport(options: ExportReportOptions): Promise<
                       children: [
                         new Paragraph({
                           children: [
-                            new TextRun({ text: col.label, bold: true, color: "FFFFFF", size: 16 }),
+                            new TextRun({
+                              text: col.label,
+                              bold: true,
+                              color: "FFFFFF",
+                              size: 16,
+                            }),
                           ],
-                          alignment: col.align === "right" ? AlignmentType.RIGHT : AlignmentType.LEFT,
+                          alignment:
+                            col.align === "right"
+                              ? AlignmentType.RIGHT
+                              : AlignmentType.LEFT,
                         }),
                       ],
                     }),
@@ -499,7 +545,10 @@ export async function generateDocxReport(options: ExportReportOptions): Promise<
                       children: [
                         new Paragraph({
                           children: [new TextRun({ text, size: 16 })],
-                          alignment: col.align === "right" ? AlignmentType.RIGHT : AlignmentType.LEFT,
+                          alignment:
+                            col.align === "right"
+                              ? AlignmentType.RIGHT
+                              : AlignmentType.LEFT,
                         }),
                       ],
                     });
@@ -521,8 +570,14 @@ export async function generateDocxReport(options: ExportReportOptions): Promise<
 export async function exportReportBuffer(
   format: ExportFormat,
   options: ExportReportOptions,
-): Promise<{ buffer: Uint8Array | string; mimeType: string; filename: string }> {
-  const sanitizedTitle = options.title.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+): Promise<{
+  buffer: Uint8Array | string;
+  mimeType: string;
+  filename: string;
+}> {
+  const sanitizedTitle = options.title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-");
   const timestamp = new Date().toISOString().slice(0, 10);
   const baseFilename = `${sanitizedTitle}-${timestamp}`;
 
@@ -539,7 +594,8 @@ export async function exportReportBuffer(
       const xlsxBytes = generateXlsxReport(options);
       return {
         buffer: xlsxBytes,
-        mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         filename: `${baseFilename}.xlsx`,
       };
     }
@@ -555,7 +611,8 @@ export async function exportReportBuffer(
       const docxBytes = await generateDocxReport(options);
       return {
         buffer: docxBytes,
-        mimeType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        mimeType:
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         filename: `${baseFilename}.docx`,
       };
     }

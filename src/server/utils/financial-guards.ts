@@ -26,7 +26,9 @@ export async function assertNoPaidVouchers(
   where: Prisma.FeeStudentClassWhereInput,
   action: string,
 ) {
-  const paid = await db.feeStudentClass.count({ where: { AND: [where, PAID_VOUCHER_WHERE] } });
+  const paid = await db.feeStudentClass.count({
+    where: { AND: [where, PAID_VOUCHER_WHERE] },
+  });
   if (paid > 0) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
@@ -41,7 +43,9 @@ export async function assertNoPaidSalaries(
   where: Prisma.SalaryWhereInput,
   action: string,
 ) {
-  const paid = await db.salary.count({ where: { AND: [where, { status: "PAID" }] } });
+  const paid = await db.salary.count({
+    where: { AND: [where, { status: "PAID" }] },
+  });
   if (paid > 0) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",

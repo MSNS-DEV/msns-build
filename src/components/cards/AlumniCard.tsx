@@ -50,7 +50,8 @@ const services: Services[] = [
       {
         label: "Active Details",
         href: "/clerk/sessions",
-        dynamicHref: (activeId) => (activeId ? `/clerk/sessions/${activeId}` : "/clerk/sessions"),
+        dynamicHref: (activeId) =>
+          activeId ? `/clerk/sessions/${activeId}` : "/clerk/sessions",
       },
       { label: "Timetable", href: "/clerk/sessions/timetable" },
       { label: "Fee Ledger", href: "/clerk/sessions/fee" },
@@ -142,7 +143,7 @@ export default function AlumniCard() {
               {/* Sub Actions and Access Panel */}
               <CardContent className="relative z-10 mt-auto flex flex-col gap-4 p-4 pt-0">
                 {service.subActions && (
-                  <div className="flex flex-wrap gap-1.5 pt-2 border-t border-white/5">
+                  <div className="flex flex-wrap gap-1.5 border-t border-white/5 pt-2">
                     {service.subActions.map((subAction) => {
                       const href = subAction.dynamicHref
                         ? subAction.dynamicHref(activeSession?.sessionId)
@@ -151,7 +152,7 @@ export default function AlumniCard() {
                         <Link
                           key={subAction.label}
                           href={href}
-                          className="px-2 py-1 text-[10px] font-bold rounded-md border border-white/10 bg-white/5 hover:bg-white/10 text-slate-300 hover:text-foreground transition-all duration-200 shadow-sm"
+                          className="rounded-md border border-white/10 bg-white/5 px-2 py-1 text-[10px] font-bold text-slate-300 shadow-sm transition-all duration-200 hover:bg-white/10 hover:text-foreground"
                         >
                           {subAction.label}
                         </Link>
@@ -164,7 +165,7 @@ export default function AlumniCard() {
                   href={service.href}
                   className={cn(
                     "flex items-center text-xs font-bold opacity-85 transition-all hover:opacity-100",
-                    service.iconColor
+                    service.iconColor,
                   )}
                 >
                   Access Panel

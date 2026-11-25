@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import {
@@ -34,10 +40,14 @@ interface AcademicCalendarTabProps {
   initialDate?: Date;
 }
 
-export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalendarTabProps) {
+export function AcademicCalendarTab({
+  initialDate = new Date(),
+}: AcademicCalendarTabProps) {
   const [currentMonth, setCurrentMonth] = useState<Date>(initialDate);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [filterType, setFilterType] = useState<"ALL" | "SESSION" | "EVENT">("ALL");
+  const [filterType, setFilterType] = useState<"ALL" | "SESSION" | "EVENT">(
+    "ALL",
+  );
 
   const { data: sessions } = api.session.getSessions.useQuery();
   const { data: eventsData } = api.event.getAll.useQuery({
@@ -74,7 +84,8 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
           title: `Session Starts: ${s.sessionName}`,
           type: "SESSION",
           description: `Academic Session ${s.sessionName} commences.`,
-          color: "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300",
+          color:
+            "bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300",
         });
       }
       if (isSameDay(date, sEnd)) {
@@ -83,7 +94,8 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
           title: `Session Concludes: ${s.sessionName}`,
           type: "SESSION",
           description: `Academic Session ${s.sessionName} finishes.`,
-          color: "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/60 dark:text-purple-300",
+          color:
+            "bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-950/60 dark:text-purple-300",
         });
       }
     });
@@ -97,7 +109,8 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
           title: e.title,
           type: "EVENT",
           description: e.description ?? undefined,
-          color: "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300",
+          color:
+            "bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-950/60 dark:text-blue-300",
         });
       }
     });
@@ -119,7 +132,8 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
             Academic Calendar & Events
           </h2>
           <p className="text-xs text-muted-foreground">
-            Scheduled terms, academic milestones, exams, and institutional activities
+            Scheduled terms, academic milestones, exams, and institutional
+            activities
           </p>
         </div>
 
@@ -133,7 +147,7 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
                 variant={filterType === t ? "default" : "ghost"}
                 onClick={() => setFilterType(t)}
                 className={cn(
-                  "h-7 text-xs font-semibold rounded-lg px-2.5",
+                  "h-7 rounded-lg px-2.5 text-xs font-semibold",
                   filterType === t
                     ? "bg-white text-emerald-700 shadow-sm dark:bg-emerald-600 dark:text-white"
                     : "text-muted-foreground",
@@ -161,7 +175,7 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         {/* Main Monthly Calendar Grid */}
         <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card lg:col-span-2">
-          <CardHeader className="p-4 border-b border-slate-100 dark:border-border/60">
+          <CardHeader className="border-b border-slate-100 p-4 dark:border-border/60">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 text-base font-bold text-slate-900 dark:text-foreground">
                 <CalendarIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -171,7 +185,7 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0 rounded-lg"
+                  className="h-8 w-8 rounded-lg p-0"
                   onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
                 >
                   <ChevronLeft className="h-4 w-4" />
@@ -179,7 +193,7 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="h-8 w-8 p-0 rounded-lg"
+                  className="h-8 w-8 rounded-lg p-0"
                   onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
                 >
                   <ChevronRight className="h-4 w-4" />
@@ -190,11 +204,11 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
 
           <CardContent className="p-4">
             {/* Days of Week Row */}
-            <div className="grid grid-cols-7 gap-1 text-center mb-2">
+            <div className="mb-2 grid grid-cols-7 gap-1 text-center">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day) => (
                 <div
                   key={day}
-                  className="text-xs font-semibold text-muted-foreground uppercase py-1"
+                  className="py-1 text-xs font-semibold uppercase text-muted-foreground"
                 >
                   {day}
                 </div>
@@ -214,11 +228,16 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
                     key={day.toISOString()}
                     onClick={() => setSelectedDate(day)}
                     className={cn(
-                      "group relative min-h-[85px] rounded-xl border p-1.5 transition-all duration-200 cursor-pointer flex flex-col justify-between",
-                      !isCurrentMonth && "opacity-35 bg-slate-50/50 dark:bg-muted/10",
-                      isCurrentMonth && "bg-white dark:bg-card hover:border-emerald-400 hover:shadow-sm",
-                      isSelected && "border-emerald-600 bg-emerald-50/30 ring-2 ring-emerald-500 dark:border-emerald-500",
-                      isCurrentDay && !isSelected && "border-blue-400 bg-blue-50/20",
+                      "group relative flex min-h-[85px] cursor-pointer flex-col justify-between rounded-xl border p-1.5 transition-all duration-200",
+                      !isCurrentMonth &&
+                        "bg-slate-50/50 opacity-35 dark:bg-muted/10",
+                      isCurrentMonth &&
+                        "bg-white hover:border-emerald-400 hover:shadow-sm dark:bg-card",
+                      isSelected &&
+                        "border-emerald-600 bg-emerald-50/30 ring-2 ring-emerald-500 dark:border-emerald-500",
+                      isCurrentDay &&
+                        !isSelected &&
+                        "border-blue-400 bg-blue-50/20",
                     )}
                   >
                     <div className="flex items-center justify-between">
@@ -239,12 +258,12 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
                     </div>
 
                     {/* Day Mini Badges */}
-                    <div className="space-y-1 mt-1 overflow-hidden">
+                    <div className="mt-1 space-y-1 overflow-hidden">
                       {dayItems.slice(0, 2).map((item) => (
                         <div
                           key={item.id}
                           className={cn(
-                            "truncate rounded-md px-1 py-0.5 text-[9px] font-semibold border",
+                            "truncate rounded-md border px-1 py-0.5 text-[9px] font-semibold",
                             item.color,
                           )}
                         >
@@ -252,7 +271,7 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
                         </div>
                       ))}
                       {dayItems.length > 2 && (
-                        <span className="text-[9px] font-bold text-muted-foreground block pl-1">
+                        <span className="block pl-1 text-[9px] font-bold text-muted-foreground">
                           +{dayItems.length - 2} more
                         </span>
                       )}
@@ -268,14 +287,17 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
         <div className="space-y-6">
           {/* Selected Date Agenda */}
           <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card">
-            <CardHeader className="p-4 border-b border-slate-100 dark:border-border/60">
+            <CardHeader className="border-b border-slate-100 p-4 dark:border-border/60">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold text-slate-900 dark:text-foreground flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-foreground">
                   <CalendarCheck2 className="h-4 w-4 text-emerald-600" />
                   {format(selectedDate, "EEEE, dd MMMM yyyy")}
                 </CardTitle>
                 {isToday(selectedDate) && (
-                  <Badge variant="outline" className="bg-emerald-50 text-emerald-700 text-[10px] font-semibold">
+                  <Badge
+                    variant="outline"
+                    className="bg-emerald-50 text-[10px] font-semibold text-emerald-700"
+                  >
                     Today
                   </Badge>
                 )}
@@ -300,7 +322,9 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
                         </Badge>
                       </div>
                       {item.description && (
-                        <p className="mt-1 text-xs opacity-90">{item.description}</p>
+                        <p className="mt-1 text-xs opacity-90">
+                          {item.description}
+                        </p>
                       )}
                     </div>
                   ))}
@@ -316,8 +340,8 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
 
           {/* Academic Milestones Summary */}
           <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card">
-            <CardHeader className="p-4 border-b border-slate-100 dark:border-border/60">
-              <CardTitle className="text-sm font-bold text-slate-900 dark:text-foreground flex items-center gap-2">
+            <CardHeader className="border-b border-slate-100 p-4 dark:border-border/60">
+              <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-foreground">
                 <GraduationCap className="h-4 w-4 text-purple-600" />
                 Active Sessions Timeline
               </CardTitle>
@@ -328,7 +352,7 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
                 {sessions?.map((session) => (
                   <div
                     key={session.sessionId}
-                    className="p-3.5 hover:bg-slate-50/60 dark:hover:bg-muted/20 transition-colors"
+                    className="p-3.5 transition-colors hover:bg-slate-50/60 dark:hover:bg-muted/20"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-900 dark:text-foreground">
@@ -344,7 +368,7 @@ export function AcademicCalendarTab({ initialDate = new Date() }: AcademicCalend
                         {session.isActive ? "ACTIVE" : "INACTIVE"}
                       </Badge>
                     </div>
-                    <p className="text-[11px] text-muted-foreground mt-1">
+                    <p className="mt-1 text-[11px] text-muted-foreground">
                       {format(new Date(session.sessionFrom), "MMM yyyy")} –{" "}
                       {format(new Date(session.sessionTo), "MMM yyyy")}
                     </p>

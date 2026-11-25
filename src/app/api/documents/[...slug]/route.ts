@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ slug: string[] }> }
+  { params }: { params: Promise<{ slug: string[] }> },
 ) {
   const session = await auth();
   if (!session?.user) {
@@ -25,7 +25,9 @@ export async function GET(
     const filename = slug[slug.length - 1] ?? "";
     const decodedFilename = decodeURIComponent(filename);
     const safeFilename = path.basename(decodedFilename);
-    const subpath = slug.map((s) => path.basename(decodeURIComponent(s))).join("/");
+    const subpath = slug
+      .map((s) => path.basename(decodeURIComponent(s)))
+      .join("/");
 
     const s3 = getS3Client();
     const bucket = getBucket();
@@ -52,12 +54,17 @@ export async function GET(
 
         if (s3Response.Body) {
           // Use Node stream to web stream for reliability
-          const stream = Readable.toWeb(s3Response.Body as Readable) as ReadableStream;
+          const stream = Readable.toWeb(
+            s3Response.Body as Readable,
+          ) as ReadableStream;
           const headers = new Headers();
           headers.set("Accept-Ranges", "bytes");
           headers.set(
             "Content-Type",
-            s3Response.ContentType ?? (safeFilename.endsWith(".pdf") ? "application/pdf" : "application/octet-stream")
+            s3Response.ContentType ??
+              (safeFilename.endsWith(".pdf")
+                ? "application/pdf"
+                : "application/octet-stream"),
           );
           if (s3Response.ContentLength !== undefined) {
             headers.set("Content-Length", s3Response.ContentLength.toString());
@@ -67,7 +74,7 @@ export async function GET(
           }
           headers.set(
             "Content-Disposition",
-            `inline; filename="${safeFilename.replace(/["\r\n]/g, "_")}"`
+            `inline; filename="${safeFilename.replace(/["\r\n]/g, "_")}"`,
           );
           headers.set("Cache-Control", "private, max-age=3600");
 

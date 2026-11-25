@@ -678,8 +678,6 @@ export function SalaryHistoryDialog({
                   </table>
                 </div>
 
-
-
                 {/* Footer */}
                 <div className="mt-12 flex items-end justify-between border-t border-gray-100 pt-6 text-[10px] text-gray-400">
                   <div>

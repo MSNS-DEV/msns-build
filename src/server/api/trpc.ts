@@ -52,7 +52,8 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
 export const publicProcedure = t.procedure.use(timingMiddleware);
 
 /** Mutations still allowed while an account must replace its default password. */
-const ALLOWED_WHILE_PASSWORD_CHANGE_REQUIRED = /^(profile|notification|mobile)\./;
+const ALLOWED_WHILE_PASSWORD_CHANGE_REQUIRED =
+  /^(profile|notification|mobile)\./;
 
 export const protectedProcedure = t.procedure
   .use(timingMiddleware)
@@ -73,7 +74,8 @@ export const protectedProcedure = t.procedure
       if (user?.mustChangePassword) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "Please change your default password (Profile → Security) before making changes.",
+          message:
+            "Please change your default password (Profile → Security) before making changes.",
         });
       }
     }
@@ -120,12 +122,12 @@ export const ROLE_GROUPS = {
 
 /** Leadership only: approvals, privileged account management, school-wide settings. */
 export const leadershipProcedure = protectedProcedure.use(
-  enforceRoles([...ROLE_GROUPS.LEADERSHIP])
+  enforceRoles([...ROLE_GROUPS.LEADERSHIP]),
 );
 
 /** Leadership + clerks: day-to-day administration. */
 export const officeProcedure = protectedProcedure.use(
-  enforceRoles([...ROLE_GROUPS.OFFICE])
+  enforceRoles([...ROLE_GROUPS.OFFICE]),
 );
 
 /** Finance data entry (fees, payroll, expenses, ERP). Approvals use leadershipProcedure. */
@@ -138,11 +140,11 @@ export const clerkProcedure = officeProcedure;
 
 /** Office staff + teachers. */
 export const teacherProcedure = protectedProcedure.use(
-  enforceRoles([...ROLE_GROUPS.STAFF])
+  enforceRoles([...ROLE_GROUPS.STAFF]),
 );
 export const staffProcedure = teacherProcedure;
 
 /** Any employee account (excludes STUDENT and PARENT). */
 export const employeeProcedure = protectedProcedure.use(
-  enforceRoles([...ROLE_GROUPS.EMPLOYEE])
+  enforceRoles([...ROLE_GROUPS.EMPLOYEE]),
 );

@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { createTRPCRouter, financeProcedure, leadershipProcedure } from "../../trpc";
+import {
+  createTRPCRouter,
+  financeProcedure,
+  leadershipProcedure,
+} from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
@@ -55,7 +59,10 @@ export const budgetRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const totalAmount = input.allocations.reduce((s, a) => s + a.allocatedAmount, 0);
+      const totalAmount = input.allocations.reduce(
+        (s, a) => s + a.allocatedAmount,
+        0,
+      );
 
       return ctx.db.budgetPlan.create({
         data: {
@@ -84,7 +91,11 @@ export const budgetRouter = createTRPCRouter({
         },
       });
 
-      if (!plan) throw new TRPCError({ code: "NOT_FOUND", message: "Budget plan not found" });
+      if (!plan)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Budget plan not found",
+        });
 
       // Fetch approved direct expenses and committed POs per cost centre
       const utilisation = await Promise.all(
@@ -108,7 +119,9 @@ export const budgetRouter = createTRPCRouter({
           const remaining = alloc.allocatedAmount - approvedSpend - committed;
           const percentUsed =
             alloc.allocatedAmount > 0
-              ? Math.round(((approvedSpend + committed) / alloc.allocatedAmount) * 100)
+              ? Math.round(
+                  ((approvedSpend + committed) / alloc.allocatedAmount) * 100,
+                )
               : 0;
 
           return {
@@ -144,18 +157,32 @@ export const budgetRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       const [fromAlloc, toAlloc] = await Promise.all([
-        ctx.db.budgetAllocation.findUnique({ where: { allocationId: input.fromAllocationId } }),
-        ctx.db.budgetAllocation.findUnique({ where: { allocationId: input.toAllocationId } }),
+        ctx.db.budgetAllocation.findUnique({
+          where: { allocationId: input.fromAllocationId },
+        }),
+        ctx.db.budgetAllocation.findUnique({
+          where: { allocationId: input.toAllocationId },
+        }),
       ]);
 
       if (!fromAlloc || !toAlloc) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Allocation not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Allocation not found",
+        });
       }
       if (fromAlloc.allocatedAmount < input.amount) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Insufficient budget to reallocate" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Insufficient budget to reallocate",
+        });
       }
 
       await ctx.db.$transaction([
@@ -188,7 +215,9 @@ export const budgetRouter = createTRPCRouter({
       ctx.db.budgetPlan.findMany({
         where: { sessionId: input.sessionId },
         include: {
-          Allocations: { include: { CostCentre: { select: { name: true, code: true } } } },
+          Allocations: {
+            include: { CostCentre: { select: { name: true, code: true } } },
+          },
         },
         orderBy: { createdAt: "desc" },
       }),

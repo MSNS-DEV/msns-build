@@ -80,13 +80,15 @@ export default function EventModal({
 
       try {
         onCreate(formData);
-        void import("~/lib/mobile/notification-service").then(({ sendBroadcastNotification }) => {
-          void sendBroadcastNotification(
-            formData.title,
-            formData.description || "New school announcement/event published",
-            formData.eventType
-          );
-        });
+        void import("~/lib/mobile/notification-service").then(
+          ({ sendBroadcastNotification }) => {
+            void sendBroadcastNotification(
+              formData.title,
+              formData.description || "New school announcement/event published",
+              formData.eventType,
+            );
+          },
+        );
         setFormData({
           title: "",
           description: "",

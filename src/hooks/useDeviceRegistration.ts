@@ -43,7 +43,10 @@ export const useDeviceRegistration = () => {
           { token, platform: "android" },
           {
             onError: (err) => {
-              console.error("[PushNotifications] Failed to register device with server:", err.message);
+              console.error(
+                "[PushNotifications] Failed to register device with server:",
+                err.message,
+              );
             },
           },
         );

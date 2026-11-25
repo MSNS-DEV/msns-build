@@ -64,61 +64,63 @@ export function FeeStructureTable() {
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[50px]"></TableHead>
-              <TableHead>Level</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead className="text-right">Tuition</TableHead>
-              <TableHead className="text-right">Admission</TableHead>
-              <TableHead className="text-right">Annual Funds</TableHead>
-              <TableHead className="text-right">Total Monthly</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {fees.map((fee) => (
-              <TableRow key={fee.feeId}>
-                <TableCell>
-                  <Checkbox
-                    checked={selectedFees.includes(fee.feeId)}
-                    onCheckedChange={() => toggleSelect(fee.feeId)}
-                  />
-                </TableCell>
-                <TableCell className="font-medium">{fee.level}</TableCell>
-                <TableCell>
-                  <Badge variant="outline">{fee.type}</Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  Rs. {fee.tuitionFee.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right">
-                  Rs. {fee.admissionFee.toLocaleString()}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex flex-col text-xs text-muted-foreground">
-                    <span>Exam: {fee.examFund}</span>
-                    <span>Lab: {fee.computerLabFund ?? 0}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="text-right font-bold text-green-600">
-                  Rs.{" "}
-                  {fee.tuitionFee + fee.infoAndCallsFee + fee.studentIdCardFee}
-                </TableCell>
-              </TableRow>
-            ))}
-            {fees.length === 0 && (
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="py-8 text-center text-muted-foreground"
-                >
-                  No fee structures defined. Create one to get started.
-                </TableCell>
+                <TableHead className="w-[50px]"></TableHead>
+                <TableHead>Level</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="text-right">Tuition</TableHead>
+                <TableHead className="text-right">Admission</TableHead>
+                <TableHead className="text-right">Annual Funds</TableHead>
+                <TableHead className="text-right">Total Monthly</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {fees.map((fee) => (
+                <TableRow key={fee.feeId}>
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedFees.includes(fee.feeId)}
+                      onCheckedChange={() => toggleSelect(fee.feeId)}
+                    />
+                  </TableCell>
+                  <TableCell className="font-medium">{fee.level}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline">{fee.type}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    Rs. {fee.tuitionFee.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    Rs. {fee.admissionFee.toLocaleString()}
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex flex-col text-xs text-muted-foreground">
+                      <span>Exam: {fee.examFund}</span>
+                      <span>Lab: {fee.computerLabFund ?? 0}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-bold text-green-600">
+                    Rs.{" "}
+                    {fee.tuitionFee +
+                      fee.infoAndCallsFee +
+                      fee.studentIdCardFee}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {fees.length === 0 && (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="py-8 text-center text-muted-foreground"
+                  >
+                    No fee structures defined. Create one to get started.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </CardContent>
     </Card>

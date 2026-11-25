@@ -1,7 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { UserPlus, Users, type LucideIcon, ArrowRight, FileText } from "lucide-react";
+import {
+  UserPlus,
+  Users,
+  type LucideIcon,
+  ArrowRight,
+  FileText,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -87,36 +93,32 @@ export default function RegistrationCards() {
         const Icon = service.icon;
         const href = service.href.replace("/admin", prefix);
         return (
-          <Link
-            href={href}
-            key={service.title}
-            className="group block h-full"
-          >
+          <Link href={href} key={service.title} className="group block h-full">
             <motion.div
               whileHover={{ y: -5 }}
               transition={{ type: "spring", stiffness: 300 }}
               className="h-full"
             >
               <Card
-                className={`relative h-full overflow-hidden border bg-white/80 dark:bg-white/5 transition-all duration-500 border-slate-200/80 dark:${service.borderColor} hover:border-opacity-50 hover:shadow-2xl ${service.hoverShadow} backdrop-blur-md`}
+                className={`relative h-full overflow-hidden border border-slate-200/80 bg-white/80 transition-all duration-500 dark:bg-white/5 dark:${service.borderColor} hover:border-opacity-50 hover:shadow-2xl ${service.hoverShadow} backdrop-blur-md`}
               >
                 {/* Gradient overlay on hover */}
-                <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 dark:from-white/5 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 dark:from-white/5" />
 
                 <CardHeader className="relative z-10 pb-2">
                   <div className="mb-4 flex items-start justify-between">
                     <div
-                      className={`rounded-2xl p-3 ${service.bgColor} border border-slate-100 dark:border-border transition-transform duration-500 group-hover:scale-110`}
+                      className={`rounded-2xl p-3 ${service.bgColor} border border-slate-100 transition-transform duration-500 group-hover:scale-110 dark:border-border`}
                     >
                       <Icon className={`h-6 w-6 ${service.iconColor}`} />
                     </div>
                     <div
-                      className={`rounded-full bg-slate-100 dark:bg-white/5 p-2 text-slate-500 dark:text-foreground/40 transition-all group-hover:bg-slate-200 dark:group-hover:bg-white/10 group-hover:text-slate-700 dark:group-hover:text-foreground`}
+                      className={`rounded-full bg-slate-100 p-2 text-slate-500 transition-all group-hover:bg-slate-200 group-hover:text-slate-700 dark:bg-white/5 dark:text-foreground/40 dark:group-hover:bg-white/10 dark:group-hover:text-foreground`}
                     >
                       <ArrowRight className="h-4 w-4 -rotate-45 transition-transform duration-300 group-hover:rotate-0" />
                     </div>
                   </div>
-                  <CardTitle className="text-xl font-bold tracking-tight text-slate-800 dark:text-foreground transition-colors group-hover:text-emerald-600 dark:group-hover:text-emerald-300">
+                  <CardTitle className="text-xl font-bold tracking-tight text-slate-800 transition-colors group-hover:text-emerald-600 dark:text-foreground dark:group-hover:text-emerald-300">
                     {service.title}
                   </CardTitle>
                 </CardHeader>

@@ -5,7 +5,10 @@ import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { useEffect, useState } from "react";
 
 import { isNative } from "~/lib/mobile/native-service";
-import { sendWelcomeNotification, triggerTestWelcomeNotification } from "~/lib/mobile/notification-service";
+import {
+  sendWelcomeNotification,
+  triggerTestWelcomeNotification,
+} from "~/lib/mobile/notification-service";
 import { useSyncEngine } from "~/hooks/useSyncEngine";
 import { useDeviceRegistration } from "~/hooks/useDeviceRegistration";
 import { useDeepLinks } from "~/hooks/useDeepLinks";
@@ -21,13 +24,21 @@ function WelcomeNotificationListener() {
     if (session?.user) {
       const user = session.user;
       const sessionKey = `msns_welcome_notified_${user.id || user.email}`;
-      if (typeof window !== "undefined" && !sessionStorage.getItem(sessionKey)) {
+      if (
+        typeof window !== "undefined" &&
+        !sessionStorage.getItem(sessionKey)
+      ) {
         sessionStorage.setItem(sessionKey, "true");
-        void sendWelcomeNotification(user.name ?? user.email ?? "User", user.accountType);
+        void sendWelcomeNotification(
+          user.name ?? user.email ?? "User",
+          user.accountType,
+        );
       }
-      void import("~/lib/mobile/daily-notifications").then(({ initDailyRoleNotifications }) => {
-        void initDailyRoleNotifications(user.accountType ?? "ADMIN");
-      });
+      void import("~/lib/mobile/daily-notifications").then(
+        ({ initDailyRoleNotifications }) => {
+          void initDailyRoleNotifications(user.accountType ?? "ADMIN");
+        },
+      );
     }
   }, [session]);
 
@@ -61,18 +72,23 @@ export function Provider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       // Expose test notification trigger on window object for easy manual testing
-      (window as unknown as Record<string, unknown>).triggerTestWelcomeNotification = triggerTestWelcomeNotification;
+      (
+        window as unknown as Record<string, unknown>
+      ).triggerTestWelcomeNotification = triggerTestWelcomeNotification;
     }
 
     if ("serviceWorker" in navigator && isNative()) {
       window.addEventListener("load", () => {
         navigator.serviceWorker.register("/sw.js").then(
           (registration) => {
-            console.log("ServiceWorker registered successfully with scope:", registration.scope);
+            console.log(
+              "ServiceWorker registered successfully with scope:",
+              registration.scope,
+            );
           },
           (err) => {
             console.error("ServiceWorker registration failed:", err);
-          }
+          },
         );
       });
     }

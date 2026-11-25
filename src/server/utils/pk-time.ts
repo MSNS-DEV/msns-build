@@ -46,8 +46,15 @@ export function pkDateOnly(d: string | Date = new Date()): Date {
 }
 
 /** Session window from its "YYYY-MM-DD" sessionFrom/sessionTo strings (undefined when unset). */
-export function sessionWindow(session: { sessionFrom: string; sessionTo: string }) {
-  const from = YMD.test(session.sessionFrom.slice(0, 10)) ? pkDayStart(session.sessionFrom) : undefined;
-  const to = YMD.test(session.sessionTo.slice(0, 10)) ? pkDayEnd(session.sessionTo) : undefined;
+export function sessionWindow(session: {
+  sessionFrom: string;
+  sessionTo: string;
+}) {
+  const from = YMD.test(session.sessionFrom.slice(0, 10))
+    ? pkDayStart(session.sessionFrom)
+    : undefined;
+  const to = YMD.test(session.sessionTo.slice(0, 10))
+    ? pkDayEnd(session.sessionTo)
+    : undefined;
   return { from, to };
 }

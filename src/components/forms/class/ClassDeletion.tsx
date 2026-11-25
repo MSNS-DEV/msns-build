@@ -16,7 +16,13 @@ import {
 } from "~/components/ui/alert-dialog";
 import { Button } from "~/components/ui/button";
 
-export const ClassDeletionDialog = ({ classIds, onSuccess }: { classIds: string[], onSuccess?: () => void }) => {
+export const ClassDeletionDialog = ({
+  classIds,
+  onSuccess,
+}: {
+  classIds: string[];
+  onSuccess?: () => void;
+}) => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const utils = api.useUtils();
@@ -56,7 +62,9 @@ export const ClassDeletionDialog = ({ classIds, onSuccess }: { classIds: string[
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={deleteClasses.isPending}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={deleteClasses.isPending}>
+            Cancel
+          </AlertDialogCancel>
           <AlertDialogAction asChild>
             <Button
               variant="destructive"

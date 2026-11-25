@@ -25,12 +25,7 @@ export function getParentagePrefix(gender?: string | null): "D/O" | "S/O" {
 
 export const checkIsAdmin = (accountType: string) => {
   const a = accountType?.toUpperCase();
-  return (
-    a === "ADMIN" ||
-    a === "PRINCIPAL" ||
-    a === "HEAD" ||
-    a === "CLERK"
-  );
+  return a === "ADMIN" || a === "PRINCIPAL" || a === "HEAD" || a === "CLERK";
 };
 
 export const checkIsTeacher = (accountType: string) => {
@@ -49,7 +44,12 @@ export const getRoleTheme = (accountType: string) => {
       gradient: "from-purple-500 to-indigo-600",
       bg: "from-purple-50 to-indigo-100",
       icon: Shield,
-      badge: a === "ADMIN" ? "Administrator" : a === "PRINCIPAL" ? "Principal" : "Head",
+      badge:
+        a === "ADMIN"
+          ? "Administrator"
+          : a === "PRINCIPAL"
+            ? "Principal"
+            : "Head",
     };
   else if (a === "CLERK")
     return {
@@ -82,12 +82,7 @@ export const getRoleTheme = (accountType: string) => {
 
 export const getStatTheme = (accountType: string) => {
   const a = accountType?.toUpperCase();
-  if (
-    a === "ADMIN" ||
-    a === "PRINCIPAL" ||
-    a === "HEAD" ||
-    a === "CLERK"
-  )
+  if (a === "ADMIN" || a === "PRINCIPAL" || a === "HEAD" || a === "CLERK")
     return {
       gradient: "from-purple-500 to-indigo-600",
       bg: "from-purple-50 to-indigo-100",

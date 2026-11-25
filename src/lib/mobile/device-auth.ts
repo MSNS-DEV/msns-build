@@ -1,4 +1,8 @@
-import { getSecureItem, setSecureItem, removeSecureItem } from "./native-service";
+import {
+  getSecureItem,
+  setSecureItem,
+  removeSecureItem,
+} from "./native-service";
 
 export interface DeviceAuthSessionData {
   userId: string;
@@ -22,8 +26,13 @@ export const getDeviceId = async (): Promise<string> => {
   try {
     let deviceId = await getSecureItem(DEVICE_ID_KEY);
     if (!deviceId) {
-      const cryptoRandom = typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : null;
-      deviceId = cryptoRandom ?? `device_${Date.now()}_${Math.random().toString(36).substring(2, 12)}`;
+      const cryptoRandom =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : null;
+      deviceId =
+        cryptoRandom ??
+        `device_${Date.now()}_${Math.random().toString(36).substring(2, 12)}`;
       await setSecureItem(DEVICE_ID_KEY, deviceId);
     }
     return deviceId;
@@ -57,10 +66,16 @@ export const saveDeviceAuthSession = async (user: {
     };
 
     await setSecureItem(DEVICE_AUTH_SESSION_KEY, JSON.stringify(sessionData));
-    console.log("[DeviceAuthSession] Saved persistent device auth session for user:", sessionData.email);
+    console.log(
+      "[DeviceAuthSession] Saved persistent device auth session for user:",
+      sessionData.email,
+    );
     return sessionData;
   } catch (error) {
-    console.error("[DeviceAuthSession] Failed to save device auth session:", error);
+    console.error(
+      "[DeviceAuthSession] Failed to save device auth session:",
+      error,
+    );
     return null;
   }
 };
@@ -68,17 +83,21 @@ export const saveDeviceAuthSession = async (user: {
 /**
  * Retrieves the currently active persistent device auth session if available.
  */
-export const getDeviceAuthSession = async (): Promise<DeviceAuthSessionData | null> => {
-  try {
-    const raw = await getSecureItem(DEVICE_AUTH_SESSION_KEY);
-    if (!raw) return null;
-    const data = JSON.parse(raw) as DeviceAuthSessionData;
-    return data;
-  } catch (error) {
-    console.error("[DeviceAuthSession] Failed to parse device auth session:", error);
-    return null;
-  }
-};
+export const getDeviceAuthSession =
+  async (): Promise<DeviceAuthSessionData | null> => {
+    try {
+      const raw = await getSecureItem(DEVICE_AUTH_SESSION_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw) as DeviceAuthSessionData;
+      return data;
+    } catch (error) {
+      console.error(
+        "[DeviceAuthSession] Failed to parse device auth session:",
+        error,
+      );
+      return null;
+    }
+  };
 
 /**
  * Clears the stored device auth session upon manual logout.
@@ -86,8 +105,13 @@ export const getDeviceAuthSession = async (): Promise<DeviceAuthSessionData | nu
 export const clearDeviceAuthSession = async (): Promise<void> => {
   try {
     await removeSecureItem(DEVICE_AUTH_SESSION_KEY);
-    console.log("[DeviceAuthSession] Device auth session cleared successfully.");
+    console.log(
+      "[DeviceAuthSession] Device auth session cleared successfully.",
+    );
   } catch (error) {
-    console.error("[DeviceAuthSession] Failed to clear device auth session:", error);
+    console.error(
+      "[DeviceAuthSession] Failed to clear device auth session:",
+      error,
+    );
   }
 };

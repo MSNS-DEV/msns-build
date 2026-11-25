@@ -3,6 +3,7 @@
 ## Executive Summary
 
 This walkthrough details the enterprise upgrade to the **MSNS LMS/ERP Fee Management System**, bridging the six operational and architectural gaps identified:
+
 1. **Challan Validity Windows (`ChallanValidity`)**: Eliminates ad-hoc due dates via non-overlapping installment schedules per session/class with bulk-sync capabilities.
 2. **Concession vs. Exemption Separation**: Unbundles policy/merit-based concessions (linked to $\ge 80\%$ attendance auto-continuation) from one-off Principal discretionary exemptions.
 3. **Sub-Installment (Voucher Splitting) State Machine**: Implements parent-child voucher hierarchies with strict sequence locking (`Concession Apply` $\rightarrow$ `Split` $\rightarrow$ `Revert if Unpaid`).
@@ -17,9 +18,11 @@ This walkthrough details the enterprise upgrade to the **MSNS LMS/ERP Fee Manage
 ### Gap 1: Strict Challan Validity Window (`ChallanValidity`)
 
 #### Problem
+
 Due dates are historically set ad-hoc per voucher record, leading to mismatched payment deadlines across students in the same class, arbitrary late-fee calculations, and no systematic scheduling for 12 monthly installments or 3 term installments.
 
 #### Architectural Solution
+
 - Introduce the **`ChallanValidity`** table that acts as the single source of truth for fee validity windows.
 - Define a temporal non-overlapping rule enforced at both the database level (`@@unique([sessionId, gradeId, installmentNo])`) and application service layer:
   $$\text{For any class } C \text{ and installment } k: \quad \text{fromDate}_k \le \text{toDate}_k < \text{fromDate}_{k+1}$$
@@ -40,10 +43,13 @@ flowchart LR
 ### Gap 2: Concession vs. Exemption Formal Separation
 
 #### Problem
+
 `FeeStudentClass` historically stored only `discount` and `discountByPercent`, blending policy-driven institutional scholarships (which are performance-contingent) with one-off compassionate fee waivers granted by the Principal.
 
 #### Architectural Solution
+
 We formally partition financial reductions into two distinct models and audit tracks:
+
 1. **Category Concessions (`concessionCategory`, `concessionScope`, `concessionAmount`)**:
    - Institutional, rules-based discounts: `RS_10_SCHOLARSHIP`, `A_PLUS_PLUS` ($90\%+$ Merit), `A_PLUS` ($85\%+$ Merit), `A_GRADE` ($80\%+$ Merit), `B_PLUS`, `B_GRADE`, `C_PLUS`, `C_GRADE`, `D_PLUS`, `D_GRADE`, `SIBLING_CONCESSION`, `STAFF_CHILD`, `ORPHAN_WELFARE`.
    - **Attendance Auto-Continuation Rule**: For all merit and welfare concessions spanning multiple installments (`GENERAL_ONE_YEAR`, `SPECIAL_TWO_YEAR`), an automated pre-generation worker calculates the student's attendance in `StudentAttendance` for the preceding month:
@@ -61,9 +67,11 @@ We formally partition financial reductions into two distinct models and audit tr
 ### Gap 3: Sub-Installment (Voucher Splitting) State Machine
 
 #### Problem
+
 Parents unable to afford a full monthly or term tuition in a single transaction frequently negotiate splitting the payment into 2 or 3 smaller installments. Clerks previously hacked this by manually altering amounts or recording partial payments, leaving the accounting ledger inconsistent.
 
 #### Architectural Solution
+
 A formal parent-child voucher hierarchy using `parentVoucherId`, `subInstallmentIndex`, and `isSplitLocked`.
 
 ```mermaid
@@ -71,20 +79,21 @@ stateDiagram-v2
     [*] --> REGULAR_INSTALLMENT: Initial Generation
     REGULAR_INSTALLMENT --> CONCESSION_APPLIED: Policy & Exemption Evaluated
     CONCESSION_APPLIED --> SUB_INSTALLMENT: Split Requested by Parent
-    
+
     state SUB_INSTALLMENT {
         [*] --> Split_Lock: Parent isSplitLocked = true
         Split_Lock --> Sub_1: Generate Sub-Voucher 1/K
         Split_Lock --> Sub_2: Generate Sub-Voucher 2/K
     }
-    
+
     SUB_INSTALLMENT --> REVERTED: Revert Split (Only if all Sub-Vouchers are 100% Unpaid)
     REVERTED --> REGULAR_INSTALLMENT: Parent Unlocked
     SUB_INSTALLMENT --> SETTLED: Sub-Vouchers Paid Incrementally
 ```
 
 #### State Machine Rules:
-1. **Concession First**: Concessions and exemptions MUST be applied and finalized on the parent voucher *before* splitting. Net payable:
+
+1. **Concession First**: Concessions and exemptions MUST be applied and finalized on the parent voucher _before_ splitting. Net payable:
    $$\text{Net Payable} = \text{Base Fee} + \text{Arrears} - \text{Concession} - \text{Exemption} + \text{Fine}$$
 2. **Deterministic Partitioning**:
    - A voucher with net payable $P$ split into $K$ installments creates child records with amounts:
@@ -101,9 +110,11 @@ stateDiagram-v2
 ### Gap 4: Full-Session / Multi-Month Merged Challan
 
 #### Problem
+
 When a student accumulates 2 to 6 months of unpaid fee installments, generating separate challans for each month results in multiple barcodes, confusion at the bank counter, and dropped late fees.
 
 #### Architectural Solution
+
 - Introduce `VoucherType.FULL_YEAR_MERGED`.
 - **Consolidation Workflow**:
   1. Clerk selects a student and a set of consecutive unpaid vouchers $[V_1, V_2, \dots, V_m]$.
@@ -121,15 +132,20 @@ When a student accumulates 2 to 6 months of unpaid fee installments, generating 
 ### Gap 5: Operational Safeguards on Payment Confirmation
 
 #### Problem
+
 Cash-counter operators and bank import processes face concurrency hazards: double submission of payments, unrecorded collecting channel, missing operator identity, and discrepancy between fee receipts and general ledger accounts.
 
 #### Architectural Solution
+
 - **Idempotent Atomic Settlement**:
   All payment updates run inside an interactive Prisma transaction (`ctx.db.$transaction`) with an explicit payment status guard:
   ```typescript
   const existing = await tx.feeStudentClass.findUnique({ where: { sfcId } });
   if (existing.paymentStatus === PaymentStatus.PAID) {
-    throw new TRPCError({ code: "BAD_REQUEST", message: "Voucher has already been settled in full." });
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: "Voucher has already been settled in full.",
+    });
   }
   ```
 - **Operator & Channel Audit Footprint**:
@@ -161,21 +177,29 @@ Cash-counter operators and bank import processes face concurrency hazards: doubl
 ### Gap 6: Protected Class Transfer & Promotion Guardrails
 
 #### Problem
+
 - In `allotment.ts` (lines 201-203), deleting student-class associations executes `tx.feeStudentClass.deleteMany`, directly wiping out historical fee transactions and receipts!
 - Students transferred between grades mid-session (e.g., from Montessori at PKR 3,000 to Grade 1 at PKR 4,500) generate no differential billing.
 - In `promotion.ts` (lines 83-90), students can be promoted across academic years even if they owe substantial unpaid arrears from the prior year.
 
 #### Architectural Solution
+
 1. **Eliminate Destructive Deletions in `allotment.ts`**:
    - Replace `deleteMany` with a validation check:
      ```typescript
      const paidVouchers = await tx.feeStudentClass.findFirst({
-       where: { studentClassId: { in: studentClassIds }, paymentStatus: { in: [PaymentStatus.PAID, PaymentStatus.PARTIALLY_PAID] } },
+       where: {
+         studentClassId: { in: studentClassIds },
+         paymentStatus: {
+           in: [PaymentStatus.PAID, PaymentStatus.PARTIALLY_PAID],
+         },
+       },
      });
      if (paidVouchers) {
        throw new TRPCError({
          code: "PRECONDITION_FAILED",
-         message: "Cannot remove student: Paid financial records exist. Mark student as transferred/withdrawn instead.",
+         message:
+           "Cannot remove student: Paid financial records exist. Mark student as transferred/withdrawn instead.",
        });
      }
      ```
@@ -190,8 +214,17 @@ Cash-counter operators and bank import processes face concurrency hazards: doubl
      ```typescript
      const unpaidBalance = await tx.feeStudentClass.aggregate({
        where: {
-         StudentClass: { studentId: input.studentId, sessionId: input.fromSessionId },
-         paymentStatus: { in: [PaymentStatus.PENDING, PaymentStatus.PARTIALLY_PAID, PaymentStatus.OVERDUE] },
+         StudentClass: {
+           studentId: input.studentId,
+           sessionId: input.fromSessionId,
+         },
+         paymentStatus: {
+           in: [
+             PaymentStatus.PENDING,
+             PaymentStatus.PARTIALLY_PAID,
+             PaymentStatus.OVERDUE,
+           ],
+         },
        },
        _sum: { amountPaid: true }, // against net calculated due
      });
@@ -377,6 +410,7 @@ model SchoolBankDetails {
 ## 3. tRPC API Router Specifications
 
 ### `voucherRouter` (`src/server/api/routers/voucher.ts`)
+
 1. `generateMonthlyVouchers`: Batch generation for session/class with `ChallanValidity` lookup, sibling detection, attendance checks for policy concessions, and sequential number allocation.
 2. `getVouchers`: Paginated filterable query (by session, grade, month, status, type, search).
 3. `getVoucherById`: Detailed fetch including parent/sub-installment hierarchy, student details, and payment history.
@@ -388,16 +422,19 @@ model SchoolBankDetails {
 9. `getVoucherPrintData`: Fetch print-optimized data for 2-part vouchers (School Copy + Student Copy) with QR code payload.
 
 ### `concessionRouter` (`src/server/api/routers/concession.ts`)
+
 1. `applyPrincipalExemption`: Management-restricted procedure to grant discretionary exemptions with reason and approval tracking.
 2. `evaluateAttendanceConcessions`: Background/on-demand worker checking student attendance ($\ge 80\%$) and marking concessions active or suspended.
 3. `getStudentConcessionSummary`: Overview of student's merit category, sibling discounts, and active exemptions.
 
 ### `challanValidityRouter` (`src/server/api/routers/challanValidity.ts`)
+
 1. `setInstallmentSchedule`: Configures non-overlapping validity windows for a grade and session.
 2. `getInstallmentSchedule`: Retrieves validity schedule for grade/session.
 3. `syncChallanValidityToVouchers`: Bulk-syncs updated issue/due dates to all pending vouchers.
 
 ### Modifications to `allotment.ts` & `promotion.ts`
+
 - **`allotment.ts`**: Replace `deleteMany` with fee safety guard. Add `transferStudentWithAdjustment` procedure calculating tuition delta and issuing `FEE_ADJUSTMENT`.
 - **`promotion.ts`**: Add `verifyPromotionFeeClearance` checking for outstanding session arrears. Block promotion if defaulter without authorization. Retain historical `StudentClass` records.
 
@@ -406,6 +443,7 @@ model SchoolBankDetails {
 ## 4. UI Architecture & Two-Part Printable Voucher
 
 ### Two-Part Printable Voucher Layout
+
 - Standard A4 or Half-A4 sheet divided into two mirrored columns:
   - **Left**: School Copy (Finance Office / Bank Receipt)
   - **Right**: Student Copy (Parent Receipt)

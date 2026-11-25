@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { createTRPCRouter, financeProcedure, leadershipProcedure } from "../../trpc";
+import {
+  createTRPCRouter,
+  financeProcedure,
+  leadershipProcedure,
+} from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 import { assertNotSelfApproval } from "~/server/api/access";
@@ -21,7 +25,11 @@ export const directExpenseRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       // FR-ERP-14: Auto-approve if below threshold (PKR 5,000)
       const autoApprove = input.amount <= 5000;
@@ -43,22 +51,26 @@ export const directExpenseRouter = createTRPCRouter({
           try {
             const approvers = await ctx.db.user.findMany({
               where: {
-                accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD"] }
+                accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD"] },
               },
-              select: { id: true }
+              select: { id: true },
             });
             const approverIds = approvers.map((u) => u.id);
             if (approverIds.length > 0) {
-              const { sendPushNotification } = await import("~/server/mobile/fcm");
+              const { sendPushNotification } =
+                await import("~/server/mobile/fcm");
               await sendPushNotification(
                 approverIds,
                 [],
                 "Direct Expense Approval Required",
-                `Direct Expense for PKR ${input.amount} ("${input.description}") requires approval.`
+                `Direct Expense for PKR ${input.amount} ("${input.description}") requires approval.`,
               );
             }
           } catch (err) {
-            console.error("Failed to send direct expense approval push notification:", err);
+            console.error(
+              "Failed to send direct expense approval push notification:",
+              err,
+            );
           }
         })();
       }
@@ -71,14 +83,25 @@ export const directExpenseRouter = createTRPCRouter({
     .input(z.object({ directExpenseId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       const expense = await ctx.db.directExpense.findUnique({
         where: { directExpenseId: input.directExpenseId },
       });
-      if (!expense) throw new TRPCError({ code: "NOT_FOUND", message: "Expense not found" });
+      if (!expense)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Expense not found",
+        });
       if (expense.isApproved) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Expense already approved" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Expense already approved",
+        });
       }
       assertNotSelfApproval(employeeRecord.employeeId, expense.createdBy);
 
@@ -94,7 +117,12 @@ export const directExpenseRouter = createTRPCRouter({
 
   // Reject expense
   reject: leadershipProcedure
-    .input(z.object({ directExpenseId: z.string().cuid(), reason: z.string().min(1) }))
+    .input(
+      z.object({
+        directExpenseId: z.string().cuid(),
+        reason: z.string().min(1),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       return ctx.db.directExpense.update({
         where: { directExpenseId: input.directExpenseId },
@@ -158,7 +186,9 @@ export const directExpenseRouter = createTRPCRouter({
         nextDueDate: z.date(),
       }),
     )
-    .mutation(({ ctx, input }) => ctx.db.recurringExpenseTemplate.create({ data: input })),
+    .mutation(({ ctx, input }) =>
+      ctx.db.recurringExpenseTemplate.create({ data: input }),
+    ),
 
   getRecurringTemplates: financeProcedure
     .input(z.object({ isActive: z.boolean().default(true) }))
@@ -180,6 +210,9 @@ export const directExpenseRouter = createTRPCRouter({
     )
     .mutation(({ ctx, input }) => {
       const { templateId, ...data } = input;
-      return ctx.db.recurringExpenseTemplate.update({ where: { templateId }, data });
+      return ctx.db.recurringExpenseTemplate.update({
+        where: { templateId },
+        data,
+      });
     }),
 });

@@ -22,19 +22,26 @@ export default function EmergencyDirectoryPage() {
 
   const { data: students, isLoading } = api.student.getStudents.useQuery();
 
-  const filteredStudents = (students as StudentDirectoryItem[] | undefined)?.filter((s) =>
-    s.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.fatherMobile.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredStudents = (
+    students as StudentDirectoryItem[] | undefined
+  )?.filter(
+    (s) =>
+      s.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.registrationNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.fatherMobile.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto p-4 sm:p-6">
+    <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-emerald-400" /> Emergency Contact & Records Directory
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
+          <ShieldCheck className="h-6 w-6 text-emerald-400" /> Emergency Contact
+          & Records Directory
         </h1>
-        <p className="text-sm text-slate-400">Search student & staff emergency contacts, blood group, and tuition status</p>
+        <p className="text-sm text-slate-400">
+          Search student & staff emergency contacts, blood group, and tuition
+          status
+        </p>
       </div>
 
       <div className="relative">
@@ -44,7 +51,7 @@ export default function EmergencyDirectoryPage() {
           placeholder="Search by student name, roll number, or parent mobile phone..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-10 bg-slate-900 border-slate-800 text-white rounded-xl focus:border-emerald-500"
+          className="rounded-xl border-slate-800 bg-slate-900 pl-10 text-white focus:border-emerald-500"
         />
       </div>
 
@@ -59,31 +66,46 @@ export default function EmergencyDirectoryPage() {
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
           {filteredStudents.map((s) => (
-            <div key={s.studentId} className="rounded-xl border border-slate-800 bg-slate-900/60 p-4 space-y-3 backdrop-blur-md">
+            <div
+              key={s.studentId}
+              className="space-y-3 rounded-xl border border-slate-800 bg-slate-900/60 p-4 backdrop-blur-md"
+            >
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-base font-bold text-white">{s.studentName}</h3>
-                  <p className="text-xs text-slate-400">Reg: {s.registrationNumber}</p>
+                  <h3 className="text-base font-bold text-white">
+                    {s.studentName}
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Reg: {s.registrationNumber}
+                  </p>
                 </div>
-                <span className="px-2.5 py-1 text-xs font-bold rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center gap-1">
-                  <Droplet className="h-3.5 w-3.5 fill-rose-400" /> {s.bloodGroup ?? "O+"}
+                <span className="flex items-center gap-1 rounded-lg border border-rose-500/20 bg-rose-500/10 px-2.5 py-1 text-xs font-bold text-rose-400">
+                  <Droplet className="h-3.5 w-3.5 fill-rose-400" />{" "}
+                  {s.bloodGroup ?? "O+"}
                 </span>
               </div>
 
-              <div className="space-y-1 text-xs text-slate-300 border-t border-slate-800/80 pt-2">
+              <div className="space-y-1 border-t border-slate-800/80 pt-2 text-xs text-slate-300">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">{getParentagePrefix(s.gender)}:</span>
+                  <span className="text-slate-400">
+                    {getParentagePrefix(s.gender)}:
+                  </span>
                   <span className="font-semibold">{s.fatherName}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Parent Mobile:</span>
-                  <a href={`tel:${s.fatherMobile}`} className="font-semibold text-emerald-400 flex items-center gap-1">
+                  <a
+                    href={`tel:${s.fatherMobile}`}
+                    className="flex items-center gap-1 font-semibold text-emerald-400"
+                  >
                     <Phone className="h-3 w-3" /> {s.fatherMobile}
                   </a>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Current Address:</span>
-                  <span className="truncate max-w-[180px]">{s.currentAddress}</span>
+                  <span className="max-w-[180px] truncate">
+                    {s.currentAddress}
+                  </span>
                 </div>
               </div>
             </div>

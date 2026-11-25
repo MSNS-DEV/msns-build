@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET(
   request: Request,
-  { params }: { params: Promise<{ filename: string }> }
+  { params }: { params: Promise<{ filename: string }> },
 ) {
   const { filename } = await params;
   if (!filename) {
@@ -27,10 +27,11 @@ export async function GET(
 
     // Use Node.js Readable.toWeb to avoid AWS SDK transformToWebStream uncaught exceptions
     const stream = Readable.toWeb(response.Body as Readable) as ReadableStream;
-    
+
     const headers = new Headers();
     if (response.ContentType) headers.set("Content-Type", response.ContentType);
-    if (response.ContentLength) headers.set("Content-Length", response.ContentLength.toString());
+    if (response.ContentLength)
+      headers.set("Content-Length", response.ContentLength.toString());
     headers.set("Cache-Control", "public, max-age=31536000, immutable");
 
     return new NextResponse(stream, { headers });

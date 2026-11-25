@@ -1,9 +1,20 @@
 import { z } from "zod";
 import { assertNoPaidVouchers } from "~/server/utils/financial-guards";
 import { getOwnStudentIds } from "~/server/api/access";
-import { createTRPCRouter, protectedProcedure, officeProcedure, teacherProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  officeProcedure,
+  teacherProcedure,
+} from "../trpc";
 import { TRPCError } from "@trpc/server";
-import { Prisma, type StudentClass, type Grades, type Sessions, type Students } from "@prisma/client";
+import {
+  Prisma,
+  type StudentClass,
+  type Grades,
+  type Sessions,
+  type Students,
+} from "@prisma/client";
 
 // Define a relation type based on your Prisma schema. Adjust field names as needed.
 type StudentClassWithRelations = StudentClass & {
@@ -67,7 +78,10 @@ export const AllotmentRouter = createTRPCRouter({
       } catch (error) {
         if (error instanceof TRPCError) throw error;
         // Concurrent "add to class" for the same student: the unique (student, session) key wins.
-        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
           throw new TRPCError({
             code: "CONFLICT",
             message: "Student already assigned to a class in this session",

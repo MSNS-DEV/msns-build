@@ -2,7 +2,14 @@
 
 import { useMemo } from "react";
 import { motion } from "framer-motion";
-import { GraduationCap, Sparkles, Users, UserCheck, Shield, FileSpreadsheet } from "lucide-react";
+import {
+  GraduationCap,
+  Sparkles,
+  Users,
+  UserCheck,
+  Shield,
+  FileSpreadsheet,
+} from "lucide-react";
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import RegistrationCards from "~/components/cards/RegistrationCard";
 import { GradientStatCard } from "~/components/shared/GradientStatCard";
@@ -18,8 +25,10 @@ export default function RegistrationPage() {
     { href: "/admin/users", label: "User Management", current: true },
   ];
 
-  const { data: students, isLoading: studentsLoading } = api.student.getStudents.useQuery();
-  const { data: faculty, isLoading: facultyLoading } = api.employee.getEmployees.useQuery();
+  const { data: students, isLoading: studentsLoading } =
+    api.student.getStudents.useQuery();
+  const { data: faculty, isLoading: facultyLoading } =
+    api.employee.getEmployees.useQuery();
 
   const exportData = useMemo(() => {
     if (!students || !faculty) return undefined;
@@ -31,18 +40,18 @@ export default function RegistrationPage() {
         { key: "contact", label: "Contact", width: 20 },
       ],
       rows: [
-        ...students.map(s => ({
+        ...students.map((s) => ({
           type: "Student",
           id: s.admissionNumber ?? s.registrationNumber,
           name: s.studentName,
           contact: s.studentMobile,
         })),
-        ...faculty.map(f => ({
+        ...faculty.map((f) => ({
           type: "Faculty",
           id: f.employeeId,
           name: f.employeeName,
           contact: f.mobileNo,
-        }))
+        })),
       ],
       sheetName: "All Users",
       title: "Users Directory Export",
@@ -55,7 +64,10 @@ export default function RegistrationPage() {
         <div className="h-10 w-48 animate-pulse rounded-md bg-slate-200 dark:bg-emerald-900/20" />
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-32 animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20" />
+            <div
+              key={i}
+              className="h-32 animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20"
+            />
           ))}
         </div>
         <div className="h-96 w-full animate-pulse rounded-xl bg-slate-200 dark:bg-emerald-900/20" />
@@ -73,16 +85,21 @@ export default function RegistrationPage() {
             User Management Hub
           </h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground dark:text-muted-foreground">
-            Central portal for student and faculty registration, directories, and account management.
+            Central portal for student and faculty registration, directories,
+            and account management.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <PageExportButton exportData={exportData} csvFilename="users-directory" pdfReportType="students" />
+          <PageExportButton
+            exportData={exportData}
+            csvFilename="users-directory"
+            pdfReportType="students"
+          />
         </div>
       </div>
 
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+      <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
         <GradientStatCard
           title="Total Students"
           value={students?.length ?? 0}
@@ -111,17 +128,26 @@ export default function RegistrationPage() {
 
       <Tabs defaultValue="actions" className="space-y-6">
         <TabsList className="h-auto flex-wrap justify-start gap-1 border border-slate-200 bg-slate-100 p-1 dark:border-border dark:bg-card">
-          <TabsTrigger value="actions" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground">
+          <TabsTrigger
+            value="actions"
+            className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground"
+          >
             <Sparkles className="h-4 w-4" />
             Quick Actions
           </TabsTrigger>
-          <TabsTrigger value="roles" className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground">
+          <TabsTrigger
+            value="roles"
+            className="gap-2 data-[state=active]:bg-white data-[state=active]:text-emerald-700 dark:data-[state=active]:bg-emerald-600 dark:data-[state=active]:text-foreground"
+          >
             <Shield className="h-4 w-4" />
             Roles &amp; Permissions
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="actions" className="m-0 duration-300 animate-in fade-in-50">
+        <TabsContent
+          value="actions"
+          className="m-0 duration-300 animate-in fade-in-50"
+        >
           <div className="flex flex-col items-center justify-center py-6">
             <div className="mx-auto mb-10 max-w-4xl space-y-4 text-center">
               <motion.div
@@ -158,7 +184,10 @@ export default function RegistrationPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="roles" className="m-0 duration-300 animate-in fade-in-50">
+        <TabsContent
+          value="roles"
+          className="m-0 duration-300 animate-in fade-in-50"
+        >
           <RoleManagementTab />
         </TabsContent>
       </Tabs>

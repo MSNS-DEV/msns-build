@@ -25,9 +25,9 @@ export const LazySalaryContent = dynamic(
 
 export const LazyEmployeeAttendanceContent = dynamic(
   () =>
-    import(
-      "~/app/(dashboard)/admin/sessions/attendance/employees/EmployeeAttendanceContent"
-    ).then((m) => m.EmployeeAttendanceContent),
+    import("~/app/(dashboard)/admin/sessions/attendance/employees/EmployeeAttendanceContent").then(
+      (m) => m.EmployeeAttendanceContent,
+    ),
   { loading: PanelLoading },
 );
 

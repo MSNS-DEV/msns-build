@@ -16,7 +16,8 @@ export const requestNotificationPermissions = async (): Promise<boolean> => {
 
   if (isNative()) {
     try {
-      const { LocalNotifications } = await import("@capacitor/local-notifications");
+      const { LocalNotifications } =
+        await import("@capacitor/local-notifications");
       let perm = await LocalNotifications.checkPermissions();
       if (perm.display !== "granted") {
         perm = await LocalNotifications.requestPermissions();
@@ -65,7 +66,8 @@ export const sendLocalNotification = async ({
 
   if (isNative()) {
     try {
-      const { LocalNotifications } = await import("@capacitor/local-notifications");
+      const { LocalNotifications } =
+        await import("@capacitor/local-notifications");
       const granted = await requestNotificationPermissions();
       if (granted) {
         await LocalNotifications.schedule({
@@ -110,7 +112,7 @@ export const sendLocalNotification = async ({
 
 export const sendWelcomeNotification = async (
   userName?: string,
-  role?: string
+  role?: string,
 ): Promise<void> => {
   const title = "🎉 Welcome to MSNS LMS!";
   const body = `Hello ${userName ?? "User"}${
@@ -129,7 +131,7 @@ export const sendWelcomeNotification = async (
 export const sendBroadcastNotification = async (
   broadcastTitle: string,
   message: string,
-  targetAudience?: string
+  targetAudience?: string,
 ): Promise<void> => {
   const title = `📢 Broadcast Announcement: ${broadcastTitle}`;
   const body = `${targetAudience ? `[${targetAudience}] ` : ""}${message}`;
@@ -146,7 +148,7 @@ export const sendBroadcastNotification = async (
 export const sendModuleActionNotification = async (
   moduleName: string,
   actionName: string,
-  details?: string
+  details?: string,
 ): Promise<void> => {
   const title = `⚡ MSNS [${moduleName.toUpperCase()}]`;
   const body = `${actionName}${details ? `: ${details}` : ""}`;
@@ -162,7 +164,7 @@ export const sendModuleActionNotification = async (
 export const sendExamDatesheetNotification = async (
   examName: string,
   startDate: string,
-  classGrade?: string
+  classGrade?: string,
 ): Promise<void> => {
   const title = `📋 Exam Datesheet Published: ${examName}`;
   const body = `${classGrade ? `For Class ${classGrade} - ` : ""}Examinations start on ${startDate}. View your datesheet schedule in the portal.`;
@@ -179,7 +181,7 @@ export const sendExamDatesheetNotification = async (
 export const sendFeeReminderNotification = async (
   studentName: string,
   amount: number,
-  dueDate: string
+  dueDate: string,
 ): Promise<void> => {
   const title = `💳 Fee Due Reminder`;
   const body = `Fee voucher for ${studentName} (Rs. ${amount.toLocaleString()}) is due on ${dueDate}. Please pay to avoid late fines.`;
@@ -196,7 +198,7 @@ export const sendFeeReminderNotification = async (
 export const sendAttendanceAlertNotification = async (
   studentName: string,
   status: string,
-  date: string
+  date: string,
 ): Promise<void> => {
   const title = `🚨 Attendance Alert`;
   const body = `${studentName} was marked as [${status.toUpperCase()}] on ${date}.`;

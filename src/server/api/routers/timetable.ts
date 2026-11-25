@@ -1,4 +1,9 @@
-import { createTRPCRouter, protectedProcedure, officeProcedure, teacherProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  officeProcedure,
+  teacherProcedure,
+} from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import type { DayOfWeek, PrismaClient } from "@prisma/client";
@@ -56,7 +61,9 @@ async function assertNoTeacherClash(
   for (const o of others) {
     const busy =
       args.employeeIds.includes(o.employeeId) ||
-      coTeachers.some((c) => c.classId === o.classId && c.subjectId === o.subjectId);
+      coTeachers.some(
+        (c) => c.classId === o.classId && c.subjectId === o.subjectId,
+      );
     if (busy) {
       throw new TRPCError({
         code: "CONFLICT",
@@ -98,7 +105,15 @@ export const timetableRouter = createTRPCRouter({
           include: {
             Grades: true,
             Subject: true,
-            Employees: { select: { employeeId: true, employeeName: true, designation: true, registrationNumber: true, profilePic: true } },
+            Employees: {
+              select: {
+                employeeId: true,
+                employeeName: true,
+                designation: true,
+                registrationNumber: true,
+                profilePic: true,
+              },
+            },
             Sessions: true,
           },
           orderBy: [{ dayOfWeek: "asc" }, { lectureNumber: "asc" }],
@@ -114,18 +129,30 @@ export const timetableRouter = createTRPCRouter({
 
   // Get timetable for a specific teacher (includes primary and co-assigned lectures)
   getTimetableByTeacher: protectedProcedure
-    .input(z.object({ employeeId: z.string().min(1), sessionId: z.string().optional() }))
+    .input(
+      z.object({
+        employeeId: z.string().min(1),
+        sessionId: z.string().optional(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       try {
         // Default to the active session so past years' slots are not mixed in.
         const sessionId =
           input.sessionId ??
-          (await ctx.db.sessions.findFirst({ where: { isActive: true }, select: { sessionId: true } }))
-            ?.sessionId;
+          (
+            await ctx.db.sessions.findFirst({
+              where: { isActive: true },
+              select: { sessionId: true },
+            })
+          )?.sessionId;
 
         // Class-subjects where this teacher is primary or co-teacher
         const teacherCS = await ctx.db.classSubject.findMany({
-          where: { employeeId: input.employeeId, ...(sessionId ? { sessionId } : {}) },
+          where: {
+            employeeId: input.employeeId,
+            ...(sessionId ? { sessionId } : {}),
+          },
           select: { classId: true, subjectId: true, sessionId: true },
         });
 
@@ -146,7 +173,15 @@ export const timetableRouter = createTRPCRouter({
           include: {
             Grades: true,
             Subject: true,
-            Employees: { select: { employeeId: true, employeeName: true, designation: true, registrationNumber: true, profilePic: true } },
+            Employees: {
+              select: {
+                employeeId: true,
+                employeeName: true,
+                designation: true,
+                registrationNumber: true,
+                profilePic: true,
+              },
+            },
             Sessions: true,
           },
           orderBy: [{ dayOfWeek: "asc" }, { lectureNumber: "asc" }],
@@ -194,7 +229,8 @@ export const timetableRouter = createTRPCRouter({
         if (rawEmployeeIds.length === 0 || rawSubjectIds.length === 0) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Please select at least 1 subject and 1 teacher (max 2 each).",
+            message:
+              "Please select at least 1 subject and 1 teacher (max 2 each).",
           });
         }
 
@@ -256,7 +292,9 @@ export const timetableRouter = createTRPCRouter({
         });
 
         // Ensure ClassSubject allotment exists for each subject and teacher combination
-        const allSubjectIds = Array.from(new Set([...subjectIds, finalSubjectId]));
+        const allSubjectIds = Array.from(
+          new Set([...subjectIds, finalSubjectId]),
+        );
         for (const sId of allSubjectIds) {
           for (const eId of employeeIds) {
             // Upsert on the unique allotment key: safe if two requests race.
@@ -353,7 +391,8 @@ export const timetableRouter = createTRPCRouter({
         if (rawEmployeeIds.length === 0 || rawSubjectIds.length === 0) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "Please select at least 1 subject and 1 teacher (max 2 each).",
+            message:
+              "Please select at least 1 subject and 1 teacher (max 2 each).",
           });
         }
 
@@ -415,7 +454,9 @@ export const timetableRouter = createTRPCRouter({
         });
 
         // Ensure ClassSubject allotment exists for each subject and teacher combination
-        const allSubjectIds = Array.from(new Set([...subjectIds, finalSubjectId]));
+        const allSubjectIds = Array.from(
+          new Set([...subjectIds, finalSubjectId]),
+        );
         for (const sId of allSubjectIds) {
           for (const eId of employeeIds) {
             // Upsert on the unique allotment key: safe if two requests race.
@@ -777,7 +818,15 @@ export const timetableRouter = createTRPCRouter({
           where: { classId: input.classId },
           include: {
             Subject: true,
-            Employees: { select: { employeeId: true, employeeName: true, designation: true, registrationNumber: true, profilePic: true } },
+            Employees: {
+              select: {
+                employeeId: true,
+                employeeName: true,
+                designation: true,
+                registrationNumber: true,
+                profilePic: true,
+              },
+            },
           },
         });
       } catch (error) {

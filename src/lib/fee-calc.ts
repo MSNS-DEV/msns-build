@@ -182,7 +182,9 @@ function amountsFor(
  * Computes amounts for a set of vouchers. Pass every voucher of the student-years you care
  * about (not just one month) so annual components are attributed exactly once.
  */
-export function computeFeeRows<T extends FeeRow>(rows: T[]): Map<string, VoucherAmounts> {
+export function computeFeeRows<T extends FeeRow>(
+  rows: T[],
+): Map<string, VoucherAmounts> {
   const out = new Map<string, VoucherAmounts>();
   const groups = new Map<string, T[]>();
   for (const r of rows) {
@@ -204,7 +206,8 @@ export function computeFeeRows<T extends FeeRow>(rows: T[]): Map<string, Voucher
         const a = annualAmounts(r.fees);
         const carries = ANNUAL_COMPONENTS.some((k) => a[k] > 0);
         if (!carries) continue;
-        if (!legacyHost || (r.month ?? 0) < (legacyHost.month ?? 0)) legacyHost = r;
+        if (!legacyHost || (r.month ?? 0) < (legacyHost.month ?? 0))
+          legacyHost = r;
       }
     }
     const paidAnywhere = (k: ComponentKey) => live.some((r) => flagOf(r, k));
@@ -217,7 +220,9 @@ export function computeFeeRows<T extends FeeRow>(rows: T[]): Map<string, Voucher
       if (isAnnualFee(r)) {
         out.set(
           r.sfcId,
-          amountsFor(r, [...ANNUAL_COMPONENTS, "admission"], (k) => flagOf(r, k)),
+          amountsFor(r, [...ANNUAL_COMPONENTS, "admission"], (k) =>
+            flagOf(r, k),
+          ),
         );
       } else if (r === legacyHost) {
         out.set(
@@ -227,7 +232,10 @@ export function computeFeeRows<T extends FeeRow>(rows: T[]): Map<string, Voucher
           ),
         );
       } else {
-        out.set(r.sfcId, amountsFor(r, ["tuition"], (k) => flagOf(r, k)));
+        out.set(
+          r.sfcId,
+          amountsFor(r, ["tuition"], (k) => flagOf(r, k)),
+        );
       }
     }
   }
@@ -238,7 +246,9 @@ export function computeFeeRows<T extends FeeRow>(rows: T[]): Map<string, Voucher
 export function computeVoucher(row: FeeRow): VoucherAmounts {
   if (isExcluded(row)) return emptyAmounts(row);
   return isAnnualFee(row)
-    ? amountsFor(row, [...ANNUAL_COMPONENTS, "admission"], (k) => flagOf(row, k))
+    ? amountsFor(row, [...ANNUAL_COMPONENTS, "admission"], (k) =>
+        flagOf(row, k),
+      )
     : amountsFor(row, ["tuition"], (k) => flagOf(row, k));
 }
 

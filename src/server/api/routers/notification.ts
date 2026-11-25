@@ -1,5 +1,9 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, leadershipProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  leadershipProcedure,
+} from "../trpc";
 import { Designation, NotificationCategory, type Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 
@@ -8,7 +12,9 @@ type NotifCtx = {
 };
 
 /** Shared rows visible to the caller: their role's broadcasts and global broadcasts. */
-function sharedVisibilityFilter(ctx: NotifCtx): Prisma.NotificationWhereInput[] {
+function sharedVisibilityFilter(
+  ctx: NotifCtx,
+): Prisma.NotificationWhereInput[] {
   const role = ctx.session.user.accountType;
   const filters: Prisma.NotificationWhereInput[] = [
     { AND: [{ userId: null }, { targetRole: null }] },
@@ -49,7 +55,7 @@ export const notificationRouter = createTRPCRouter({
           category: z.nativeEnum(NotificationCategory).optional(),
           limit: z.number().min(1).max(100).default(50),
         })
-        .optional()
+        .optional(),
     )
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
@@ -113,7 +119,11 @@ export const notificationRouter = createTRPCRouter({
         where: { id: input.id, ...visibleFilter(ctx) },
         select: { id: true, userId: true },
       });
-      if (!n) throw new TRPCError({ code: "NOT_FOUND", message: "Notification not found" });
+      if (!n)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Notification not found",
+        });
       if (n.userId === userId) {
         return ctx.db.notification.update({
           where: { id: n.id },
@@ -169,9 +179,16 @@ export const notificationRouter = createTRPCRouter({
         where: { id: input.id, ...visibleFilter(ctx) },
         select: { id: true, userId: true },
       });
-      if (!n) throw new TRPCError({ code: "NOT_FOUND", message: "Notification not found" });
+      if (!n)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Notification not found",
+        });
       if (n.userId === userId) {
-        return ctx.db.notification.delete({ where: { id: n.id }, select: { id: true } });
+        return ctx.db.notification.delete({
+          where: { id: n.id },
+          select: { id: true },
+        });
       }
       await ctx.db.notificationReceipt.upsert({
         where: { notificationId_userId: { notificationId: n.id, userId } },
@@ -216,12 +233,14 @@ export const notificationRouter = createTRPCRouter({
       z.object({
         title: z.string().min(1),
         body: z.string().min(1),
-        category: z.nativeEnum(NotificationCategory).default(NotificationCategory.SYSTEM),
+        category: z
+          .nativeEnum(NotificationCategory)
+          .default(NotificationCategory.SYSTEM),
         actionUrl: z.string().optional(),
         userId: z.string().optional(),
         targetRole: z.nativeEnum(Designation).optional(),
         data: z.record(z.unknown()).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
       return await ctx.db.notification.create({

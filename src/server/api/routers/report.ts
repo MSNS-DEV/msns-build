@@ -2,14 +2,19 @@ import { z } from "zod";
 import { createTRPCRouter, officeProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { generatePdf } from "~/lib/pdf-reports";
+import { REPORT_DEFINITIONS, type ReportColumn } from "~/lib/report-types";
 import {
-  REPORT_DEFINITIONS,
-  type ReportColumn,
-} from "~/lib/report-types";
-import { exportReportBuffer, type ExportReportOptions } from "~/lib/report-exporters";
+  exportReportBuffer,
+  type ExportReportOptions,
+} from "~/lib/report-exporters";
 import { type PrismaClient, type Prisma } from "@prisma/client";
 import { computeFeeRows, sumAmounts } from "~/lib/fee-calc";
-import { pkDayEnd, pkDayStart, pkYmd, sessionWindow } from "~/server/utils/pk-time";
+import {
+  pkDayEnd,
+  pkDayStart,
+  pkYmd,
+  sessionWindow,
+} from "~/server/utils/pk-time";
 
 // Legacy schemas for backward compatibility
 export const reportTypeSchema = z.enum([
@@ -50,9 +55,11 @@ function extractCity(address: string | null | undefined): string {
   if (!address || address === "none") return "Wazirabad";
   const lower = address.toLowerCase();
   if (lower.includes("wazirabad")) return "Wazirabad";
-  if (lower.includes("ghakhar") || lower.includes("ghakkhar")) return "Ghakhar Mandi";
+  if (lower.includes("ghakhar") || lower.includes("ghakkhar"))
+    return "Ghakhar Mandi";
   if (lower.includes("nizamabad")) return "Nizamabad";
-  if (lower.includes("alipur") || lower.includes("ali pur")) return "Alipur Chatha";
+  if (lower.includes("alipur") || lower.includes("ali pur"))
+    return "Alipur Chatha";
   if (lower.includes("gujranwala")) return "Gujranwala";
   if (lower.includes("sialkot")) return "Sialkot";
   if (lower.includes("daska")) return "Daska";
@@ -82,7 +89,7 @@ export const reportDataInputSchema = z.object({
 export type ReportDataInput = z.input<typeof reportDataInputSchema>;
 
 export interface ReportDataResult {
-  reportDefinition: typeof REPORT_DEFINITIONS[string];
+  reportDefinition: (typeof REPORT_DEFINITIONS)[string];
   columns: ReportColumn[];
   rows: Record<string, unknown>[];
   allRowsCount: number;
@@ -151,9 +158,7 @@ export async function fetchReportData(
   }
 
   const genderFilter =
-    input.gender && input.gender !== "ALL"
-      ? input.gender
-      : undefined;
+    input.gender && input.gender !== "ALL" ? input.gender : undefined;
 
   // Relational StudentClass query filter
   const studentClassWhere: Record<string, unknown> = {};
@@ -165,7 +170,8 @@ export async function fetchReportData(
 
   const studentConditions: Record<string, unknown> = {};
   if (genderFilter) studentConditions.gender = genderFilter;
-  if (Object.keys(dateFilter).length > 0) studentConditions.createdAt = dateFilter;
+  if (Object.keys(dateFilter).length > 0)
+    studentConditions.createdAt = dateFilter;
   if (input.search) {
     studentConditions.OR = [
       { studentName: { contains: input.search, mode: "insensitive" } },
@@ -176,7 +182,10 @@ export async function fetchReportData(
     ];
   }
   if (input.city) {
-    studentConditions.currentAddress = { contains: input.city, mode: "insensitive" };
+    studentConditions.currentAddress = {
+      contains: input.city,
+      mode: "insensitive",
+    };
   }
 
   if (Object.keys(studentConditions).length > 0) {
@@ -211,7 +220,11 @@ export async function fetchReportData(
     feeStudentConditions.length > 0 ? { AND: feeStudentConditions } : undefined;
 
   let allRows: Record<string, unknown>[] = [];
-  let summaryMetrics: { label: string; value: string | number; change?: string }[] = [];
+  let summaryMetrics: {
+    label: string;
+    value: string | number;
+    change?: string;
+  }[] = [];
   let truncated = false;
   const notTracked = (what: string) => {
     allRows = [];
@@ -251,8 +264,12 @@ export async function fetchReportData(
         status: sc.Students.isAssign ? "Assigned" : "Unassigned",
       }));
 
-      const boys = enrollments.filter((e) => e.Students.gender === "MALE").length;
-      const girls = enrollments.filter((e) => e.Students.gender === "FEMALE").length;
+      const boys = enrollments.filter(
+        (e) => e.Students.gender === "MALE",
+      ).length;
+      const girls = enrollments.filter(
+        (e) => e.Students.gender === "FEMALE",
+      ).length;
 
       summaryMetrics = [
         { label: "Enrolled Students", value: enrollments.length },
@@ -260,7 +277,9 @@ export async function fetchReportData(
         { label: "Girls", value: girls },
         {
           label: "Active Sections",
-          value: new Set(enrollments.map((e) => e.Grades.grade + e.Grades.section)).size,
+          value: new Set(
+            enrollments.map((e) => e.Grades.grade + e.Grades.section),
+          ).size,
         },
       ];
       break;
@@ -289,10 +308,15 @@ export async function fetchReportData(
 
       summaryMetrics = [
         { label: "Total Indexed Students", value: enrollments.length },
-        { label: "First Ref #", value: enrollments[0]?.Students.registrationNumber ?? "-" },
+        {
+          label: "First Ref #",
+          value: enrollments[0]?.Students.registrationNumber ?? "-",
+        },
         {
           label: "Last Ref #",
-          value: enrollments[enrollments.length - 1]?.Students.registrationNumber ?? "-",
+          value:
+            enrollments[enrollments.length - 1]?.Students.registrationNumber ??
+            "-",
         },
       ];
       break;
@@ -303,11 +327,15 @@ export async function fetchReportData(
       const enrollments = await db.studentClass.findMany({
         where: studentClassWhere,
         include: { Students: true, Grades: true },
-        orderBy: [{ Grades: { grade: "asc" } }, { Students: { studentName: "asc" } }],
+        orderBy: [
+          { Grades: { grade: "asc" } },
+          { Students: { studentName: "asc" } },
+        ],
       });
 
       allRows = enrollments.map((sc, idx) => {
-        const isMatric = sc.Grades.category === "SSC_I" || sc.Grades.category === "SSC_II";
+        const isMatric =
+          sc.Grades.category === "SSC_I" || sc.Grades.category === "SSC_II";
         const stream = isMatric
           ? idx % 2 === 0
             ? "Matric Science"
@@ -330,12 +358,17 @@ export async function fetchReportData(
         };
       });
 
-      const biseCount = allRows.filter((r) => r.boardName === "BISE Gujranwala").length;
+      const biseCount = allRows.filter(
+        (r) => r.boardName === "BISE Gujranwala",
+      ).length;
 
       summaryMetrics = [
         { label: "Total Candidates", value: enrollments.length },
         { label: "BISE Gujranwala Candidates", value: biseCount },
-        { label: "Internal Assessments", value: enrollments.length - biseCount },
+        {
+          label: "Internal Assessments",
+          value: enrollments.length - biseCount,
+        },
       ];
       break;
     }
@@ -387,7 +420,9 @@ export async function fetchReportData(
           ...(input.examId ? { examId: input.examId } : {}),
           ...(input.section ? { Grades: { section: input.section } } : {}),
           ...(genderFilter ? { Students: { gender: genderFilter } } : {}),
-          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+          ...(Object.keys(dateFilter).length > 0
+            ? { createdAt: dateFilter }
+            : {}),
         },
         include: {
           Students: true,
@@ -426,7 +461,8 @@ export async function fetchReportData(
             grade: rc.Grades.grade,
             section: rc.Grades.section,
             gender: rc.Students.gender,
-            examName: rc.Exam?.ExamType?.name ?? rc.Exam?.examTypeEnum ?? "Term Exam",
+            examName:
+              rc.Exam?.ExamType?.name ?? rc.Exam?.examTypeEnum ?? "Term Exam",
             totalMax: rc.totalMaxMarks,
             totalObtained: rc.totalObtainedMarks,
             obtainedMarks: rc.totalObtainedMarks,
@@ -448,7 +484,10 @@ export async function fetchReportData(
 
         allRows = enrollments
           .map((sc, idx) => {
-            const percentage = Math.max(45, Math.min(96, 95 - ((idx * 3) % 45)));
+            const percentage = Math.max(
+              45,
+              Math.min(96, 95 - ((idx * 3) % 45)),
+            );
             const totalMarks = 500;
             const obtainedMarks = Math.round((percentage / 100) * totalMarks);
             let gradeLetter = "B";
@@ -482,14 +521,17 @@ export async function fetchReportData(
 
       const avgPct =
         allRows.length > 0
-          ? allRows.reduce((acc, r) => acc + (r.percentage as number), 0) / allRows.length
+          ? allRows.reduce((acc, r) => acc + (r.percentage as number), 0) /
+            allRows.length
           : 0;
 
       summaryMetrics = [
         { label: "Evaluated Candidates", value: allRows.length },
         {
           label: "Top Score",
-          value: allRows[0] ? `${(allRows[0].percentage as number).toFixed(1)}%` : "-",
+          value: allRows[0]
+            ? `${(allRows[0].percentage as number).toFixed(1)}%`
+            : "-",
         },
         { label: "Class Average", value: `${avgPct.toFixed(1)}%` },
         { label: "Pass Rate", value: "98.2%" },
@@ -513,7 +555,9 @@ export async function fetchReportData(
                 ? {
                     Students: {
                       ...(genderFilter ? { gender: genderFilter } : {}),
-                      ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+                      ...(Object.keys(dateFilter).length > 0
+                        ? { createdAt: dateFilter }
+                        : {}),
                     },
                   }
                 : {}),
@@ -550,9 +594,18 @@ export async function fetchReportData(
         };
       });
 
-      const totalStudents = allRows.reduce((acc, r) => acc + (r.totalStudents as number), 0);
-      const totalBoys = allRows.reduce((acc, r) => acc + (r.boysCount as number), 0);
-      const totalGirls = allRows.reduce((acc, r) => acc + (r.girlsCount as number), 0);
+      const totalStudents = allRows.reduce(
+        (acc, r) => acc + (r.totalStudents as number),
+        0,
+      );
+      const totalBoys = allRows.reduce(
+        (acc, r) => acc + (r.boysCount as number),
+        0,
+      );
+      const totalGirls = allRows.reduce(
+        (acc, r) => acc + (r.girlsCount as number),
+        0,
+      );
 
       summaryMetrics = [
         { label: "Total Students", value: totalStudents },
@@ -568,7 +621,10 @@ export async function fetchReportData(
       const enrollments = await db.studentClass.findMany({
         where: studentClassWhere,
         include: { Students: true, Grades: true },
-        orderBy: [{ Grades: { grade: "asc" } }, { Students: { studentName: "asc" } }],
+        orderBy: [
+          { Grades: { grade: "asc" } },
+          { Students: { studentName: "asc" } },
+        ],
       });
 
       allRows = enrollments.map((sc, idx) => ({
@@ -579,7 +635,8 @@ export async function fetchReportData(
         grade: sc.Grades.grade,
         section: sc.Grades.section,
         studentMobile: sc.Students.studentMobile || "-",
-        fatherMobile: sc.Students.fatherMobile || sc.Students.studentMobile || "-",
+        fatherMobile:
+          sc.Students.fatherMobile || sc.Students.studentMobile || "-",
         guardianName: sc.Students.guardianName ?? sc.Students.fatherName,
         emergencyContact: sc.Students.fatherMobile || "+92 300 1234567",
       }));
@@ -588,7 +645,8 @@ export async function fetchReportData(
         { label: "Parent Contacts", value: enrollments.length },
         {
           label: "Verified Mobiles",
-          value: enrollments.filter((e) => e.Students.studentMobile !== "none").length,
+          value: enrollments.filter((e) => e.Students.studentMobile !== "none")
+            .length,
         },
         { label: "Emergency Numbers", value: enrollments.length },
       ];
@@ -600,7 +658,10 @@ export async function fetchReportData(
       const enrollments = await db.studentClass.findMany({
         where: studentClassWhere,
         include: { Students: true, Grades: true },
-        orderBy: [{ Students: { currentAddress: "asc" } }, { Students: { studentName: "asc" } }],
+        orderBy: [
+          { Students: { currentAddress: "asc" } },
+          { Students: { studentName: "asc" } },
+        ],
       });
 
       allRows = enrollments
@@ -613,13 +674,21 @@ export async function fetchReportData(
             fatherName: sc.Students.fatherName,
             grade: sc.Grades.grade,
             section: sc.Grades.section,
-            currentAddress: sc.Students.currentAddress || "Main Campus Catchment, Wazirabad",
+            currentAddress:
+              sc.Students.currentAddress || "Main Campus Catchment, Wazirabad",
             permanentAddress:
-              sc.Students.permanentAddress || sc.Students.currentAddress || "Wazirabad",
-            primaryPhone: sc.Students.studentMobile || sc.Students.fatherMobile || "-",
+              sc.Students.permanentAddress ||
+              sc.Students.currentAddress ||
+              "Wazirabad",
+            primaryPhone:
+              sc.Students.studentMobile || sc.Students.fatherMobile || "-",
           };
         })
-        .filter((r) => !input.city || r.cityOrArea.toLowerCase() === input.city.toLowerCase());
+        .filter(
+          (r) =>
+            !input.city ||
+            r.cityOrArea.toLowerCase() === input.city.toLowerCase(),
+        );
 
       const areas = new Set(allRows.map((r) => r.cityOrArea));
 
@@ -642,18 +711,31 @@ export async function fetchReportData(
       const regNumbers = enrollments.map((e) => e.Students.registrationNumber);
       const users = await db.user.findMany({
         where: { accountId: { in: regNumbers } },
-        select: { accountId: true, username: true, email: true, mustChangePassword: true },
+        select: {
+          accountId: true,
+          username: true,
+          email: true,
+          mustChangePassword: true,
+        },
       });
       const userMap = new Map<
         string,
-        { accountId: string; username: string; email: string; mustChangePassword: boolean }
+        {
+          accountId: string;
+          username: string;
+          email: string;
+          mustChangePassword: boolean;
+        }
       >(users.map((u) => [u.accountId, u]));
 
       allRows = enrollments.map((sc, idx) => {
         const u = userMap.get(sc.Students.registrationNumber);
         const username =
-          u?.username ?? `MSN-STUDENT-${sc.Students.admissionNumber.replace(/\D/g, "")}`;
-        const email = u?.email ?? `${sc.Students.admissionNumber.toLowerCase()}@msns.edu.pk`;
+          u?.username ??
+          `MSN-STUDENT-${sc.Students.admissionNumber.replace(/\D/g, "")}`;
+        const email =
+          u?.email ??
+          `${sc.Students.admissionNumber.toLowerCase()}@msns.edu.pk`;
 
         return {
           srNo: idx + 1,
@@ -719,7 +801,8 @@ export async function fetchReportData(
         { label: "Struck Off Pupils", value: allRows.length },
         {
           label: "Pending Clearance",
-          value: allRows.filter((r) => r.slcIssued === "Pending Clearance").length,
+          value: allRows.filter((r) => r.slcIssued === "Pending Clearance")
+            .length,
         },
         { label: "Unpaid Dues Balance", value: "Rs. 45,000" },
       ];
@@ -753,7 +836,9 @@ export async function fetchReportData(
           fatherName: `${s.fatherName} (${s.fatherProfession || "Business"})`,
           dateOfBirth: `${s.dateOfBirth}`,
           classOnAdmission: "Nursery / KG",
-          dateOfLeaving: isWithdrawn ? s.updatedAt.toLocaleDateString("en-PK") : "Enrolled",
+          dateOfLeaving: isWithdrawn
+            ? s.updatedAt.toLocaleDateString("en-PK")
+            : "Enrolled",
           classOnLeaving: isWithdrawn ? currentClass : "In Progress",
           reasonOfWithdrawal: isWithdrawn
             ? "Completed Matriculation / Migration"
@@ -764,8 +849,14 @@ export async function fetchReportData(
 
       summaryMetrics = [
         { label: "Permanent Register Entries", value: students.length },
-        { label: "Active Cohort", value: students.filter((s) => s.isAssign).length },
-        { label: "Archived Withdrawals", value: students.filter((s) => !s.isAssign).length },
+        {
+          label: "Active Cohort",
+          value: students.filter((s) => s.isAssign).length,
+        },
+        {
+          label: "Archived Withdrawals",
+          value: students.filter((s) => !s.isAssign).length,
+        },
       ];
       break;
     }
@@ -790,14 +881,22 @@ export async function fetchReportData(
               ? sc.Students.currentAddress
               : "Mohallah Nizamabad, Circular Road, Wazirabad",
           city: extractCity(sc.Students.currentAddress) + " (52000)",
-          contactNumber: sc.Students.fatherMobile || sc.Students.studentMobile || "-",
+          contactNumber:
+            sc.Students.fatherMobile || sc.Students.studentMobile || "-",
         }))
-        .filter((r) => !input.city || r.city.toLowerCase().includes(input.city.toLowerCase()));
+        .filter(
+          (r) =>
+            !input.city ||
+            r.city.toLowerCase().includes(input.city.toLowerCase()),
+        );
 
       summaryMetrics = [
         { label: "Printable Mailing Labels", value: allRows.length },
         { label: "Labels Per Sheet", value: 12 },
-        { label: "Standard Sheet Count", value: Math.ceil(allRows.length / 12) },
+        {
+          label: "Standard Sheet Count",
+          value: Math.ceil(allRows.length / 12),
+        },
       ];
       break;
     }
@@ -807,7 +906,9 @@ export async function fetchReportData(
       // The LMS sends in-app/push notifications; there is no SMS gateway or delivery receipts.
       const notifications = await db.notification.findMany({
         where: {
-          ...(Object.keys(dateFilter).length > 0 ? { createdAt: dateFilter } : {}),
+          ...(Object.keys(dateFilter).length > 0
+            ? { createdAt: dateFilter }
+            : {}),
         },
         include: { User: { select: { username: true } } },
         take: REPORT_ROW_LIMIT,
@@ -816,8 +917,12 @@ export async function fetchReportData(
 
       allRows = notifications.map((n, idx) => ({
         srNo: idx + 1,
-        timestamp: n.createdAt.toLocaleString("en-PK", { timeZone: "Asia/Karachi" }),
-        recipientName: n.User?.username ?? (n.targetRole ? `All ${n.targetRole}` : "Everyone"),
+        timestamp: n.createdAt.toLocaleString("en-PK", {
+          timeZone: "Asia/Karachi",
+        }),
+        recipientName:
+          n.User?.username ??
+          (n.targetRole ? `All ${n.targetRole}` : "Everyone"),
         recipientRole: n.targetRole ?? (n.userId ? "USER" : "ALL"),
         phoneNumber: "-",
         category: n.category,
@@ -827,27 +932,39 @@ export async function fetchReportData(
 
       summaryMetrics = [
         { label: "Notifications Sent", value: allRows.length },
-        { label: "Broadcasts (role or school-wide)", value: notifications.filter((n) => !n.userId).length },
-        { label: "SMS Delivery Tracking", value: "Not available (no SMS gateway)" },
+        {
+          label: "Broadcasts (role or school-wide)",
+          value: notifications.filter((n) => !n.userId).length,
+        },
+        {
+          label: "SMS Delivery Tracking",
+          value: "Not available (no SMS gateway)",
+        },
       ];
       break;
     }
 
     // ---------------- 14. FORM COLLECTION CHECKLIST ----------------
     case "form-collection-checklist": {
-      notTracked("Admission form checklists (SLC, photos, result cards) are not recorded in the LMS.");
+      notTracked(
+        "Admission form checklists (SLC, photos, result cards) are not recorded in the LMS.",
+      );
       break;
     }
 
     // ---------------- 15. FORM COLLECTION BOARD WISE ----------------
     case "form-collection-board": {
-      notTracked("Applicants' previous examination boards are not recorded in the LMS.");
+      notTracked(
+        "Applicants' previous examination boards are not recorded in the LMS.",
+      );
       break;
     }
 
     // ---------------- 16. FORM COLLECTION PASSING YEAR WISE ----------------
     case "form-collection-passing-year": {
-      notTracked("Applicants' passing years and previous marks are not recorded in the LMS.");
+      notTracked(
+        "Applicants' passing years and previous marks are not recorded in the LMS.",
+      );
       break;
     }
 
@@ -872,7 +989,11 @@ export async function fetchReportData(
             contactNo: s.studentMobile || s.fatherMobile || "-",
           };
         })
-        .filter((r) => !input.city || r.townOrCity.toLowerCase() === input.city.toLowerCase())
+        .filter(
+          (r) =>
+            !input.city ||
+            r.townOrCity.toLowerCase() === input.city.toLowerCase(),
+        )
         .map((r, idx) => ({ srNo: idx + 1, ...r }));
 
       const townCounts = new Map<string, number>();
@@ -884,7 +1005,10 @@ export async function fetchReportData(
 
       summaryMetrics = [
         { label: "Students Mapped", value: allRows.length },
-        { label: "Largest Catchment", value: topTown ? `${topTown[0]} (${topTown[1]})` : "-" },
+        {
+          label: "Largest Catchment",
+          value: topTown ? `${topTown[0]} (${topTown[1]})` : "-",
+        },
         { label: "Towns Represented", value: townCounts.size },
       ];
       break;
@@ -893,31 +1017,41 @@ export async function fetchReportData(
     // ---------------- 18. ADMISSION STATICS CITY WISE & 19. FORM REPORT SUMMARY CITY WISE ----------------
     case "admission-statics-city":
     case "form-report-summary-city": {
-      notTracked("Admission forms by city are not recorded in the LMS. Use Student Contact & Address for enrolled students by town.");
+      notTracked(
+        "Admission forms by city are not recorded in the LMS. Use Student Contact & Address for enrolled students by town.",
+      );
       break;
     }
 
     // ---------------- 20. STEP FORM COLLECTION SUMMARY ----------------
     case "step-form-collection-summary": {
-      notTracked("Admission funnel stages (registration, test, interview) are not recorded in the LMS.");
+      notTracked(
+        "Admission funnel stages (registration, test, interview) are not recorded in the LMS.",
+      );
       break;
     }
 
     // ---------------- 21. ADMISSION STATUS REPORT ----------------
     case "admission-status": {
-      notTracked("Admission test scores and application statuses are not recorded in the LMS.");
+      notTracked(
+        "Admission test scores and application statuses are not recorded in the LMS.",
+      );
       break;
     }
 
     // ---------------- 22. ADMISSION AGING REPORT ----------------
     case "admission-aging": {
-      notTracked("Application dates and pipeline ages are not recorded in the LMS.");
+      notTracked(
+        "Application dates and pipeline ages are not recorded in the LMS.",
+      );
       break;
     }
 
     // ---------------- 23. SOURCE OF INFORMATION REPORT ----------------
     case "source-of-information": {
-      notTracked("How applicants heard about the school is not recorded in the LMS.");
+      notTracked(
+        "How applicants heard about the school is not recorded in the LMS.",
+      );
       break;
     }
 
@@ -931,7 +1065,10 @@ export async function fetchReportData(
           Sessions: { select: { sessionName: true } },
           FeeStudentClass: {
             where: { fees: { type: "AnnualFee" } },
-            select: { admissionFeePaid: true, fees: { select: { admissionFee: true } } },
+            select: {
+              admissionFeePaid: true,
+              fees: { select: { admissionFee: true } },
+            },
           },
         },
         orderBy: { Students: { createdAt: "desc" } },
@@ -942,7 +1079,9 @@ export async function fetchReportData(
         const annual = sc.FeeStudentClass[0];
         return {
           srNo: idx + 1,
-          admissionDate: sc.Students.createdAt.toLocaleDateString("en-PK", { timeZone: "Asia/Karachi" }),
+          admissionDate: sc.Students.createdAt.toLocaleDateString("en-PK", {
+            timeZone: "Asia/Karachi",
+          }),
           registrationNumber: sc.Students.registrationNumber,
           admissionNumber: sc.Students.admissionNumber,
           studentName: sc.Students.studentName,
@@ -952,33 +1091,53 @@ export async function fetchReportData(
           gender: sc.Students.gender,
           studentMobile: sc.Students.studentMobile,
           admissionFee: annual?.fees.admissionFee ?? 0,
-          feeStatus: !annual ? "No Annual Voucher" : annual.admissionFeePaid ? "Paid" : "Pending",
+          feeStatus: !annual
+            ? "No Annual Voucher"
+            : annual.admissionFeePaid
+              ? "Paid"
+              : "Pending",
         };
       });
 
-      const admissionDue = allRows.reduce((acc, r) => acc + (r.admissionFee as number), 0);
+      const admissionDue = allRows.reduce(
+        (acc, r) => acc + (r.admissionFee as number),
+        0,
+      );
       const admissionPaid = allRows
         .filter((r) => r.feeStatus === "Paid")
         .reduce((acc, r) => acc + (r.admissionFee as number), 0);
 
       summaryMetrics = [
         { label: "Admissions Listed", value: allRows.length },
-        { label: "Admission Fees Billed", value: `Rs. ${admissionDue.toLocaleString()}` },
-        { label: "Admission Fees Received", value: `Rs. ${admissionPaid.toLocaleString()}` },
-        { label: "Session", value: enrollments[0]?.Sessions.sessionName ?? "-" },
+        {
+          label: "Admission Fees Billed",
+          value: `Rs. ${admissionDue.toLocaleString()}`,
+        },
+        {
+          label: "Admission Fees Received",
+          value: `Rs. ${admissionPaid.toLocaleString()}`,
+        },
+        {
+          label: "Session",
+          value: enrollments[0]?.Sessions.sessionName ?? "-",
+        },
       ];
       break;
     }
 
     // ---------------- 25. FORM COLLECTIONS FEE PAID REPORT ----------------
     case "form-collection-fee-paid": {
-      notTracked("Admission form (prospectus) fees are not recorded in the LMS.");
+      notTracked(
+        "Admission form (prospectus) fees are not recorded in the LMS.",
+      );
       break;
     }
 
     // ---------------- 26. FORM COLLECTION SUMMARY ----------------
     case "form-collection-summary": {
-      notTracked("Admission forms issued and returned are not recorded in the LMS.");
+      notTracked(
+        "Admission forms issued and returned are not recorded in the LMS.",
+      );
       break;
     }
 
@@ -1005,7 +1164,13 @@ export async function fetchReportData(
 
       const rows = vouchers
         .filter((f) => !input.month || f.month === input.month)
-        .filter((f) => Object.keys(dateFilter).length === 0 || (f.paidAt && (!dateFilter.gte || f.paidAt >= dateFilter.gte) && (!dateFilter.lte || f.paidAt <= dateFilter.lte)))
+        .filter(
+          (f) =>
+            Object.keys(dateFilter).length === 0 ||
+            (f.paidAt &&
+              (!dateFilter.gte || f.paidAt >= dateFilter.gte) &&
+              (!dateFilter.lte || f.paidAt <= dateFilter.lte)),
+        )
         .map((f) => ({ f, a: amounts.get(f.sfcId)! }))
         .filter(({ a }) => !a.excluded);
       truncated = rows.length > REPORT_ROW_LIMIT;
@@ -1016,15 +1181,22 @@ export async function fetchReportData(
           period: `${f.month}/${f.year}`,
           registrationNumber: f.StudentClass.Students.registrationNumber,
           studentName: f.StudentClass.Students.studentName,
-          gradeSection: `${f.StudentClass.Grades.grade} ${f.StudentClass.Grades.section}`.trim(),
+          gradeSection:
+            `${f.StudentClass.Grades.grade} ${f.StudentClass.Grades.section}`.trim(),
           tuitionFee: c.tuition ?? 0,
           examFund: c.examFund ?? 0,
           otherCharges:
-            (c.computerLab ?? 0) + (c.studentIdCard ?? 0) + (c.infoAndCalls ?? 0) + (c.admission ?? 0) + a.lateFee,
+            (c.computerLab ?? 0) +
+            (c.studentIdCard ?? 0) +
+            (c.infoAndCalls ?? 0) +
+            (c.admission ?? 0) +
+            a.lateFee,
           discount: a.discount,
           netPaid: a.paid,
           paymentStatus: a.isPaid ? "Paid" : a.paid > 0 ? "Partial" : "Pending",
-          paidAt: f.paidAt ? f.paidAt.toLocaleDateString("en-PK", { timeZone: "Asia/Karachi" }) : "-",
+          paidAt: f.paidAt
+            ? f.paidAt.toLocaleDateString("en-PK", { timeZone: "Asia/Karachi" })
+            : "-",
         };
       });
 
@@ -1034,7 +1206,10 @@ export async function fetchReportData(
       summaryMetrics = [
         { label: "Vouchers", value: rows.length },
         { label: "Collected", value: `Rs. ${totals.paid.toLocaleString()}` },
-        { label: "Outstanding", value: `Rs. ${totals.outstanding.toLocaleString()}` },
+        {
+          label: "Outstanding",
+          value: `Rs. ${totals.outstanding.toLocaleString()}`,
+        },
         {
           label: "Settlement Rate",
           value: `${rows.length > 0 ? ((paidCount / rows.length) * 100).toFixed(1) : 0}%`,
@@ -1076,14 +1251,21 @@ export async function fetchReportData(
         const a = amounts.get(f.sfcId);
         if (!a || a.excluded || a.outstanding <= 0) continue;
         const key = f.StudentClass.studentId;
-        const d = byStudent.get(key) ?? { f, months: new Set<string>(), outstanding: 0, lateFee: 0 };
+        const d = byStudent.get(key) ?? {
+          f,
+          months: new Set<string>(),
+          outstanding: 0,
+          lateFee: 0,
+        };
         d.months.add(`${f.year}-${f.month}`);
         d.outstanding += a.outstanding;
         d.lateFee += Math.min(a.lateFee, a.outstanding);
         byStudent.set(key, d);
       }
 
-      const list = [...byStudent.values()].sort((x, y) => y.outstanding - x.outstanding);
+      const list = [...byStudent.values()].sort(
+        (x, y) => y.outstanding - x.outstanding,
+      );
       truncated = list.length > REPORT_ROW_LIMIT;
       allRows = list.slice(0, REPORT_ROW_LIMIT).map((d, idx) => {
         const st = d.f.StudentClass.Students;
@@ -1093,13 +1275,17 @@ export async function fetchReportData(
           registrationNumber: st.registrationNumber,
           studentName: st.studentName,
           fatherName: st.fatherName ?? "-",
-          gradeSection: `${d.f.StudentClass.Grades.grade} ${d.f.StudentClass.Grades.section}`.trim(),
+          gradeSection:
+            `${d.f.StudentClass.Grades.grade} ${d.f.StudentClass.Grades.section}`.trim(),
           fatherMobile: st.fatherMobile || st.studentMobile || "-",
           unpaidMonthsCount: d.months.size,
           tuitionDue: Math.round((total - d.lateFee) * 100) / 100,
           lateFee: d.lateFee,
           totalOutstanding: total,
-          defaulterSeverity: d.months.size >= 3 || total > 5000 ? "High Priority" : "Standard Notice",
+          defaulterSeverity:
+            d.months.size >= 3 || total > 5000
+              ? "High Priority"
+              : "Standard Notice",
         };
       });
 
@@ -1113,7 +1299,8 @@ export async function fetchReportData(
         },
         {
           label: "High Priority Cases",
-          value: allRows.filter((r) => r.defaulterSeverity === "High Priority").length,
+          value: allRows.filter((r) => r.defaulterSeverity === "High Priority")
+            .length,
         },
       ];
       break;
@@ -1141,7 +1328,10 @@ export async function fetchReportData(
       for (const v of vouchers) {
         const a = voucherAmounts.get(v.sfcId);
         if (!a || a.excluded || a.paid <= 0) continue;
-        const gross = Object.values(a.paidComponents).reduce((x, y) => x + (y ?? 0), 0);
+        const gross = Object.values(a.paidComponents).reduce(
+          (x, y) => x + (y ?? 0),
+          0,
+        );
         if (gross <= 0) continue;
         const scale = a.paid / gross;
         const m = v.month - 1;
@@ -1154,39 +1344,60 @@ export async function fetchReportData(
         }
       }
 
-      const [salaries, directExpenses, oldExpenses, pettyCash, paidPOs] = await Promise.all([
-        db.salary.groupBy({
-          by: ["month"],
-          where: { year, status: "PAID" },
-          _sum: { amount: true, allowances: true, bonus: true, deductions: true },
-        }),
-        db.directExpense.findMany({
-          where: { isApproved: true, expenseDate: { gte: yearStart, lte: yearEnd } },
-          select: { amount: true, expenseDate: true },
-        }),
-        db.expenses.groupBy({ by: ["month"], where: { year }, _sum: { amount: true } }),
-        db.pettyCashDisbursement.findMany({
-          where: { date: { gte: yearStart, lte: yearEnd } },
-          select: { amount: true, date: true },
-        }),
-        db.purchaseOrder.findMany({
-          where: { status: "Paid", createdAt: { gte: yearStart, lte: yearEnd } },
-          select: { estimatedTotal: true, createdAt: true },
-        }),
-      ]);
+      const [salaries, directExpenses, oldExpenses, pettyCash, paidPOs] =
+        await Promise.all([
+          db.salary.groupBy({
+            by: ["month"],
+            where: { year, status: "PAID" },
+            _sum: {
+              amount: true,
+              allowances: true,
+              bonus: true,
+              deductions: true,
+            },
+          }),
+          db.directExpense.findMany({
+            where: {
+              isApproved: true,
+              expenseDate: { gte: yearStart, lte: yearEnd },
+            },
+            select: { amount: true, expenseDate: true },
+          }),
+          db.expenses.groupBy({
+            by: ["month"],
+            where: { year },
+            _sum: { amount: true },
+          }),
+          db.pettyCashDisbursement.findMany({
+            where: { date: { gte: yearStart, lte: yearEnd } },
+            select: { amount: true, date: true },
+          }),
+          db.purchaseOrder.findMany({
+            where: {
+              status: "Paid",
+              createdAt: { gte: yearStart, lte: yearEnd },
+            },
+            select: { estimatedTotal: true, createdAt: true },
+          }),
+        ]);
       for (const g of salaries) {
         const m = g.month - 1;
         if (m < 0 || m > 11) continue;
         payroll[m]! +=
-          (g._sum.amount ?? 0) + (g._sum.allowances ?? 0) + (g._sum.bonus ?? 0) - (g._sum.deductions ?? 0);
+          (g._sum.amount ?? 0) +
+          (g._sum.allowances ?? 0) +
+          (g._sum.bonus ?? 0) -
+          (g._sum.deductions ?? 0);
       }
-      for (const e of directExpenses) direct[monthOf(e.expenseDate) - 1]! += e.amount;
+      for (const e of directExpenses)
+        direct[monthOf(e.expenseDate) - 1]! += e.amount;
       for (const g of oldExpenses) {
         const m = g.month - 1;
         if (m >= 0 && m <= 11) direct[m]! += g._sum.amount ?? 0;
       }
       for (const d of pettyCash) direct[monthOf(d.date) - 1]! += d.amount;
-      for (const po of paidPOs) direct[monthOf(po.createdAt) - 1]! += po.estimatedTotal;
+      for (const po of paidPOs)
+        direct[monthOf(po.createdAt) - 1]! += po.estimatedTotal;
 
       const r = (n: number) => Math.round(n);
       allRows = tuition.map((_, i) => {
@@ -1205,17 +1416,30 @@ export async function fetchReportData(
         };
       });
 
-      const totalRev = allRows.reduce((acc, row) => acc + (row.totalRevenue as number), 0);
-      const totalExp = allRows.reduce((acc, row) => acc + (row.totalExpenses as number), 0);
+      const totalRev = allRows.reduce(
+        (acc, row) => acc + (row.totalRevenue as number),
+        0,
+      );
+      const totalExp = allRows.reduce(
+        (acc, row) => acc + (row.totalExpenses as number),
+        0,
+      );
       const net = totalRev - totalExp;
 
       summaryMetrics = [
-        { label: "Total Fee Income", value: `Rs. ${totalRev.toLocaleString()}` },
-        { label: "Total Expenses (payroll + spend)", value: `Rs. ${totalExp.toLocaleString()}` },
+        {
+          label: "Total Fee Income",
+          value: `Rs. ${totalRev.toLocaleString()}`,
+        },
+        {
+          label: "Total Expenses (payroll + spend)",
+          value: `Rs. ${totalExp.toLocaleString()}`,
+        },
         { label: "Net Balance", value: `Rs. ${net.toLocaleString()}` },
         {
           label: "Operating Margin",
-          value: totalRev > 0 ? `${((net / totalRev) * 100).toFixed(1)}%` : "0%",
+          value:
+            totalRev > 0 ? `${((net / totalRev) * 100).toFixed(1)}%` : "0%",
         },
       ];
       break;
@@ -1260,7 +1484,10 @@ export async function fetchReportData(
       summaryMetrics = [
         { label: "Payroll Rows", value: allRows.length },
         { label: "Net Paid", value: `Rs. ${netPaid.toLocaleString()}` },
-        { label: "Net Still Payable (pending/partial)", value: `Rs. ${netPending.toLocaleString()}` },
+        {
+          label: "Net Still Payable (pending/partial)",
+          value: `Rs. ${netPending.toLocaleString()}`,
+        },
       ];
       break;
     }
@@ -1275,7 +1502,11 @@ export async function fetchReportData(
 
   // Search on computed rows, only for reports whose query did not already search
   // (a DB match on a hidden column such as the address must not be dropped here).
-  if (input.search && allRows.length > 0 && !DB_SEARCH_REPORTS.has(input.reportType)) {
+  if (
+    input.search &&
+    allRows.length > 0 &&
+    !DB_SEARCH_REPORTS.has(input.reportType)
+  ) {
     const s = input.search.toLowerCase();
     allRows = allRows.filter((r) =>
       Object.values(r).some((val) => String(val).toLowerCase().includes(s)),
@@ -1328,7 +1559,9 @@ export const reportRouter = createTRPCRouter({
         }),
       ]);
 
-      const sections = Array.from(new Set(grades.map((g) => g.section).filter(Boolean)));
+      const sections = Array.from(
+        new Set(grades.map((g) => g.section).filter(Boolean)),
+      );
       const cities = [
         "Wazirabad",
         "Ghakhar Mandi",
@@ -1363,8 +1596,12 @@ export const reportRouter = createTRPCRouter({
     try {
       // Active session's fee collections (was: tuition of every paid voucher ever, ignoring
       // discounts and annual components) and that session's recorded expenses.
-      const active = await ctx.db.sessions.findFirst({ where: { isActive: true } });
-      const window = active ? sessionWindow(active) : { from: undefined, to: undefined };
+      const active = await ctx.db.sessions.findFirst({
+        where: { isActive: true },
+      });
+      const window = active
+        ? sessionWindow(active)
+        : { from: undefined, to: undefined };
       const vouchers = active
         ? await ctx.db.feeStudentClass.findMany({
             where: { StudentClass: { sessionId: active.sessionId } },
@@ -1462,12 +1699,17 @@ export const reportRouter = createTRPCRouter({
         if (input.sessionId) filterSummary.push("Session: Active/Selected");
         if (input.classId) filterSummary.push("Class: Selected");
         if (input.section) filterSummary.push(`Section: ${input.section}`);
-        if (input.gender && input.gender !== "ALL") filterSummary.push(`Gender: ${input.gender}`);
-        if (input.startDate && input.endDate) filterSummary.push(`Date: ${input.startDate} to ${input.endDate}`);
+        if (input.gender && input.gender !== "ALL")
+          filterSummary.push(`Gender: ${input.gender}`);
+        if (input.startDate && input.endDate)
+          filterSummary.push(`Date: ${input.startDate} to ${input.endDate}`);
         if (input.city) filterSummary.push(`City: ${input.city}`);
         if (input.month) filterSummary.push(`Month: ${input.month}`);
         if (input.year) filterSummary.push(`Year: ${input.year}`);
-        if (dataResult.truncated || dataResult.allRowsCount > dataResult.rows.length) {
+        if (
+          dataResult.truncated ||
+          dataResult.allRowsCount > dataResult.rows.length
+        ) {
           filterSummary.push(
             `Truncated: first ${dataResult.rows.length.toLocaleString()} of ${dataResult.allRowsCount.toLocaleString()}+ rows`,
           );
@@ -1547,7 +1789,8 @@ export const reportRouter = createTRPCRouter({
             });
 
             rawData = timetableData.map((t) => ({
-              grade: `${t.Grades?.grade ?? ""} ${t.Grades?.section ?? ""}`.trim(),
+              grade:
+                `${t.Grades?.grade ?? ""} ${t.Grades?.section ?? ""}`.trim(),
               day: t.dayOfWeek,
               period: `L${t.lectureNumber}`,
               time: `${t.startTime} - ${t.endTime}`,
@@ -1614,9 +1857,17 @@ export const reportRouter = createTRPCRouter({
             ];
             const sessions = await ctx.db.sessions.findMany({
               orderBy: { sessionFrom: "desc" },
-              select: { sessionName: true, sessionFrom: true, sessionTo: true, isActive: true },
+              select: {
+                sessionName: true,
+                sessionFrom: true,
+                sessionTo: true,
+                isActive: true,
+              },
             });
-            rawData = sessions.map((x) => ({ ...x, isActive: x.isActive ? "Active" : "Closed" }));
+            rawData = sessions.map((x) => ({
+              ...x,
+              isActive: x.isActive ? "Active" : "Closed",
+            }));
             break;
           }
 
@@ -1671,7 +1922,8 @@ export const reportRouter = createTRPCRouter({
           return transformed;
         });
 
-        const periodTitle = period !== "all" ? ` (${period.toUpperCase()})` : "";
+        const periodTitle =
+          period !== "all" ? ` (${period.toUpperCase()})` : "";
         const title = `${reportType.toUpperCase()}${periodTitle} REPORT`;
         const pdfBuffer = await generatePdf(transformedData, headers, title);
 

@@ -52,8 +52,7 @@ export async function POST(request: Request) {
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         {
-          error:
-            "Invalid file type. Allowed: JPEG, PNG, WebP, GIF, AVIF, PDF",
+          error: "Invalid file type. Allowed: JPEG, PNG, WebP, GIF, AVIF, PDF",
         },
         { status: 400 },
       );
@@ -71,7 +70,9 @@ export async function POST(request: Request) {
     const optimized = await optimizeImageForUpload(rawBuffer, file.type);
 
     // Sanitize filename — remove path traversal and special characters
-    const baseName = file.name ? file.name.split("/").pop()?.split("\\").pop() ?? "file" : "file";
+    const baseName = file.name
+      ? (file.name.split("/").pop()?.split("\\").pop() ?? "file")
+      : "file";
     const sanitizedName = baseName.replace(/[^a-zA-Z0-9._-]/g, "_");
     // Unguessable key: uploads are private (photos, CVs) and must not be enumerable.
     const key = `uploads/${randomUUID()}_${sanitizedName.slice(-80)}`;

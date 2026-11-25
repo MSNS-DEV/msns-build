@@ -722,58 +722,58 @@ export function ClassFeeTable({
       {/* Table */}
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-colors dark:border-border dark:bg-card dark:shadow-xl dark:backdrop-blur-sm">
         <div className="overflow-x-auto">
-        <Table>
-          <TableHeader className="border-b border-slate-200 bg-slate-50 dark:border-border dark:bg-emerald-950/40">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent">
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    className="h-11 font-semibold text-slate-600 dark:text-emerald-100/80"
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  className="border-slate-100 transition-colors hover:bg-slate-50 dark:border-border dark:hover:bg-white/5"
-                >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3">
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
+          <Table>
+            <TableHeader className="border-b border-slate-200 bg-slate-50 dark:border-border dark:bg-emerald-950/40">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id} className="hover:bg-transparent">
+                  {headerGroup.headers.map((header) => (
+                    <TableHead
+                      key={header.id}
+                      className="h-11 font-semibold text-slate-600 dark:text-emerald-100/80"
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-32 text-center text-muted-foreground dark:text-muted-foreground"
-                >
-                  <div className="flex flex-col items-center justify-center">
-                    <Filter className="mb-2 h-8 w-8 opacity-20" />
-                    <p>No fee records found for this period.</p>
-                  </div>
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow
+                    key={row.id}
+                    className="border-slate-100 transition-colors hover:bg-slate-50 dark:border-border dark:hover:bg-white/5"
+                  >
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id} className="py-3">
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-32 text-center text-muted-foreground dark:text-muted-foreground"
+                  >
+                    <div className="flex flex-col items-center justify-center">
+                      <Filter className="mb-2 h-8 w-8 opacity-20" />
+                      <p>No fee records found for this period.</p>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </div>
       </div>
 

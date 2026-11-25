@@ -7,7 +7,7 @@ const DELETE_ALLOWED_ROLES = ["ADMIN", "PRINCIPAL", "HEAD", "CLERK"];
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ key: string[] }> }
+  { params }: { params: Promise<{ key: string[] }> },
 ) {
   try {
     // Check authentication
@@ -21,7 +21,7 @@ export async function DELETE(
     if (!DELETE_ALLOWED_ROLES.includes(userRole)) {
       return NextResponse.json(
         { error: "You do not have permission to delete gallery images" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -31,7 +31,7 @@ export async function DELETE(
     if (!key || !isGalleryKey(key)) {
       return NextResponse.json(
         { error: "A valid gallery image key is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,7 +42,7 @@ export async function DELETE(
     console.error("Error deleting image:", error);
     return NextResponse.json(
       { error: "Failed to delete image" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -2,7 +2,15 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { Calculator, Calendar, CreditCard, Settings, Search, User, BarChart3 } from "lucide-react";
+import {
+  Calculator,
+  Calendar,
+  CreditCard,
+  Settings,
+  Search,
+  User,
+  BarChart3,
+} from "lucide-react";
 import {
   CommandDialog,
   CommandEmpty,
@@ -86,7 +94,7 @@ export function CommandPalette() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="inline-flex items-center gap-2 whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 border border-input hover:bg-accent hover:text-accent-foreground px-4 py-2 relative h-9 w-full justify-start rounded-[0.5rem] bg-slate-50/50 dark:bg-muted/50 text-sm font-normal text-muted-foreground shadow-sm sm:pr-12 md:w-40 lg:w-64"
+        className="relative inline-flex h-9 w-full items-center justify-start gap-2 whitespace-nowrap rounded-[0.5rem] border border-input bg-slate-50/50 px-4 py-2 text-sm font-normal text-muted-foreground shadow-sm transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 dark:bg-muted/50 sm:pr-12 md:w-40 lg:w-64"
       >
         <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
         <span className="hidden lg:inline-flex">Search documentation...</span>
@@ -102,24 +110,32 @@ export function CommandPalette() {
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading="Suggestions">
             {role !== "NONE" && role !== "WORKER" && (
-              <CommandItem onSelect={() => runCommand(() => router.push(sessionsUrl))}>
+              <CommandItem
+                onSelect={() => runCommand(() => router.push(sessionsUrl))}
+              >
                 <Calendar className="mr-2 h-4 w-4" />
                 <span>Calendar / Sessions</span>
               </CommandItem>
             )}
             {["ADMIN", "HEAD", "PRINCIPAL", "CLERK"].includes(role) && (
-              <CommandItem onSelect={() => runCommand(() => router.push("/admin/erp"))}>
+              <CommandItem
+                onSelect={() => runCommand(() => router.push("/admin/erp"))}
+              >
                 <BarChart3 className="mr-2 h-4 w-4" />
                 <span>Enterprise Resource Planning (ERP)</span>
               </CommandItem>
             )}
             {revenueUrl && (
-              <CommandItem onSelect={() => runCommand(() => router.push(revenueUrl))}>
+              <CommandItem
+                onSelect={() => runCommand(() => router.push(revenueUrl))}
+              >
                 <CreditCard className="mr-2 h-4 w-4" />
                 <span>Revenue & Billing</span>
               </CommandItem>
             )}
-            <CommandItem onSelect={() => runCommand(() => router.push(profileUrl))}>
+            <CommandItem
+              onSelect={() => runCommand(() => router.push(profileUrl))}
+            >
               <User className="mr-2 h-4 w-4" />
               <span>Profile Settings</span>
             </CommandItem>

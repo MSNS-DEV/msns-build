@@ -26,10 +26,8 @@ export type AccessCtx = {
 export const roleOf = (ctx: AccessCtx) =>
   (ctx.session?.user.accountType ?? "").toUpperCase();
 
-export const hasRole = (
-  ctx: AccessCtx,
-  group: readonly string[],
-): boolean => group.includes(roleOf(ctx));
+export const hasRole = (ctx: AccessCtx, group: readonly string[]): boolean =>
+  group.includes(roleOf(ctx));
 
 export const isOffice = (ctx: AccessCtx) => hasRole(ctx, ROLE_GROUPS.OFFICE);
 export const isStaff = (ctx: AccessCtx) => hasRole(ctx, ROLE_GROUPS.STAFF);
@@ -143,7 +141,9 @@ export function assertNotSelfApproval(
   ...makerEmployeeIds: (string | null | undefined)[]
 ) {
   if (makerEmployeeIds.some((id) => id && id === approverEmployeeId)) {
-    throw forbidden("You cannot approve a request you created or already approved");
+    throw forbidden(
+      "You cannot approve a request you created or already approved",
+    );
   }
 }
 
@@ -151,15 +151,23 @@ export function assertNotSelfApproval(
 const PRIVILEGED_ROLES = ["ADMIN", "PRINCIPAL", "HEAD"];
 
 /** Clerks (and HEAD) may not create or promote accounts into leadership roles. */
-export function assertCanAssignRole(ctx: AccessCtx, role: string | undefined | null) {
+export function assertCanAssignRole(
+  ctx: AccessCtx,
+  role: string | undefined | null,
+) {
   if (!role || !PRIVILEGED_ROLES.includes(role.toUpperCase())) return;
   if (!["ADMIN", "PRINCIPAL"].includes(roleOf(ctx))) {
-    throw forbidden("Only an ADMIN or PRINCIPAL can grant ADMIN, PRINCIPAL or HEAD access");
+    throw forbidden(
+      "Only an ADMIN or PRINCIPAL can grant ADMIN, PRINCIPAL or HEAD access",
+    );
   }
 }
 
 /** Office staff may read any employee's HR/payroll data; other employees only their own. */
-export async function assertCanReadEmployee(ctx: AccessCtx, employeeId: string | undefined) {
+export async function assertCanReadEmployee(
+  ctx: AccessCtx,
+  employeeId: string | undefined,
+) {
   if (isOffice(ctx)) return;
   if (!hasRole(ctx, ROLE_GROUPS.EMPLOYEE) || !employeeId) throw forbidden();
   const me = await requireSessionEmployee(ctx);

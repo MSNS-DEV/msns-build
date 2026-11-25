@@ -9,7 +9,8 @@ import {
 
 export function usePersistentAuthSession() {
   const { data: session, status } = useSession();
-  const [deviceSession, setDeviceSession] = useState<DeviceAuthSessionData | null>(null);
+  const [deviceSession, setDeviceSession] =
+    useState<DeviceAuthSessionData | null>(null);
   const [isRestoring, setIsRestoring] = useState(true);
 
   // 1. Sync active NextAuth session to in-device storage
@@ -30,7 +31,10 @@ export function usePersistentAuthSession() {
       void getDeviceAuthSession().then((stored) => {
         if (stored) {
           setDeviceSession(stored);
-          console.log("[usePersistentAuthSession] Active in-device auth session found for device:", stored.deviceId);
+          console.log(
+            "[usePersistentAuthSession] Active in-device auth session found for device:",
+            stored.deviceId,
+          );
         }
         setIsRestoring(false);
       });

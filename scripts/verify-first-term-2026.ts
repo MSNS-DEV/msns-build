@@ -42,7 +42,7 @@ async function verify() {
       marksCount: e._count.Marks,
       reportCardsCount: e._count.ReportCard,
       status: e.status,
-    }))
+    })),
   );
 
   console.log("\n=== 2. VERIFY REPORT CARDS SUMMARY ===");
@@ -89,10 +89,14 @@ async function verify() {
   });
 
   for (const sr of sampleReports) {
-    console.log(`\nStudent: ${sr.Students.studentName} | Class: ${sr.Grades.grade} ${sr.Grades.section} | Total: ${sr.totalObtainedMarks}/${sr.totalMaxMarks} (${sr.percentage}%) | Status: ${sr.status}`);
+    console.log(
+      `\nStudent: ${sr.Students.studentName} | Class: ${sr.Grades.grade} ${sr.Grades.section} | Total: ${sr.totalObtainedMarks}/${sr.totalMaxMarks} (${sr.percentage}%) | Status: ${sr.status}`,
+    );
     console.log("Subjects:");
     sr.ReportCardDetail.forEach((d) => {
-      console.log(`  - ${d.Subject.subjectName}: ${d.obtainedMarks}/${d.totalMarks} (${d.percentage}%) [${d.remarks}]`);
+      console.log(
+        `  - ${d.Subject.subjectName}: ${d.obtainedMarks}/${d.totalMarks} (${d.percentage}%) [${d.remarks}]`,
+      );
     });
   }
 }

@@ -1,7 +1,12 @@
 // File: user.ts
 import { assertNoPaidSalaries } from "~/server/utils/financial-guards";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, officeProcedure, leadershipProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  officeProcedure,
+  leadershipProcedure,
+} from "../trpc";
 import { z } from "zod";
 import { generatePdf } from "~/lib/pdf-reports";
 import { generateUniqueUserCredentials } from "~/server/utils/credential-generator";
@@ -105,10 +110,7 @@ export const UserRouter = createTRPCRouter({
         return await ctx.db.$transaction(async (tx) => {
           const existing = await tx.user.findFirst({
             where: {
-              OR: [
-                { username: input.username },
-                { email: input.email },
-              ],
+              OR: [{ username: input.username }, { email: input.email }],
             },
           });
           if (existing) {
@@ -118,7 +120,10 @@ export const UserRouter = createTRPCRouter({
             });
           }
 
-          const credentials = await generateUniqueUserCredentials(tx, input.accountType);
+          const credentials = await generateUniqueUserCredentials(
+            tx,
+            input.accountType,
+          );
           const username = input.username?.trim() || credentials.username;
           const email = input.email?.trim() || credentials.email;
 
@@ -188,10 +193,12 @@ export const UserRouter = createTRPCRouter({
         });
         const bulkPromoBatchIds = bulkPromoBatches.map((b) => b.batchId);
 
-        const bulkSalaryBatches = await ctx.db.bulkSalaryCreationBatch.findMany({
-          where: { initiatedBy: { in: input.employeeIds } },
-          select: { batchId: true },
-        });
+        const bulkSalaryBatches = await ctx.db.bulkSalaryCreationBatch.findMany(
+          {
+            where: { initiatedBy: { in: input.employeeIds } },
+            select: { batchId: true },
+          },
+        );
         const bulkSalaryBatchIds = bulkSalaryBatches.map((b) => b.batchId);
 
         const leaveApps = await ctx.db.leaveApplication.findMany({
@@ -264,9 +271,11 @@ export const UserRouter = createTRPCRouter({
           stockTransactionUpd,
           assetUpd,
           userDel,
-          employeeDel
+          employeeDel,
         ] = await ctx.db.$transaction([
-          ctx.db.bioMetric.deleteMany({ where: { employeeId: { in: input.employeeIds } } }),
+          ctx.db.bioMetric.deleteMany({
+            where: { employeeId: { in: input.employeeIds } },
+          }),
           ctx.db.marks.deleteMany({
             where: {
               OR: [
@@ -283,37 +292,61 @@ export const UserRouter = createTRPCRouter({
               ],
             },
           }),
-          ctx.db.classSubject.deleteMany({ where: { employeeId: { in: input.employeeIds } } }),
-          ctx.db.timetable.deleteMany({ where: { employeeId: { in: input.employeeIds } } }),
-          ctx.db.salary.deleteMany({ where: { employeeId: { in: input.employeeIds } } }),
-          ctx.db.salaryAssignment.deleteMany({ where: { employeeId: { in: input.employeeIds } } }),
-          ctx.db.salaryIncrement.deleteMany({ where: { employeeId: { in: input.employeeIds } } }),
-          ctx.db.employeeAttendance.deleteMany({ where: { employeeId: { in: input.employeeIds } } }),
-          ctx.db.leaveBalance.deleteMany({ where: { employeeId: { in: input.employeeIds } } }),
-          ctx.db.promotionHistory.deleteMany({ where: { promotedBy: { in: input.employeeIds } } }),
-          
-          ctx.db.bulkPromotionBatchItem.deleteMany({ where: { batchId: { in: bulkPromoBatchIds } } }),
-          ctx.db.bulkPromotionBatch.deleteMany({ where: { batchId: { in: bulkPromoBatchIds } } }),
+          ctx.db.classSubject.deleteMany({
+            where: { employeeId: { in: input.employeeIds } },
+          }),
+          ctx.db.timetable.deleteMany({
+            where: { employeeId: { in: input.employeeIds } },
+          }),
+          ctx.db.salary.deleteMany({
+            where: { employeeId: { in: input.employeeIds } },
+          }),
+          ctx.db.salaryAssignment.deleteMany({
+            where: { employeeId: { in: input.employeeIds } },
+          }),
+          ctx.db.salaryIncrement.deleteMany({
+            where: { employeeId: { in: input.employeeIds } },
+          }),
+          ctx.db.employeeAttendance.deleteMany({
+            where: { employeeId: { in: input.employeeIds } },
+          }),
+          ctx.db.leaveBalance.deleteMany({
+            where: { employeeId: { in: input.employeeIds } },
+          }),
+          ctx.db.promotionHistory.deleteMany({
+            where: { promotedBy: { in: input.employeeIds } },
+          }),
+
+          ctx.db.bulkPromotionBatchItem.deleteMany({
+            where: { batchId: { in: bulkPromoBatchIds } },
+          }),
+          ctx.db.bulkPromotionBatch.deleteMany({
+            where: { batchId: { in: bulkPromoBatchIds } },
+          }),
           ctx.db.bulkSalaryCreationItem.deleteMany({
             where: {
               OR: [
                 { batchId: { in: bulkSalaryBatchIds } },
-                { employeeId: { in: input.employeeIds } }
-              ]
-            }
+                { employeeId: { in: input.employeeIds } },
+              ],
+            },
           }),
-          ctx.db.bulkSalaryCreationBatch.deleteMany({ where: { batchId: { in: bulkSalaryBatchIds } } }),
-          
+          ctx.db.bulkSalaryCreationBatch.deleteMany({
+            where: { batchId: { in: bulkSalaryBatchIds } },
+          }),
+
           ctx.db.leaveApproval.deleteMany({
             where: {
               OR: [
                 { applicationId: { in: leaveAppIds } },
-                { approverId: { in: input.employeeIds } }
-              ]
-            }
+                { approverId: { in: input.employeeIds } },
+              ],
+            },
           }),
-          ctx.db.leaveApplication.deleteMany({ where: { applicationId: { in: leaveAppIds } } }),
-          
+          ctx.db.leaveApplication.deleteMany({
+            where: { applicationId: { in: leaveAppIds } },
+          }),
+
           ctx.db.gRNLineItem.deleteMany({
             where: {
               OR: [
@@ -322,8 +355,12 @@ export const UserRouter = createTRPCRouter({
               ],
             },
           }),
-          ctx.db.goodsReceiptNote.deleteMany({ where: { grnId: { in: grnIds } } }),
-          ctx.db.purchaseOrderLineItem.deleteMany({ where: { poId: { in: poIds } } }),
+          ctx.db.goodsReceiptNote.deleteMany({
+            where: { grnId: { in: grnIds } },
+          }),
+          ctx.db.purchaseOrderLineItem.deleteMany({
+            where: { poId: { in: poIds } },
+          }),
           ctx.db.purchaseOrder.deleteMany({ where: { poId: { in: poIds } } }),
           ctx.db.directExpense.deleteMany({
             where: {
@@ -333,13 +370,27 @@ export const UserRouter = createTRPCRouter({
               ],
             },
           }),
-          ctx.db.budgetReallocation.deleteMany({ where: { authorisedBy: { in: input.employeeIds } } }),
-          ctx.db.stockReconciliation.deleteMany({ where: { performedBy: { in: input.employeeIds } } }),
-          ctx.db.assetTransfer.deleteMany({ where: { authorisedBy: { in: input.employeeIds } } }),
-          ctx.db.pettyCashDisbursement.deleteMany({ where: { recordedBy: { in: input.employeeIds } } }),
-          ctx.db.pettyCashReconciliation.deleteMany({ where: { performedBy: { in: input.employeeIds } } }),
-          ctx.db.financialLedgerEntry.deleteMany({ where: { createdBy: { in: input.employeeIds } } }),
-          ctx.db.approvalRecord.deleteMany({ where: { approverId: { in: input.employeeIds } } }),
+          ctx.db.budgetReallocation.deleteMany({
+            where: { authorisedBy: { in: input.employeeIds } },
+          }),
+          ctx.db.stockReconciliation.deleteMany({
+            where: { performedBy: { in: input.employeeIds } },
+          }),
+          ctx.db.assetTransfer.deleteMany({
+            where: { authorisedBy: { in: input.employeeIds } },
+          }),
+          ctx.db.pettyCashDisbursement.deleteMany({
+            where: { recordedBy: { in: input.employeeIds } },
+          }),
+          ctx.db.pettyCashReconciliation.deleteMany({
+            where: { performedBy: { in: input.employeeIds } },
+          }),
+          ctx.db.financialLedgerEntry.deleteMany({
+            where: { createdBy: { in: input.employeeIds } },
+          }),
+          ctx.db.approvalRecord.deleteMany({
+            where: { approverId: { in: input.employeeIds } },
+          }),
           ctx.db.approvalDelegation.deleteMany({
             where: {
               OR: [
@@ -348,7 +399,7 @@ export const UserRouter = createTRPCRouter({
               ],
             },
           }),
-          
+
           ctx.db.costCentre.updateMany({
             where: { managerId: { in: input.employeeIds } },
             data: { managerId: null },
@@ -361,7 +412,7 @@ export const UserRouter = createTRPCRouter({
             where: { assignedToId: { in: input.employeeIds } },
             data: { assignedToId: null },
           }),
-          
+
           ctx.db.user.deleteMany({ where: { accountId: { in: regNumbers } } }),
           ctx.db.employees.deleteMany({
             where: {
@@ -374,7 +425,8 @@ export const UserRouter = createTRPCRouter({
 
         return {
           success: true,
-          message: "Employees and all their related records successfully deleted/updated.",
+          message:
+            "Employees and all their related records successfully deleted/updated.",
           summary: {
             employeesDeleted: employeeDel.count,
             usersDeleted: userDel.count,
@@ -412,8 +464,8 @@ export const UserRouter = createTRPCRouter({
           },
           reasons: [
             "Cleaned up all database relations to prevent foreign key constraint violations.",
-            "Nullified manager, recipient, and assignee associations where the employee was set to maintain transaction history."
-          ]
+            "Nullified manager, recipient, and assignee associations where the employee was set to maintain transaction history.",
+          ],
         };
       } catch (error) {
         if (error instanceof TRPCError) throw error;

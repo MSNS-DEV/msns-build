@@ -217,7 +217,8 @@ export function EmployeeTable() {
               <Link
                 href={`/admin/users/faculty/bio-metric?employeeId=${row.original.employeeId}&employeeName=${encodeURIComponent(row.original.employeeName)}`}
               >
-                <Shield className="mr-2 h-3.5 w-3.5 text-blue-600 dark:text-blue-400" /> Enroll Fingerprint
+                <Shield className="mr-2 h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />{" "}
+                Enroll Fingerprint
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem
@@ -230,7 +231,8 @@ export function EmployeeTable() {
               }}
               className="cursor-pointer hover:bg-slate-100 focus:bg-slate-100 dark:hover:bg-emerald-500/20 dark:focus:bg-emerald-500/20"
             >
-              <Fingerprint className="mr-2 h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" /> Mark Biometric Attendance
+              <Fingerprint className="mr-2 h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />{" "}
+              Mark Biometric Attendance
             </DropdownMenuItem>
             {row.original.cv && (
               <DropdownMenuItem
@@ -248,12 +250,16 @@ export function EmployeeTable() {
     },
   ];
 
-  const [employeeTab, setEmployeeTab] = useState<"active" | "inactive">("active");
+  const [employeeTab, setEmployeeTab] = useState<"active" | "inactive">(
+    "active",
+  );
 
   const activeEmployees = useMemo(() => {
     if (!employees) return [];
     return (employees as EmployeeData[]).filter(
-      (e) => e.status === "Active" || (!e.status && e.status !== "Left" && e.status !== "Retired"),
+      (e) =>
+        e.status === "Active" ||
+        (!e.status && e.status !== "Left" && e.status !== "Retired"),
     );
   }, [employees]);
 
@@ -264,7 +270,8 @@ export function EmployeeTable() {
     );
   }, [employees]);
 
-  const currentData = employeeTab === "active" ? activeEmployees : inactiveEmployees;
+  const currentData =
+    employeeTab === "active" ? activeEmployees : inactiveEmployees;
 
   const table = useReactTable({
     data: currentData,
@@ -320,7 +327,7 @@ export function EmployeeTable() {
           </Button>
         </div>
 
-        <div className="text-[11px] text-muted-foreground font-medium">
+        <div className="text-[11px] font-medium text-muted-foreground">
           {employeeTab === "active"
             ? "Showing currently active staff (Left/Retired excluded)"
             : "Archive of resigned and retired staff members"}

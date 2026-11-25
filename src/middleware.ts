@@ -83,7 +83,9 @@ export async function middleware(request: NextRequest) {
   }
 
   const role =
-    typeof token.accountType === "string" ? token.accountType.toUpperCase() : "";
+    typeof token.accountType === "string"
+      ? token.accountType.toUpperCase()
+      : "";
   const allowed = route[1];
   if (allowed !== "any" && !allowed.includes(role)) {
     const url = request.nextUrl.clone();

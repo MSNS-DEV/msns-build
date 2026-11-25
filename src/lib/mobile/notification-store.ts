@@ -14,13 +14,17 @@ export const getStoredNotifications = (): StoredNotification[] => {
   if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as StoredNotification[]) : getSampleInitialNotifications();
+    return raw
+      ? (JSON.parse(raw) as StoredNotification[])
+      : getSampleInitialNotifications();
   } catch {
     return getSampleInitialNotifications();
   }
 };
 
-export const saveStoredNotifications = (notifications: StoredNotification[]): void => {
+export const saveStoredNotifications = (
+  notifications: StoredNotification[],
+): void => {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
@@ -30,7 +34,9 @@ export const saveStoredNotifications = (notifications: StoredNotification[]): vo
   }
 };
 
-export const addStoredNotification = (notif: Omit<StoredNotification, "id" | "timestamp" | "read">): StoredNotification => {
+export const addStoredNotification = (
+  notif: Omit<StoredNotification, "id" | "timestamp" | "read">,
+): StoredNotification => {
   const current = getStoredNotifications();
   const newNotif: StoredNotification = {
     ...notif,

@@ -38,7 +38,9 @@ export const useDeepLinks = () => {
           } else if (rawUrl.startsWith("msns://lms/approvals/")) {
             const poId = extractId(rawUrl, "msns://lms/approvals/");
             if (poId) {
-              router.push(`/admin/erp/purchase-orders?poId=${encodeURIComponent(poId)}`);
+              router.push(
+                `/admin/erp/purchase-orders?poId=${encodeURIComponent(poId)}`,
+              );
             }
           }
         } catch (err) {

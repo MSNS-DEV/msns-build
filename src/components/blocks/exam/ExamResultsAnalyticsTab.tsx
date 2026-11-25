@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -80,7 +86,8 @@ export function ExamResultsAnalyticsTab({
             Examination Results Analytics
           </h2>
           <p className="text-xs text-muted-foreground">
-            Aggregate performance indicators, subject pass rates, and grade distribution
+            Aggregate performance indicators, subject pass rates, and grade
+            distribution
           </p>
         </div>
       </div>
@@ -134,7 +141,7 @@ export function ExamResultsAnalyticsTab({
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i} className="rounded-2xl p-4">
-                <Skeleton className="h-4 w-20 mb-2" />
+                <Skeleton className="mb-2 h-4 w-20" />
                 <Skeleton className="h-8 w-16" />
               </Card>
             ))}
@@ -168,7 +175,7 @@ export function ExamResultsAnalyticsTab({
                 <span className="text-2xl font-bold text-slate-900 dark:text-foreground">
                   {analytics.totalStudents}
                 </span>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
                   Across {analytics.totalExams} exam records
                 </p>
               </div>
@@ -187,7 +194,7 @@ export function ExamResultsAnalyticsTab({
                 <span className="text-2xl font-bold text-slate-900 dark:text-foreground">
                   {analytics.averageScorePct}%
                 </span>
-                <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-medium">
+                <p className="mt-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                   Overall performance
                 </p>
               </div>
@@ -206,7 +213,7 @@ export function ExamResultsAnalyticsTab({
                 <span className="text-2xl font-bold text-slate-900 dark:text-foreground">
                   {analytics.totalMarksCount}
                 </span>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
+                <p className="mt-0.5 text-[11px] text-muted-foreground">
                   Verified subject marks
                 </p>
               </div>
@@ -225,7 +232,7 @@ export function ExamResultsAnalyticsTab({
                 <span className="text-2xl font-bold text-slate-900 dark:text-foreground">
                   {analytics.topStudents[0]?.percentage ?? 0}%
                 </span>
-                <p className="text-[11px] text-amber-600 dark:text-amber-400 mt-0.5 font-medium truncate">
+                <p className="mt-0.5 truncate text-[11px] font-medium text-amber-600 dark:text-amber-400">
                   {analytics.topStudents[0]?.studentName ?? "No scores yet"}
                 </p>
               </div>
@@ -242,7 +249,8 @@ export function ExamResultsAnalyticsTab({
                   Subject Average Scores (%)
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Average percentage score achieved across all evaluated subjects
+                  Average percentage score achieved across all evaluated
+                  subjects
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-4 pt-2">
@@ -253,7 +261,11 @@ export function ExamResultsAnalyticsTab({
                         data={analytics.subjectStats}
                         margin={{ top: 10, right: 10, left: -20, bottom: 25 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="#e2e8f0"
+                        />
                         <XAxis
                           dataKey="subjectName"
                           axisLine={false}
@@ -314,7 +326,11 @@ export function ExamResultsAnalyticsTab({
                         data={analytics.gradeDistribution}
                         margin={{ top: 10, right: 10, left: -20, bottom: 25 }}
                       >
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke="#e2e8f0"
+                        />
                         <XAxis
                           dataKey="name"
                           axisLine={false}
@@ -331,7 +347,10 @@ export function ExamResultsAnalyticsTab({
                           tick={{ fontSize: 11, fill: "#64748b" }}
                         />
                         <RechartsTooltip
-                          formatter={(val: number) => [`${val} Students`, "Count"]}
+                          formatter={(val: number) => [
+                            `${val} Students`,
+                            "Count",
+                          ]}
                           contentStyle={{
                             borderRadius: "12px",
                             border: "1px solid #e2e8f0",
@@ -362,7 +381,7 @@ export function ExamResultsAnalyticsTab({
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
             {/* Top Students Leaderboard */}
             <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card">
-              <CardHeader className="p-4 border-b border-slate-100 dark:border-border/60">
+              <CardHeader className="border-b border-slate-100 p-4 dark:border-border/60">
                 <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-foreground">
                   <Trophy className="h-4 w-4 text-amber-500" />
                   Top Performers
@@ -377,19 +396,19 @@ export function ExamResultsAnalyticsTab({
                     {analytics.topStudents.map((student, idx) => (
                       <div
                         key={idx}
-                        className="flex items-center justify-between p-3.5 hover:bg-slate-50/60 dark:hover:bg-muted/20 transition-colors"
+                        className="flex items-center justify-between p-3.5 transition-colors hover:bg-slate-50/60 dark:hover:bg-muted/20"
                       >
                         <div className="flex items-center gap-3">
                           <div
                             className={cn(
                               "flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shadow-sm",
                               idx === 0
-                                ? "bg-amber-100 text-amber-800 border border-amber-300"
+                                ? "border border-amber-300 bg-amber-100 text-amber-800"
                                 : idx === 1
-                                ? "bg-slate-200 text-slate-700"
-                                : idx === 2
-                                ? "bg-amber-700/20 text-amber-900"
-                                : "bg-slate-100 text-slate-600",
+                                  ? "bg-slate-200 text-slate-700"
+                                  : idx === 2
+                                    ? "bg-amber-700/20 text-amber-900"
+                                    : "bg-slate-100 text-slate-600",
                             )}
                           >
                             {idx + 1}
@@ -405,7 +424,7 @@ export function ExamResultsAnalyticsTab({
                         </div>
                         <Badge
                           variant="outline"
-                          className="bg-emerald-50 text-emerald-700 border-emerald-200 font-bold text-xs"
+                          className="border-emerald-200 bg-emerald-50 text-xs font-bold text-emerald-700"
                         >
                           {student.percentage}%
                         </Badge>
@@ -422,13 +441,14 @@ export function ExamResultsAnalyticsTab({
 
             {/* Subject Pass Rate Breakdown Table */}
             <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-border dark:bg-card lg:col-span-2">
-              <CardHeader className="p-4 border-b border-slate-100 dark:border-border/60">
+              <CardHeader className="border-b border-slate-100 p-4 dark:border-border/60">
                 <CardTitle className="flex items-center gap-2 text-sm font-bold text-slate-900 dark:text-foreground">
                   <GraduationCap className="h-4 w-4 text-emerald-600" />
                   Subject Breakdown & Pass Rates
                 </CardTitle>
                 <CardDescription className="text-xs">
-                  Detailed subject-by-subject passing percentage and average score
+                  Detailed subject-by-subject passing percentage and average
+                  score
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -437,9 +457,9 @@ export function ExamResultsAnalyticsTab({
                     {analytics.subjectStats.map((sub, idx) => (
                       <div
                         key={idx}
-                        className="p-3.5 hover:bg-slate-50/60 dark:hover:bg-muted/20 transition-colors"
+                        className="p-3.5 transition-colors hover:bg-slate-50/60 dark:hover:bg-muted/20"
                       >
-                        <div className="flex items-center justify-between mb-1.5">
+                        <div className="mb-1.5 flex items-center justify-between">
                           <span className="text-xs font-bold text-slate-900 dark:text-foreground">
                             {sub.subjectName}
                           </span>
@@ -454,8 +474,8 @@ export function ExamResultsAnalyticsTab({
                                 sub.passRate >= 75
                                   ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
                                   : sub.passRate >= 50
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300",
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-300",
                               )}
                             >
                               Pass Rate: {sub.passRate}%
