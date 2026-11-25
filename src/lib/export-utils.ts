@@ -13,6 +13,16 @@ export interface ExportData {
   title?: string;
 }
 
+/**
+ * Quote a CSV text cell and neutralise spreadsheet formula injection
+ * (cells starting with = + - @ tab or CR are executed by Excel).
+ */
+function escapeCsvText(raw: string): string {
+  const isNumber = /^[-+]?\d[\d,.]*%?$/.test(raw);
+  const val = !isNumber && /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
+  return /[",\n\r]/.test(val) ? `"${val.replace(/"/g, '""')}"` : val;
+}
+
 // Generate CSV content from data
 export function generateCSV(data: ExportData): string {
   const { columns, rows } = data;
@@ -26,8 +36,7 @@ export function generateCSV(data: ExportData): string {
       .map((col) => {
         const value = row[col.key];
         if (value === null || value === undefined) return "";
-        if (typeof value === "string")
-          return value.includes(",") ? `"${value}"` : value;
+        if (typeof value === "string") return escapeCsvText(value);
         if (
           typeof value === "number" ||
           typeof value === "boolean" ||

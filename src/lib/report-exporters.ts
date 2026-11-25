@@ -16,6 +16,17 @@ import {
 } from "docx";
 import type { ReportColumn, ExportFormat } from "./report-types";
 
+
+/**
+ * Neutralise spreadsheet formula injection: text starting with = + - @ (or a
+ * tab/CR) is executed by Excel/Sheets, so prefix it with an apostrophe.
+ * Numbers are left alone so negative amounts stay numeric.
+ */
+export function neutraliseFormula(val: string): string {
+  if (/^[-+]?\d[\d,.]*%?$/.test(val)) return val; // plain numbers stay numbers
+  return /^[=+\-@\t\r]/.test(val) ? `'${val}` : val;
+}
+
 export interface ExportReportOptions {
   title: string;
   subtitle?: string;
@@ -334,10 +345,13 @@ export function generateXlsxReport(options: ExportReportOptions): Uint8Array {
       if (col.format === "date") {
         return formatCellValue(raw, "date");
       }
-      if (typeof raw === "string" || typeof raw === "number" || typeof raw === "boolean") {
+      if (typeof raw === "number" || typeof raw === "boolean") {
         return raw;
       }
-      return formatCellValue(raw, col.format);
+      if (typeof raw === "string") {
+        return neutraliseFormula(raw);
+      }
+      return neutraliseFormula(formatCellValue(raw, col.format));
     });
     aoa.push(rowValues);
   });
@@ -366,7 +380,8 @@ export function generateXlsxReport(options: ExportReportOptions): Uint8Array {
 export function generateCsvReport(options: ExportReportOptions): string {
   const { columns, rows } = options;
 
-  const escapeCsv = (val: string): string => {
+  const escapeCsv = (raw: string): string => {
+    const val = neutraliseFormula(raw);
     if (val.includes(",") || val.includes('"') || val.includes("\n") || val.includes("\r")) {
       return `"${val.replace(/"/g, '""')}"`;
     }
