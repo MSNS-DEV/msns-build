@@ -45,7 +45,7 @@ export const timetableRouter = createTRPCRouter({
           include: {
             Grades: true,
             Subject: true,
-            Employees: true,
+            Employees: { select: { employeeId: true, employeeName: true, designation: true, registrationNumber: true, profilePic: true } },
             Sessions: true,
           },
           orderBy: [{ dayOfWeek: "asc" }, { lectureNumber: "asc" }],
@@ -90,7 +90,7 @@ export const timetableRouter = createTRPCRouter({
           include: {
             Grades: true,
             Subject: true,
-            Employees: true,
+            Employees: { select: { employeeId: true, employeeName: true, designation: true, registrationNumber: true, profilePic: true } },
             Sessions: true,
           },
           orderBy: [{ dayOfWeek: "asc" }, { lectureNumber: "asc" }],
@@ -719,7 +719,7 @@ export const timetableRouter = createTRPCRouter({
           where: { classId: input.classId },
           include: {
             Subject: true,
-            Employees: true,
+            Employees: { select: { employeeId: true, employeeName: true, designation: true, registrationNumber: true, profilePic: true } },
           },
         });
       } catch (error) {
