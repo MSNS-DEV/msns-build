@@ -67,6 +67,13 @@ export const clearPreferences = async (): Promise<void> => {
   }
 };
 
+/** 256-bit random passphrase from the platform CSPRNG. */
+const generatePassphrase = (): string => {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+};
+
 export const initDb = async (): Promise<SQLiteDB | null> => {
   if (!isNative()) return null;
   if (dbInstance) return dbInstance;
@@ -79,11 +86,18 @@ export const initDb = async (): Promise<SQLiteDB | null> => {
     const mode = 'secret';
     const version = 1;
 
-    let secretKey = await getSecureItem('db_secret_key');
-    if (!secretKey) {
-      secretKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      await setSecureItem('db_secret_key', secretKey);
+    // The plugin keeps the passphrase in its own encrypted storage; we only need to
+    // provide one the first time. Never store it in plain Preferences/localStorage.
+    const secretConn = sqliteConnection as {
+      isSecretStored(): Promise<{ result?: boolean }>;
+      setEncryptionSecret(passphrase: string): Promise<void>;
+    };
+    const { result: secretStored } = await secretConn.isSecretStored();
+    if (!secretStored) {
+      await secretConn.setEncryptionSecret(generatePassphrase());
     }
+    // Remove the plaintext key written by earlier app versions.
+    await removeSecureItem('db_secret_key');
 
     const connectionObj = sqliteConnection as {
       createConnection(
@@ -163,10 +177,17 @@ const createOfflineTables = async (db: SQLiteDB) => {
       action TEXT,
       payload TEXT,
       createdAt TEXT,
-      status TEXT
+      status TEXT,
+      attempts INTEGER DEFAULT 0
     );
   `;
   await db.execute(query);
+  // Databases created by earlier versions lack the attempts column.
+  try {
+    await db.execute(`ALTER TABLE sync_queue ADD COLUMN attempts INTEGER DEFAULT 0;`);
+  } catch {
+    // column already exists
+  }
 };
 
 export interface NetworkStatus {
@@ -220,11 +241,20 @@ export interface PushPayload {
   data?: Record<string, string>;
 }
 
+export interface PushRegistrationHandle {
+  remove(): Promise<void>;
+}
+
+/**
+ * Registers for push notifications and attaches listeners.
+ * Listeners are attached BEFORE register() so the first token event is not missed.
+ * Returns a handle whose remove() detaches every listener added here.
+ */
 export const registerPushNotifications = async (
   onToken: (token: string) => void,
   onNotification: (notification: PushPayload) => void
-) => {
-  if (!isNative()) return;
+): Promise<PushRegistrationHandle | null> => {
+  if (!isNative()) return null;
   try {
     const { PushNotifications } = await import('@capacitor/push-notifications');
     let permStatus = await PushNotifications.checkPermissions();
@@ -233,28 +263,47 @@ export const registerPushNotifications = async (
     }
     if (permStatus.receive !== 'granted') {
       console.warn('Push notification permissions denied');
-      return;
+      return null;
     }
+
+    const listeners = await Promise.all([
+      PushNotifications.addListener('registration', (token) => {
+        onToken(token.value);
+      }),
+      PushNotifications.addListener('registrationError', (err) => {
+        console.error('Push notification registration error:', err.error);
+      }),
+      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        onNotification({
+          title: notification.title,
+          body: notification.body,
+          data: notification.data as Record<string, string> | undefined
+        });
+      }),
+    ]);
 
     await PushNotifications.register();
 
-    void PushNotifications.addListener('registration', (token) => {
-      onToken(token.value);
-    });
-
-    void PushNotifications.addListener('registrationError', (err) => {
-      console.error('Push notification registration error:', err);
-    });
-
-    void PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      onNotification({
-        title: notification.title,
-        body: notification.body,
-        data: notification.data as Record<string, string> | undefined
-      });
-    });
+    return {
+      remove: async () => {
+        await Promise.all(listeners.map((l) => l.remove()));
+      },
+    };
   } catch (error) {
     console.error('Push notifications init failed:', error);
+    return null;
+  }
+};
+
+/** Stops push delivery to this device (call on logout). */
+export const unregisterPushNotifications = async (): Promise<void> => {
+  if (!isNative()) return;
+  try {
+    const { PushNotifications } = await import('@capacitor/push-notifications');
+    await PushNotifications.removeAllListeners();
+    await PushNotifications.unregister();
+  } catch (error) {
+    console.error('Push notifications unregister failed:', error);
   }
 };
 
@@ -305,6 +354,17 @@ export const clearAllMobileState = async (): Promise<void> => {
   try {
     await clearDb();
     await clearPreferences();
+    // Web-layer caches (offline cache mirrors, sync queue fallbacks) live in the
+    // WebView's localStorage on native too; wipe them so the next user on a
+    // shared device cannot read the previous user's data.
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+      } catch {
+        // storage may be unavailable; nothing else to do
+      }
+    }
   } catch (error) {
     console.error('Failed to clear mobile state:', error);
   }

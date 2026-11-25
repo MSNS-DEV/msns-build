@@ -1,37 +1,62 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { registerPushNotifications, isNative } from "~/lib/mobile/native-service";
+import {
+  registerPushNotifications,
+  isNative,
+  type PushRegistrationHandle,
+} from "~/lib/mobile/native-service";
 import { api } from "~/trpc/react";
 
+// One push registration per app process, even if several components mount the hook
+// or React re-runs effects (Strict Mode, fast refresh).
+let pushRegistration: Promise<PushRegistrationHandle | null> | null = null;
+// Kept in memory only (never persisted or logged) so logout can unregister it.
+let currentPushToken: string | null = null;
+
+export const getCurrentPushToken = () => currentPushToken;
+
+export const resetDeviceRegistration = async () => {
+  const pending = pushRegistration;
+  pushRegistration = null;
+  currentPushToken = null;
+  const handle = await pending;
+  await handle?.remove();
+};
+
 export const useDeviceRegistration = () => {
-  const session = useSession();
-  const registerMutation = api.mobile.registerDevice.useMutation();
+  const { status } = useSession();
+  const { mutate } = api.mobile.registerDevice.useMutation();
+
+  // Keep the latest mutate in a ref so the effect does not re-run when the
+  // mutation object changes identity on every render.
+  const mutateRef = useRef(mutate);
+  mutateRef.current = mutate;
 
   useEffect(() => {
-    if (session.status !== "authenticated" || !isNative()) return;
+    if (status !== "authenticated" || !isNative()) return;
+    if (pushRegistration) return;
 
-    const initPush = async () => {
-      await registerPushNotifications(
-        (token) => {
-          console.log("[PushNotifications] Registered FCM token:", token);
-          void registerMutation.mutateAsync({
-            token,
-            platform: "android",
-          }).then(() => {
-            console.log("[PushNotifications] Device registered with server successfully.");
-          }).catch((err) => {
-            console.error("[PushNotifications] Failed to register device with server:", err);
-          });
-        },
-        (notification) => {
-          console.log("[PushNotifications] Received notification:", notification);
-          if (notification.title && notification.body) {
-            alert(`${notification.title}\n${notification.body}`);
-          }
+    pushRegistration = registerPushNotifications(
+      (token) => {
+        currentPushToken = token;
+        mutateRef.current(
+          { token, platform: "android" },
+          {
+            onError: (err) => {
+              console.error("[PushNotifications] Failed to register device with server:", err.message);
+            },
+          },
+        );
+      },
+      (notification) => {
+        if (notification.title && notification.body) {
+          alert(`${notification.title}\n${notification.body}`);
         }
-      );
-    };
+      },
+    );
+  }, [status]);
 
-    void initPush();
-  }, [session.status, registerMutation]);
+  useEffect(() => {
+    if (status === "unauthenticated") void resetDeviceRegistration();
+  }, [status]);
 };

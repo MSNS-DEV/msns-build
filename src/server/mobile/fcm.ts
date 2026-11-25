@@ -4,10 +4,10 @@ export const sendPushNotification = async (
   userIds: string[],
   parentGuardianIds: string[],
   title: string,
-  body: string,
+  _body: string,
   _data?: Record<string, string>
 ) => {
-  console.log(`[FCM Push] Triggered alert: "${title}" - "${body}" for Users:`, userIds, "Parents:", parentGuardianIds);
+  // Do not log recipient ids, message bodies or device tokens (personal data / credentials).
 
   try {
     const prismaDb = db as unknown as {
@@ -35,11 +35,11 @@ export const sendPushNotification = async (
 
     const tokens = registrations.map((r: { token: string }) => r.token);
     if (tokens.length === 0) {
-      console.log("[FCM Push] No registered device tokens found for target recipients.");
+      console.log("[FCM Push] No registered device tokens for this notification.");
       return;
     }
 
-    console.log(`[FCM Push] Mock sending push payload to ${tokens.length} tokens:`, tokens);
+    console.log(`[FCM Push] Mock send "${title}" to ${tokens.length} device(s).`);
   } catch (error) {
     console.error("[FCM Push] Error fetching tokens / sending notification:", error);
   }

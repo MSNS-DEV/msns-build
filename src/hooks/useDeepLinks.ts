@@ -10,6 +10,15 @@ interface AppListener {
   remove(): void;
 }
 
+// Ids taken from a deep link must be a single safe path segment, so a crafted
+// link (e.g. msns://lms/reports/../../admin/...) cannot navigate elsewhere.
+const SAFE_ID = /^[A-Za-z0-9_-]{1,128}$/;
+
+const extractId = (rawUrl: string, prefix: string): string | null => {
+  const id = rawUrl.substring(prefix.length).split(/[?#]/)[0] ?? "";
+  return SAFE_ID.test(id) ? id : null;
+};
+
 export const useDeepLinks = () => {
   const router = useRouter();
 
@@ -19,20 +28,17 @@ export const useDeepLinks = () => {
     let appListener: AppListener | undefined;
     void import("@capacitor/app").then(({ App }) => {
       void App.addListener("appUrlOpen", (data: AppUrlOpenData) => {
-        console.log("[DeepLinks] Received deep link URL:", data.url);
         try {
           const rawUrl = data.url;
           if (rawUrl.startsWith("msns://lms/reports/")) {
-            const examId = rawUrl.substring("msns://lms/reports/".length);
+            const examId = extractId(rawUrl, "msns://lms/reports/");
             if (examId) {
-              console.log("[DeepLinks] Routing to reports:", examId);
-              router.push(`/student/reports/${examId}`);
+              router.push(`/student/reports/${encodeURIComponent(examId)}`);
             }
           } else if (rawUrl.startsWith("msns://lms/approvals/")) {
-            const poId = rawUrl.substring("msns://lms/approvals/".length);
+            const poId = extractId(rawUrl, "msns://lms/approvals/");
             if (poId) {
-              console.log("[DeepLinks] Routing to approvals:", poId);
-              router.push(`/admin/erp/purchase-orders?poId=${poId}`);
+              router.push(`/admin/erp/purchase-orders?poId=${encodeURIComponent(poId)}`);
             }
           }
         } catch (err) {

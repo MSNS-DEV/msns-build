@@ -7,7 +7,7 @@ export interface CachedDataEnvelope<T> {
 }
 
 /**
- * Cache Timetable data locally (SQLite on Android, localStorage on Web)
+ * Cache Timetable data locally (encrypted SQLite on Android, localStorage on Web only)
  */
 export const saveCachedTimetable = async (classId: string, data: unknown): Promise<void> => {
   const envelope: CachedDataEnvelope<unknown> = {
@@ -31,7 +31,7 @@ export const saveCachedTimetable = async (classId: string, data: unknown): Promi
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       localStorage.setItem(`offline_timetable_${classId}`, jsonStr);
     } catch (err) {
@@ -59,7 +59,7 @@ export const getCachedTimetable = async <T>(classId: string): Promise<CachedData
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       const item = localStorage.getItem(`offline_timetable_${classId}`);
       if (item) return JSON.parse(item) as CachedDataEnvelope<T>;
@@ -96,7 +96,7 @@ export const saveCachedDiary = async (classId: string, data: unknown): Promise<v
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       localStorage.setItem(`offline_diary_${classId}`, jsonStr);
     } catch (err) {
@@ -124,7 +124,7 @@ export const getCachedDiary = async <T>(classId: string): Promise<CachedDataEnve
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       const item = localStorage.getItem(`offline_diary_${classId}`);
       if (item) return JSON.parse(item) as CachedDataEnvelope<T>;
@@ -161,7 +161,7 @@ export const saveCachedDatesheet = async (examId: string, data: unknown): Promis
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       localStorage.setItem(`offline_datesheet_${examId}`, jsonStr);
     } catch (err) {
@@ -189,7 +189,7 @@ export const getCachedDatesheet = async <T>(examId: string): Promise<CachedDataE
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       const item = localStorage.getItem(`offline_datesheet_${examId}`);
       if (item) return JSON.parse(item) as CachedDataEnvelope<T>;

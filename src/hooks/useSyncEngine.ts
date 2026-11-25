@@ -13,7 +13,8 @@ export const useSyncEngine = () => {
   useEffect(() => {
     if (!isNative()) return;
 
-    const trpcClient = utils as unknown as TRPCClient;
+    // useUtils() exposes the vanilla tRPC client (with .mutate) as `utils.client`.
+    const trpcClient = utils.client as unknown as TRPCClient;
     void processSyncQueue(trpcClient);
 
     let unsubscribeNetwork: (() => void) | undefined;

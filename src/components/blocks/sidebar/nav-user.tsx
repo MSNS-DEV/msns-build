@@ -36,12 +36,28 @@ export const NavUser = () => {
   const { theme, setTheme } = useTheme();
   
   const { data: userProfile } = api.profile.getProfile.useQuery();
+  const unregisterDevice = api.mobile.unregisterDevice.useMutation();
   const profilePic = userProfile?.profilePic;
   const username = userProfile?.username ?? session.data?.user.username ?? "User";
   const initials = username.charAt(0).toUpperCase();
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
+    try {
+      // Stop push alerts for this account on this device before clearing state.
+      const { getCurrentPushToken, resetDeviceRegistration } = await import("~/hooks/useDeviceRegistration");
+      const { unregisterPushNotifications } = await import("~/lib/mobile/native-service");
+      const token = getCurrentPushToken();
+      if (token) {
+        await unregisterDevice.mutateAsync({ token }).catch((err: unknown) => {
+          console.error("Failed to unregister device:", err);
+        });
+      }
+      await resetDeviceRegistration();
+      await unregisterPushNotifications();
+    } catch (err) {
+      console.error("Failed to unregister push notifications during sign out:", err);
+    }
     try {
       const { clearAllMobileState } = await import("~/lib/mobile/native-service");
       const { clearDeviceAuthSession } = await import("~/lib/mobile/device-auth");

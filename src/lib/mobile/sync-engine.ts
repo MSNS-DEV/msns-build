@@ -6,11 +6,15 @@ export interface SyncQueueItem {
   payload: string;
   createdAt: string;
   status: string;
+  attempts?: number;
 }
+
+/** After this many failed attempts an item is parked as DEAD and no longer retried. */
+const MAX_SYNC_ATTEMPTS = 5;
 
 export const addToSyncQueue = async (action: string, payload: unknown) => {
   const payloadStr = JSON.stringify(payload);
-  const id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  const id = crypto.randomUUID();
   const createdAt = new Date().toISOString();
   const status = 'PENDING';
 
@@ -19,7 +23,7 @@ export const addToSyncQueue = async (action: string, payload: unknown) => {
       const db = await getDb();
       const dbRun = db as unknown as { run(query: string, params: unknown[]): Promise<void> };
       await dbRun.run(
-        `INSERT INTO sync_queue (id, action, payload, createdAt, status) VALUES (?, ?, ?, ?, ?)`,
+        `INSERT INTO sync_queue (id, action, payload, createdAt, status, attempts) VALUES (?, ?, ?, ?, ?, 0)`,
         [id, action, payloadStr, createdAt, status]
       );
       console.log(`[SyncEngine] Added action ${action} to SQLite sync queue.`);
@@ -30,7 +34,7 @@ export const addToSyncQueue = async (action: string, payload: unknown) => {
     if (typeof window !== 'undefined') {
       const localQueueStr = localStorage.getItem('sync_queue') ?? '[]';
       const localQueue = JSON.parse(localQueueStr) as SyncQueueItem[];
-      localQueue.push({ id, action, payload: payloadStr, createdAt, status });
+      localQueue.push({ id, action, payload: payloadStr, createdAt, status, attempts: 0 });
       localStorage.setItem('sync_queue', JSON.stringify(localQueue));
       console.log(`[SyncEngine] Added action ${action} to localStorage sync queue.`);
     }
@@ -50,7 +54,17 @@ export interface TRPCClient {
   };
 }
 
-export const processSyncQueue = async (trpcClient: TRPCClient) => {
+// Mount, network-change and foreground events can all fire at once; run one pass at a time.
+let syncInFlight: Promise<void> | null = null;
+
+export const processSyncQueue = (trpcClient: TRPCClient): Promise<void> => {
+  syncInFlight ??= runSyncQueue(trpcClient).finally(() => {
+    syncInFlight = null;
+  });
+  return syncInFlight;
+};
+
+const runSyncQueue = async (trpcClient: TRPCClient) => {
   let items: SyncQueueItem[] = [];
 
   if (isNative()) {
@@ -83,6 +97,8 @@ export const processSyncQueue = async (trpcClient: TRPCClient) => {
         await trpcClient.marks.saveAllMarks.mutate(payload);
       } else if (item.action === 'CREATE_DIARY') {
         await trpcClient.subjectDiary.create.mutate(payload);
+      } else {
+        throw new Error(`Unknown sync action: ${item.action}`);
       }
       
       if (isNative()) {
@@ -101,16 +117,21 @@ export const processSyncQueue = async (trpcClient: TRPCClient) => {
     } catch (error: unknown) {
       console.error(`[SyncEngine] Sync failed for item ${item.id}:`, error);
       
+      const attempts = (item.attempts ?? 0) + 1;
+      const nextStatus = attempts >= MAX_SYNC_ATTEMPTS ? 'DEAD' : 'FAILED';
       if (isNative()) {
         const db = await getDb();
         const dbRun = db as unknown as { run(query: string, params: unknown[]): Promise<void> };
-        await dbRun.run(`UPDATE sync_queue SET status = 'FAILED' WHERE id = ?`, [item.id]);
+        await dbRun.run(`UPDATE sync_queue SET status = ?, attempts = ? WHERE id = ?`, [nextStatus, attempts, item.id]);
       } else {
         if (typeof window !== 'undefined') {
           const localQueueStr = localStorage.getItem('sync_queue') ?? '[]';
           const localQueue = JSON.parse(localQueueStr) as SyncQueueItem[];
           const target = localQueue.find((x) => x.id === item.id);
-          if (target) target.status = 'FAILED';
+          if (target) {
+            target.status = nextStatus;
+            target.attempts = attempts;
+          }
           localStorage.setItem('sync_queue', JSON.stringify(localQueue));
         }
       }
