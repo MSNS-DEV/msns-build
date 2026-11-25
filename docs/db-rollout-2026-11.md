@@ -1,12 +1,13 @@
 # Database rollout: November 2026
 
-This branch adds three migrations. Apply them to production **before** deploying the app.
+This branch adds four migrations. Apply them to production **before** deploying the app.
 
-| Migration                               | What it does                                                                                                                                                                                                                                                                                                                                                                               | Production action                                                                                  |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- |
-| `20261125150000_baseline_db_push_drift` | Captures everything that reached production through `prisma db push` and never had a migration: the fee-voucher columns and enums, `Notification`, `DeviceRegistration`, `Broadcast`, `ChallanValidity`, `SchoolBankDetails`, `Employees.status/leftDate`, report-card remarks, `User.profilePic`. Every statement is idempotent. Fee rows with no voucher number get `'V-' \|\| "sfcId"`. | **Deploy**. Do not mark it as applied. It skips what already exists and fills in anything missing. |
-| `20261125160000_auth_hardening`         | `User.mustChangePassword`, `User.tokenVersion`, `NotificationReceipt`, `LoginAttempt`.                                                                                                                                                                                                                                                                                                     | Deploy                                                                                             |
-| `20261125170000_data_integrity`         | Unique keys: `Salary(employeeId, month, year)`, `StudentClass(studentId, sessionId)` and `ClassSubject(classId, subjectId, employeeId, sessionId)`. Voucher `subInstallmentIndex` changes so that 0 means the whole voucher (existing non-split rows are set to 0). Adds lookup indexes.                                                                                                   | Deploy, after the duplicate check below                                                            |
+| Migration                                        | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                      | Production action                                                                                  |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `20261125150000_baseline_db_push_drift`          | Captures everything that reached production through `prisma db push` and never had a migration: the fee-voucher columns and enums, `Notification`, `DeviceRegistration`, `Broadcast`, `ChallanValidity`, `SchoolBankDetails`, `Employees.status/leftDate`, report-card remarks, `User.profilePic`. Every statement is idempotent. Fee rows with no voucher number get `'V-' \|\| "sfcId"`.                                                        | **Deploy**. Do not mark it as applied. It skips what already exists and fills in anything missing. |
+| `20261125160000_auth_hardening`                  | `User.mustChangePassword`, `User.tokenVersion`, `NotificationReceipt`, `LoginAttempt`.                                                                                                                                                                                                                                                                                                                                                            | Deploy                                                                                             |
+| `20261125170000_data_integrity`                  | Unique keys: `Salary(employeeId, month, year)`, `StudentClass(studentId, sessionId)` and `ClassSubject(classId, subjectId, employeeId, sessionId)`. Voucher `subInstallmentIndex` changes so that 0 means the whole voucher (existing non-split rows are set to 0). Adds lookup indexes.                                                                                                                                                          | Deploy, after the duplicate check below                                                            |
+| `20261125180000_two_factor_and_account_security` | Additive only. Tables for two-factor authentication and account security: `AccountSecurity`, `WebAuthnCredential`, `WebAuthnChallenge`, `OtpChallenge`, `BackupCode`, `AuthSession`, `SecurityEvent`, `AdminAuditLog`, `RoleSecurityPolicy`. Adds `User.isActive/suspendedAt/suspendedReason` and `ParentGuardian.tokenVersion/mustChangePassword`. Resets the old cosmetic `User.twoFactorAuth` toggle to false; it now mirrors real 2FA status. | Deploy                                                                                             |
 
 These steps were checked locally against three simulated production databases:
 
@@ -37,7 +38,7 @@ Run these from a trusted machine with `DATABASE_URL` set to production. Use the 
      ```sh
      npx prisma migrate resolve --applied <migration_name>
      ```
-     Only resolve migrations dated **up to `20260517174137_erp2_0`**. Never resolve the three new ones: they must run.
+     Only resolve migrations dated **up to `20260517174137_erp2_0`**. Never resolve the four new ones: they must run.
    - Any row shows `finished = false` or a `rolled_back_at` value: stop and investigate before continuing.
 
 4. **Deploy:**
@@ -61,7 +62,9 @@ Run these from a trusted machine with `DATABASE_URL` set to production. Use the 
    npx tsx scripts/flag-default-passwords.ts --apply
    ```
 
-7. Deploy the app.
+7. **Set the two-factor environment variables** in Vercel before deploying (see `docs/two-factor-setup.md`). At minimum `TWO_FACTOR_ENCRYPTION_KEY`; the SMS variables when SMS is ready.
+
+8. Deploy the app. Everyone is signed out once, because sessions are now tracked server-side and older sign-ins have no session record.
 
 ## Duplicates
 
