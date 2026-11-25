@@ -61,8 +61,20 @@ export const pettyCashRouter = createTRPCRouter({
         });
       }
 
-      await ctx.db.$transaction([
-        ctx.db.pettyCashDisbursement.create({
+      const newBalance = await ctx.db.$transaction(async (tx) => {
+        // Conditional decrement: only succeeds if the balance still covers the amount,
+        // so two disbursements at once cannot overdraw the register.
+        const debited = await tx.pettyCashRegister.updateMany({
+          where: { registerId: register.registerId, currentBalance: { gte: input.amount } },
+          data: { currentBalance: { decrement: input.amount } },
+        });
+        if (debited.count === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Insufficient petty cash: the balance changed while this was being recorded. Refresh and try again.",
+          });
+        }
+        await tx.pettyCashDisbursement.create({
           data: {
             registerId: register.registerId,
             amount: input.amount,
@@ -73,14 +85,15 @@ export const pettyCashRouter = createTRPCRouter({
             voucherRef: input.voucherRef,
             recordedBy: employeeRecord.employeeId,
           },
-        }),
-        ctx.db.pettyCashRegister.update({
+        });
+        const after = await tx.pettyCashRegister.findUniqueOrThrow({
           where: { registerId: register.registerId },
-          data: { currentBalance: { decrement: input.amount } },
-        }),
-      ]);
+          select: { currentBalance: true },
+        });
+        return after.currentBalance;
+      });
 
-      return { success: true, newBalance: register.currentBalance - input.amount };
+      return { success: true, newBalance };
     }),
 
   // FR-ERP-32: Replenishment
@@ -98,12 +111,13 @@ export const pettyCashRouter = createTRPCRouter({
       });
       if (!register) throw new TRPCError({ code: "NOT_FOUND", message: "Petty cash register not found" });
 
-      await ctx.db.pettyCashRegister.update({
+      const updated = await ctx.db.pettyCashRegister.update({
         where: { registerId: register.registerId },
         data: { currentBalance: { increment: input.amount } },
+        select: { currentBalance: true },
       });
 
-      return { success: true, newBalance: register.currentBalance + input.amount };
+      return { success: true, newBalance: updated.currentBalance };
     }),
 
   // FR-ERP-33: Reconciliation
