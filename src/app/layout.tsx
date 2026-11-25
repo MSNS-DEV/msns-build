@@ -1,8 +1,6 @@
 // src/app/layout.tsx
 import "~/styles/globals.css";
 
-export const dynamic = "force-dynamic";
-
 import { Geist_Mono, Inter } from "next/font/google";
 import { type Metadata, type Viewport } from "next";
 import Script from "next/script";
@@ -31,8 +29,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export const metadata: Metadata = {

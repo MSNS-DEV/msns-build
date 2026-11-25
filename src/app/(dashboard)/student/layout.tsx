@@ -17,8 +17,8 @@ export default function StudentDashboardLayout({
             <div className="pointer-events-none absolute inset-0 z-0">
               <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(16,185,129,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.02)_1px,transparent_1px)] bg-[size:3rem_3rem] sm:bg-[size:4rem_4rem] dark:bg-[linear-gradient(to_right,rgba(16,185,129,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.05)_1px,transparent_1px)]" />
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/10 via-slate-50/50 to-slate-100/40 dark:from-emerald-950/30 dark:via-slate-950/90 dark:to-slate-950" />
-              <div className="absolute -top-20 left-1/4 h-[500px] w-[500px] animate-pulse rounded-full bg-emerald-300/10 opacity-30 blur-[120px] dark:bg-emerald-500/10 dark:opacity-50" />
-              <div className="absolute -bottom-20 right-1/4 h-[500px] w-[500px] animate-pulse rounded-full bg-teal-300/10 opacity-30 blur-[120px] delay-1000 dark:bg-teal-500/10 dark:opacity-50" />
+              <div className="absolute -top-20 left-1/4 h-[500px] w-[500px] motion-safe:animate-pulse rounded-full bg-emerald-300/10 opacity-30 blur-[120px] dark:bg-emerald-500/10 dark:opacity-50" />
+              <div className="absolute -bottom-20 right-1/4 h-[500px] w-[500px] motion-safe:animate-pulse rounded-full bg-teal-300/10 opacity-30 blur-[120px] delay-1000 dark:bg-teal-500/10 dark:opacity-50" />
             </div>
 
             <main className="relative z-10 w-full flex-1 overflow-y-auto p-2 sm:p-4 pb-safe px-safe">

@@ -24,8 +24,8 @@ export default async function DashboardLayout({
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/10 via-slate-50/50 to-slate-100/40 dark:from-emerald-950/30 dark:via-slate-950/90 dark:to-slate-950" />
 
               {/* Animated Ambient Glows */}
-              <div className="absolute -top-20 left-1/4 h-[500px] w-[500px] animate-pulse rounded-full bg-emerald-300/10 opacity-30 blur-[120px] dark:bg-emerald-500/10 dark:opacity-50" />
-              <div className="absolute -bottom-20 right-1/4 h-[500px] w-[500px] animate-pulse rounded-full bg-teal-300/10 opacity-30 blur-[120px] delay-1000 dark:bg-teal-500/10 dark:opacity-50" />
+              <div className="absolute -top-20 left-1/4 h-[500px] w-[500px] motion-safe:animate-pulse rounded-full bg-emerald-300/10 opacity-30 blur-[120px] dark:bg-emerald-500/10 dark:opacity-50" />
+              <div className="absolute -bottom-20 right-1/4 h-[500px] w-[500px] motion-safe:animate-pulse rounded-full bg-teal-300/10 opacity-30 blur-[120px] delay-1000 dark:bg-teal-500/10 dark:opacity-50" />
             </div>
 
             {/* Main Content Area with Sticky PageHeader and Minimal Mobile Padding */}
