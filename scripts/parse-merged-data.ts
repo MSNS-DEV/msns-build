@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function parseAndAnalyze() {
-  const content = fs.readFileSync("scripts/Merged_Results_Data.md", "utf-8");
+  const content = fs.readFileSync("prisma/private/Merged_Results_Data.md", "utf-8");
   
   // Let's see all sections in Merged_Results_Data.md
   console.log("File length:", content.length);

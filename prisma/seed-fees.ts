@@ -92,9 +92,9 @@ function mapJsonClassToDbGrade(jsonClass: string): { grade: string; section: str
 async function main() {
   console.log('--- Seeding Fee Collections for 2025 (Fuzzy Matching + Auto-enroll) ---');
 
-  const filePath = path.join(process.cwd(), 'prisma', 'fee-collections-2025.json');
+  const filePath = path.join(process.cwd(), 'prisma', 'private', 'fee-collections-2025.json');
   if (!fs.existsSync(filePath)) {
-    throw new Error('fee-collections-2025.json not found');
+    throw new Error('prisma/private/fee-collections-2025.json not found (private data, kept out of git)');
   }
 
   const rawData = fs.readFileSync(filePath, 'utf8');

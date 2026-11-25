@@ -1,7 +1,7 @@
 import fs from "fs";
 
 function parseMergedResults() {
-  const content = fs.readFileSync("scripts/Merged_Results_Data.md", "utf-8");
+  const content = fs.readFileSync("prisma/private/Merged_Results_Data.md", "utf-8");
   const sections = content.split(/## File:\s*/g).filter(Boolean);
 
   const results: any[] = [];

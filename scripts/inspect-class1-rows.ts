@@ -1,6 +1,6 @@
 import fs from "fs";
 
-const content = fs.readFileSync("scripts/Merged_Results_Data.md", "utf-8");
+const content = fs.readFileSync("prisma/private/Merged_Results_Data.md", "utf-8");
 const sec = content.split(/## File:\s*/g).find(s => s.includes("FIRST TERM RESULT -2026 ONE - ZAINAB JAMSHAD.xlsx"))!;
 
 const lines = sec.split("\n").map(l => l.trim()).filter(Boolean);

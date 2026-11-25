@@ -92,7 +92,7 @@ async function main() {
     console.log(`🔢 Suffix counter for auto-created employees will start at ${nextSuffix}`);
 
     // 4. Load JSON file
-    const jsonPath = path.join(__dirname, 'msns_salaries_2026.json');
+    const jsonPath = path.join(__dirname, 'private', 'msns_salaries_2026.json');
     if (!fs.existsSync(jsonPath)) {
       throw new Error(`Data file not found at: ${jsonPath}`);
     }

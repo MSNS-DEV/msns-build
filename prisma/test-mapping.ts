@@ -81,7 +81,7 @@ function mapJsonClassToDbGrade(jsonClass: string): { grade: string; section: str
 }
 
 async function main() {
-  const jsonPath = path.join(process.cwd(), 'prisma', 'fee-collections-2025.json');
+  const jsonPath = path.join(process.cwd(), 'prisma', 'private', 'fee-collections-2025.json');
   const rawData = fs.readFileSync(jsonPath, 'utf8');
   const data = JSON.parse(rawData);
 

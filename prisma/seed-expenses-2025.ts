@@ -255,7 +255,7 @@ interface ExpensesFile {
 }
 
 async function main() {
-  const filePath = path.join(__dirname, 'expenses_2025.json');
+  const filePath = path.join(__dirname, 'private', 'expenses_2025.json');
   const raw = fs.readFileSync(filePath, 'utf-8');
   const data: ExpensesFile = JSON.parse(raw);
 

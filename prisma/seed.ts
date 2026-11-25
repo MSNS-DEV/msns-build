@@ -529,7 +529,6 @@ const nameTranslationMap: { [gradeName: string]: { [seedName: string]: string } 
   }
 };
 
-<<<<<<< HEAD
 function mapDatasetToDbClass(grade: string, section: string) {
   const normGrade = grade.toUpperCase().trim();
   const normSection = section.toUpperCase().trim();

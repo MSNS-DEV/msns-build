@@ -51,3 +51,9 @@ railway-lmsbackup.dump.sql
 .env*
 
 .agents/teamwork/
+
+# Logs
+*.log
+
+# Private data (staff salaries, fee collections, result sheets) - never commit
+prisma/private/
