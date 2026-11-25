@@ -58,6 +58,7 @@ import {
 } from "../ui/dialog";
 import { ScrollArea, ScrollBar } from "../ui/scroll-area";
 import { cn } from "~/lib/utils";
+import type { VoucherAmounts } from "~/lib/fee-calc";
 
 // --- Types ---
 export type FeeProps = {
@@ -83,6 +84,9 @@ export type ClassFeeProps = {
   computerLabPaid: boolean;
   studentIdCardPaid: boolean;
   infoAndCallsPaid: boolean;
+  admissionFeePaid?: boolean;
+  /** Server-computed amounts (annual components counted once per student-year). */
+  amounts: VoucherAmounts;
   month?: number;
   year?: number;
   lateFee?: number;
@@ -119,6 +123,7 @@ type UpdateFeePayload = {
   computerLabPaid?: boolean;
   studentIdCardPaid?: boolean;
   infoAndCallsPaid?: boolean;
+  admissionFeePaid?: boolean;
   paidAt?: Date;
 };
 
@@ -128,7 +133,8 @@ type FeeType =
   | "examFund"
   | "computerLab"
   | "studentIdCard"
-  | "infoAndCalls";
+  | "infoAndCalls"
+  | "admission";
 
 const months = [
   { value: 1, label: "January" },
@@ -196,7 +202,11 @@ export function ClassFeeTable({
       // Optimistic update handled by invalidation
     },
   });
+  const { mutateAsync: updatePaymentsBatch } =
+    api.fee.updateFeePaymentsBatch.useMutation();
 
+  // Marks tuition on monthly vouchers, or the annual components on AnnualFee vouchers,
+  // in one server transaction. Annual components on monthly rows are toggled individually.
   const handleBatchUpdate = async (markAllPaid: boolean) => {
     const selectedIds = Object.keys(rowSelection);
     if (selectedIds.length === 0) return;
@@ -207,24 +217,15 @@ export function ClassFeeTable({
         .getSelectedRowModel()
         .rows.map((row) => row.original);
 
-      const promises = selectedRows.map((row) =>
-        updatePayment({
-          feeStudentClassId: row.sfcId,
-          tuitionPaid: markAllPaid,
-          examFundPaid: markAllPaid,
-          computerLabPaid: markAllPaid,
-          studentIdCardPaid: markAllPaid,
-          infoAndCallsPaid: markAllPaid,
-          paidAt: markAllPaid ? new Date() : undefined,
-        }),
-      );
-
-      await Promise.all(promises);
+      await updatePaymentsBatch({
+        feeStudentClassIds: selectedRows.map((row) => row.sfcId),
+        paid: markAllPaid,
+      });
       toast.success(`Successfully updated ${selectedRows.length} students`);
       setRowSelection({});
       await utils.fee.getClassFees.invalidate();
     } catch {
-      toast.error("Batch update encountered an error");
+      toast.error("Batch update failed; no changes were saved");
     } finally {
       setIsBatchUpdating(false);
     }
@@ -251,6 +252,7 @@ export function ClassFeeTable({
     else if (feeType === "computerLab") payload.computerLabPaid = paid;
     else if (feeType === "studentIdCard") payload.studentIdCardPaid = paid;
     else if (feeType === "infoAndCalls") payload.infoAndCallsPaid = paid;
+    else if (feeType === "admission") payload.admissionFeePaid = paid;
 
     // Set paidAt date if marking as paid
     if (paid) payload.paidAt = new Date();
@@ -262,30 +264,6 @@ export function ClassFeeTable({
     } catch {
       toast.error("Failed to update payment");
     }
-  };
-
-  const calculateTotalFee = (fee: FeeProps, lateFee = 0): number => {
-    return (
-      fee.tuitionFee +
-      fee.examFund +
-      (fee.computerLabFund ?? 0) +
-      fee.studentIdCardFee +
-      fee.infoAndCallsFee +
-      lateFee
-    );
-  };
-
-  const calculatePaidFee = (classFee: ClassFeeProps): number => {
-    const { fees } = classFee;
-    let paidTotal = 0;
-
-    if (classFee.tuitionPaid) paidTotal += fees.tuitionFee;
-    if (classFee.examFundPaid) paidTotal += fees.examFund;
-    if (classFee.computerLabPaid) paidTotal += fees.computerLabFund ?? 0;
-    if (classFee.studentIdCardPaid) paidTotal += fees.studentIdCardFee;
-    if (classFee.infoAndCallsPaid) paidTotal += fees.infoAndCallsFee;
-
-    return Math.max(paidTotal - classFee.discount, 0);
   };
 
   // --- Columns Definition ---
@@ -380,6 +358,17 @@ export function ClassFeeTable({
             type: "infoAndCalls" as const,
             isAnnual: true,
           },
+          ...(fee.type === "AnnualFee"
+            ? [
+                {
+                  label: "Admission",
+                  value: fee.admissionFee,
+                  paid: !!row.original.admissionFeePaid,
+                  type: "admission" as const,
+                  isAnnual: true,
+                },
+              ]
+            : []),
         ];
 
         return (
@@ -417,14 +406,7 @@ export function ClassFeeTable({
       id: "totalFee",
       header: "Total Fee",
       cell: ({ row }) => {
-        const baseFee = calculateTotalFee(row.original.fees, 0);
-        const discount =
-          row.original.discount ||
-          (row.original.discountByPercent > 0
-            ? (baseFee * row.original.discountByPercent) / 100
-            : 0);
-        const lateFee = row.original.lateFee ?? 0;
-        const total = baseFee - discount + lateFee;
+        const { due: total, discount, lateFee } = row.original.amounts;
 
         return (
           <div className="flex flex-col">
@@ -449,18 +431,7 @@ export function ClassFeeTable({
       id: "totalPaid",
       header: "Paid",
       cell: ({ row }) => {
-        const paidFee = calculatePaidFee(row.original);
-        const baseFee = calculateTotalFee(
-          row.original.fees,
-          row.original.lateFee ?? 0,
-        );
-        const discount =
-          row.original.discount ||
-          (row.original.discountByPercent > 0
-            ? (baseFee * row.original.discountByPercent) / 100
-            : 0);
-        const total = baseFee - discount;
-        const isPaid = paidFee >= total;
+        const { paid: paidFee, isPaid } = row.original.amounts;
 
         return (
           <div
@@ -480,7 +451,7 @@ export function ClassFeeTable({
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-        const baseFee = calculateTotalFee(row.original.fees, 0);
+        const baseFee = row.original.amounts.base;
         const dueDate = new Date(
           row.original.year ?? currentYear,
           (row.original.month ?? 1) - 1,
@@ -588,15 +559,12 @@ export function ClassFeeTable({
   const totals = useMemo(() => {
     const data = classFees ?? [];
     return {
-      totalFee: data.reduce((sum: number, f: ClassFeeProps) => {
-        const baseFee = calculateTotalFee(f.fees, f.lateFee ?? 0);
-        const discount =
-          f.discount ||
-          (f.discountByPercent > 0 ? (baseFee * f.discountByPercent) / 100 : 0);
-        return sum + baseFee - discount;
-      }, 0),
+      totalFee: data.reduce(
+        (sum: number, f: ClassFeeProps) => sum + f.amounts.due,
+        0,
+      ),
       totalPaid: data.reduce(
-        (sum: number, f: ClassFeeProps) => sum + calculatePaidFee(f),
+        (sum: number, f: ClassFeeProps) => sum + f.amounts.paid,
         0,
       ),
     };
@@ -617,12 +585,7 @@ export function ClassFeeTable({
         { key: "paidAmount", label: "Paid", width: 15 },
       ],
       rows: data.map((f: ClassFeeProps) => {
-        const baseFee = calculateTotalFee(f.fees, 0);
-        const discount =
-          f.discount ||
-          (f.discountByPercent > 0 ? (baseFee * f.discountByPercent) / 100 : 0);
-        const total = baseFee - discount + (f.lateFee ?? 0);
-        const paid = calculatePaidFee(f);
+        const { due: total, paid } = f.amounts;
         return {
           regNo: f.studentClass.student.registrationNumber,
           studentName: f.studentClass.student.studentName,

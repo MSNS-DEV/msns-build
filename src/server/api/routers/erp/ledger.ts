@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { createTRPCRouter, financeProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
+import { computeFeeRows } from "~/lib/fee-calc";
+import { pkDayEnd, pkDayStart, sessionWindow } from "~/server/utils/pk-time";
 import { type Prisma } from "@prisma/client";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
@@ -147,31 +149,34 @@ export const ledgerRouter = createTRPCRouter({
       });
       if (!session) throw new TRPCError({ code: "NOT_FOUND", message: "Session not found" });
 
-      // Calculate real fee income: (tuitionFee * (1 - discountByPercent/100)) - discount + examFund + computerLabFund...
-      const paidFees = await ctx.db.feeStudentClass.findMany({
-        where: { tuitionPaid: true }, // Filter to only paid vouchers
+      // Everything is scoped to the session's dates (or the requested window inside it).
+      const window = sessionWindow(session);
+      const from = input.fromDate ? pkDayStart(input.fromDate) : window.from;
+      const to = input.toDate ? pkDayEnd(input.toDate) : window.to;
+      const explicitWindow = !!(input.fromDate ?? input.toDate);
+      const inWindow = (d: Date | null | undefined) =>
+        !!d && (!from || d >= from) && (!to || d <= to);
+      const dateFilter = { ...(from ? { gte: from } : {}), ...(to ? { lte: to } : {}) };
+
+      // Fee income: amounts collected on this session's vouchers, each component counted
+      // once (annual components once per student-year), net of discounts.
+      const sessionVouchers = await ctx.db.feeStudentClass.findMany({
+        where: { StudentClass: { sessionId: input.sessionId } },
         include: { fees: true },
       });
-
-      const totalIncome = paidFees.reduce((sum, pf) => {
-        let voucherTotal = 0;
-        if (pf.tuitionPaid) {
-          const baseTuition = pf.fees.tuitionFee;
-          const discountedTuition = baseTuition - (baseTuition * (pf.discountByPercent / 100)) - pf.discount;
-          voucherTotal += Math.max(0, discountedTuition);
-        }
-        if (pf.examFundPaid) voucherTotal += pf.fees.examFund;
-        if (pf.computerLabPaid && pf.fees.computerLabFund) voucherTotal += pf.fees.computerLabFund;
-        if (pf.studentIdCardPaid) voucherTotal += pf.fees.studentIdCardFee;
-        if (pf.infoAndCallsPaid) voucherTotal += pf.fees.infoAndCallsFee;
-        
-        voucherTotal += pf.lateFee;
-        return sum + voucherTotal;
+      const voucherAmounts = computeFeeRows(sessionVouchers);
+      const totalIncome = sessionVouchers.reduce((sum, v) => {
+        if (explicitWindow && !inWindow(v.paidAt)) return sum;
+        return sum + (voucherAmounts.get(v.sfcId)?.paid ?? 0);
       }, 0);
 
       // Salary expenditure (paid)
       const salaryExpenditure = await ctx.db.salary.aggregate({
-        where: { sessionId: input.sessionId, status: "PAID" },
+        where: {
+          sessionId: input.sessionId,
+          status: "PAID",
+          ...(explicitWindow ? { paymentDate: dateFilter } : {}),
+        },
         _sum: { amount: true, allowances: true, bonus: true, deductions: true },
       });
 
@@ -181,13 +186,13 @@ export const ledgerRouter = createTRPCRouter({
         (salaryExpenditure._sum.bonus ?? 0) -
         (salaryExpenditure._sum.deductions ?? 0);
 
-      // Approved direct expenses
+      // Approved direct expenses dated within the window
       const directExpenses = await ctx.db.directExpense.aggregate({
-        where: { isApproved: true },
+        where: { isApproved: true, expenseDate: dateFilter },
         _sum: { amount: true },
       });
 
-      // Petty cash disbursements
+      // Petty cash disbursements from this session's register
       const pettyCashRegister = await ctx.db.pettyCashRegister.findUnique({
         where: { sessionId: input.sessionId },
       });
@@ -195,20 +200,24 @@ export const ledgerRouter = createTRPCRouter({
       let pettyCashSpend = 0;
       if (pettyCashRegister) {
         const pcSpend = await ctx.db.pettyCashDisbursement.aggregate({
-          where: { registerId: pettyCashRegister.registerId },
+          where: {
+            registerId: pettyCashRegister.registerId,
+            ...(explicitWindow ? { date: dateFilter } : {}),
+          },
           _sum: { amount: true },
         });
         pettyCashSpend = pcSpend._sum.amount ?? 0;
       }
 
-      // Paid POs
+      // Paid POs raised within the window (POs have no payment date)
       const poExpenditure = await ctx.db.purchaseOrder.aggregate({
-        where: { status: "Paid" },
+        where: { status: "Paid", createdAt: dateFilter },
         _sum: { estimatedTotal: true },
       });
 
-      // Old-style expenses
+      // Old-style expenses dated within the window
       const oldExpenses = await ctx.db.expenses.aggregate({
+        where: { date: dateFilter },
         _sum: { amount: true },
       });
 
