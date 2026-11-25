@@ -68,6 +68,10 @@ model ClassSubject {
   Subject      Subject        @relation(fields: [subjectId], references: [subjectId])
   Marks        Marks[]
   SubjectDiary SubjectDiary[]
+
+  @@unique([classId, subjectId, employeeId, sessionId])
+  @@index([employeeId])
+  @@index([sessionId])
 }
 
 model Employees {
@@ -192,7 +196,8 @@ model FeeStudentClass {
   parentVoucherId      String?
   parentVoucher        FeeStudentClass?   @relation("SubInstallmentHierarchy", fields: [parentVoucherId], references: [sfcId], onDelete: Restrict)
   subInstallments      FeeStudentClass[]  @relation("SubInstallmentHierarchy")
-  subInstallmentIndex  Int                @default(1)
+  /// 0 = the whole voucher (regular/merged/parent); 1..N = sub-installments of a split parent.
+  subInstallmentIndex  Int                @default(0)
   totalSubInstallments Int                @default(1)
   isSplitLocked        Boolean            @default(false)
   mergedIntoVoucherId  String?
@@ -225,7 +230,6 @@ model FeeStudentClass {
   @@index([feeId])
   @@index([month, year])
   @@index([paymentStatus])
-  @@index([voucherNumber])
   @@index([parentVoucherId])
   @@index([mergedIntoVoucherId])
 }
@@ -289,6 +293,8 @@ model Expenses {
   date        DateTime        @default(now())
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+
+  @@index([date])
 }
 
 model Grades {
@@ -329,6 +335,9 @@ model Salary {
   // Relations
   Employees Employees @relation(fields: [employeeId], references: [employeeId])
   Sessions  Sessions  @relation(fields: [sessionId], references: [sessionId])
+
+  @@unique([employeeId, month, year])
+  @@index([sessionId, year])
 }
 
 model SalaryAssignment {
@@ -447,6 +456,10 @@ model StudentClass {
   Grades          Grades            @relation(fields: [classId], references: [classId])
   Sessions        Sessions          @relation(fields: [sessionId], references: [sessionId])
   Students        Students          @relation(fields: [studentId], references: [studentId])
+
+  @@unique([studentId, sessionId])
+  @@index([classId])
+  @@index([sessionId])
 }
 
 model Students {
@@ -572,6 +585,7 @@ model Marks {
 
   // Unique constraint
   @@unique([examId, studentId, subjectId])
+  @@index([studentId])
 }
 
 model ReportCard {
@@ -1042,6 +1056,9 @@ model FinancialLedgerEntry {
   createdAt       DateTime @default(now())
 
   CreatedBy Employees @relation("LedgerCreatedBy", fields: [createdBy], references: [employeeId])
+
+  @@index([accountCode])
+  @@index([transactionDate])
 }
 
 model ApprovalPolicy {
