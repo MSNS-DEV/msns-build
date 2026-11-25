@@ -5,7 +5,6 @@ import android.view.View;
 import androidx.activity.EdgeToEdge;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 
 import com.getcapacitor.BridgeActivity;
@@ -15,9 +14,8 @@ import com.google.firebase.FirebaseOptions;
 public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Enable edge-to-edge layout for Android 15 (SDK 35+) and backward compatibility
+        // Enable edge-to-edge layout for Android 15+ (SDK 35+) with backward compatibility
         EdgeToEdge.enable(this);
-        WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
 
         super.onCreate(savedInstanceState);
 

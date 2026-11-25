@@ -1,6 +1,9 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
-const isProduction = process.env.NODE_ENV === 'production';
+// Debug-only WebView features are opt-in. Release builds (cap sync / android:build)
+// never set CAP_ENV, so they ship with WebView debugging and cleartext disabled.
+// For local debugging run: CAP_ENV=development npx cap sync android
+const isDevBuild = process.env.CAP_ENV === 'development';
 
 const config: CapacitorConfig = {
   appId: 'com.msns.lms',
@@ -9,13 +12,12 @@ const config: CapacitorConfig = {
   server: {
     // Live LMS production server domain
     url: 'https://lms.msns.edu.pk',
-    cleartext: !isProduction,
+    cleartext: isDevBuild,
     androidScheme: 'https'
   },
   android: {
-    allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: !isProduction
+    webContentsDebuggingEnabled: isDevBuild
   },
   plugins: {
     SplashScreen: {
