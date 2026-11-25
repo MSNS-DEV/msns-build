@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
+import { createTRPCRouter, officeProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
 import { generatePdf } from "~/lib/pdf-reports";
 import {
@@ -601,10 +601,12 @@ export async function fetchReportData(
       const regNumbers = enrollments.map((e) => e.Students.registrationNumber);
       const users = await db.user.findMany({
         where: { accountId: { in: regNumbers } },
+        select: { accountId: true, username: true, email: true, mustChangePassword: true },
       });
-      const userMap = new Map<string, { accountId: string; username: string; email: string }>(
-        users.map((u) => [u.accountId, u]),
-      );
+      const userMap = new Map<
+        string,
+        { accountId: string; username: string; email: string; mustChangePassword: boolean }
+      >(users.map((u) => [u.accountId, u]));
 
       allRows = enrollments.map((sc, idx) => {
         const u = userMap.get(sc.Students.registrationNumber);
@@ -620,7 +622,12 @@ export async function fetchReportData(
           section: sc.Grades.section,
           username,
           email,
-          initialPassword: sc.Students.admissionNumber,
+          // Never export passwords; only say whether the default one is still in use.
+          passwordStatus: !u
+            ? "No portal account"
+            : u.mustChangePassword
+              ? "Default - must change at next login"
+              : "Changed by user",
           accountStatus: "Active",
           lastLogin: new Date().toLocaleDateString("en-PK"),
         };
@@ -1579,7 +1586,7 @@ export async function fetchReportData(
 
 export const reportRouter = createTRPCRouter({
   // ================= 1. FILTER OPTIONS FOR UI =================
-  getFilterOptions: protectedProcedure.query(async ({ ctx }) => {
+  getFilterOptions: officeProcedure.query(async ({ ctx }) => {
     try {
       const [sessions, grades, exams] = await Promise.all([
         ctx.db.sessions.findMany({
@@ -1628,7 +1635,7 @@ export const reportRouter = createTRPCRouter({
   }),
 
   // ================= 2. PRINCIPAL STATS (PRESERVED) =================
-  getPrincipalStats: protectedProcedure.query(async ({ ctx }) => {
+  getPrincipalStats: officeProcedure.query(async ({ ctx }) => {
     try {
       const fees = await ctx.db.feeStudentClass.findMany({
         where: { tuitionPaid: true },
@@ -1675,7 +1682,7 @@ export const reportRouter = createTRPCRouter({
   }),
 
   // ================= 3. GET REPORT DATA (LIVE PREVIEW & METRICS) =================
-  getReportData: protectedProcedure
+  getReportData: officeProcedure
     .input(reportDataInputSchema)
     .query(async ({ ctx, input }) => {
       try {
@@ -1685,13 +1692,13 @@ export const reportRouter = createTRPCRouter({
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to load report data",
+          message: "Failed to load report data",
         });
       }
     }),
 
   // ================= 4. EXPORT REPORT TO FILE (PDF, XLSX, CSV, DOCX) =================
-  exportReport: protectedProcedure
+  exportReport: officeProcedure
     .input(
       z.object({
         reportType: z.string(),
@@ -1756,13 +1763,13 @@ export const reportRouter = createTRPCRouter({
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to export report file",
+          message: "Failed to export report file",
         });
       }
     }),
 
   // ================= 5. LEGACY GENERATE REPORT (BACKWARD COMPATIBILITY) =================
-  generateReport: protectedProcedure
+  generateReport: officeProcedure
     .input(
       z.object({
         reportType: reportTypeSchema,
@@ -1885,7 +1892,7 @@ export const reportRouter = createTRPCRouter({
         if (error instanceof TRPCError) throw error;
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to generate report",
+          message: "Failed to generate report",
         });
       }
     }),

@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, managementProcedure, clerkProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, clerkProcedure, officeProcedure, teacherProcedure, leadershipProcedure } from "../trpc";
 import { z } from "zod";
+import { assertCanAssignRole, type AccessCtx } from "~/server/api/access";
 import { generatePdf } from "~/lib/pdf-reports";
 import { hash } from "bcryptjs";
 import { generateUniqueEmployeeCredentials } from "~/server/utils/credential-generator";
@@ -38,6 +39,20 @@ type AccountTypeEnum =
   | "CLERK"
   | "TEACHER"
   | "WORKER";
+
+/** Clerks may not edit leadership accounts or promote anyone into leadership. */
+async function assertCanManageEmployee(
+  ctx: AccessCtx,
+  employeeId: string,
+  newDesignation: string | undefined,
+) {
+  assertCanAssignRole(ctx, newDesignation);
+  const current = await ctx.db.employees.findUnique({
+    where: { employeeId },
+    select: { designation: true },
+  });
+  if (current) assertCanAssignRole(ctx, current.designation);
+}
 
 export const EmployeeRouter = createTRPCRouter({
   // Get employee profile by User ID (via accountId matching registrationNumber)
@@ -81,7 +96,7 @@ export const EmployeeRouter = createTRPCRouter({
       });
     }
   }),
-  getEmployees: protectedProcedure
+  getEmployees: teacherProcedure
     .input(
       z
         .object({
@@ -158,7 +173,7 @@ export const EmployeeRouter = createTRPCRouter({
     }
   }),
 
-  getInactiveEmployees: protectedProcedure.query(async ({ ctx }) => {
+  getInactiveEmployees: officeProcedure.query(async ({ ctx }) => {
     try {
       const employees = await ctx.db.employees.findMany({
         where: {
@@ -189,7 +204,7 @@ export const EmployeeRouter = createTRPCRouter({
     }
   }),
 
-  getEmployeeById: protectedProcedure
+  getEmployeeById: officeProcedure
     .input(z.object({ employeeId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
       const employee = await ctx.db.employees.findUnique({
@@ -203,7 +218,7 @@ export const EmployeeRouter = createTRPCRouter({
     }),
 
   // Get employee profile with linked User account details
-  getEmployeeWithUser: protectedProcedure
+  getEmployeeWithUser: officeProcedure
     .input(z.object({ employeeId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
       const employee = await ctx.db.employees.findUnique({
@@ -257,7 +272,7 @@ export const EmployeeRouter = createTRPCRouter({
       return { ...employee, user };
     }),
 
-  getUnAllocateEmployees: protectedProcedure.query(async ({ ctx }) => {
+  getUnAllocateEmployees: officeProcedure.query(async ({ ctx }) => {
     try {
       const employees = await ctx.db.employees.findMany({
         where: {
@@ -277,6 +292,7 @@ export const EmployeeRouter = createTRPCRouter({
   createEmployee: clerkProcedure
     .input(employeeSchema)
     .mutation(async ({ ctx, input }) => {
+      assertCanAssignRole(ctx, input.designation);
       try {
         return await ctx.db.$transaction(async (tx) => {
           const credentials = await generateUniqueEmployeeCredentials(
@@ -300,6 +316,7 @@ export const EmployeeRouter = createTRPCRouter({
               email: credentials.email.toLowerCase(),
               password,
               accountType: input.designation as AccountTypeEnum,
+              mustChangePassword: true, // default password = admission number
             },
           });
 
@@ -308,10 +325,9 @@ export const EmployeeRouter = createTRPCRouter({
       } catch (error) {
         console.error("Error creating employee:", error);
         if (error instanceof TRPCError) throw error;
-        const msg = error instanceof Error ? error.message : "Failed to create employee";
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: msg,
+          message: "Failed to create employee",
         });
       }
     }),
@@ -319,6 +335,7 @@ export const EmployeeRouter = createTRPCRouter({
   updateEmployee: clerkProcedure
     .input(employeeSchema.extend({ employeeId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
+      await assertCanManageEmployee(ctx, input.employeeId, input.designation);
       try {
         const { employeeId, ...data } = input;
 
@@ -369,6 +386,7 @@ export const EmployeeRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCanManageEmployee(ctx, input.employeeId, input.designation);
       try {
         const { employeeId, username, email, ...employeeData } = input;
 
@@ -427,7 +445,7 @@ export const EmployeeRouter = createTRPCRouter({
       }
     }),
 
-  deleteEmployeesByIds: clerkProcedure
+  deleteEmployeesByIds: leadershipProcedure
     .input(
       z.object({
         employeeIds: z.string().array(),
@@ -703,7 +721,7 @@ export const EmployeeRouter = createTRPCRouter({
       }
     }),
 
-  getEmployeesByDesignation: protectedProcedure
+  getEmployeesByDesignation: officeProcedure
     .input(
       z.object({
         designation: z.enum([
@@ -733,7 +751,7 @@ export const EmployeeRouter = createTRPCRouter({
       }
     }),
 
-  generateEmployeeReport: protectedProcedure.query(async ({ ctx }) => {
+  generateEmployeeReport: officeProcedure.query(async ({ ctx }) => {
     try {
       const employees = await ctx.db.employees.findMany();
       // Map data to match report requirements

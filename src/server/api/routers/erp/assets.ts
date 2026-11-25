@@ -1,20 +1,20 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, financeProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
 export const assetsRouter = createTRPCRouter({
   // Asset Category management
-  createCategory: protectedProcedure
+  createCategory: financeProcedure
     .input(z.object({ name: z.string().min(1).max(100), description: z.string().optional() }))
     .mutation(({ ctx, input }) => ctx.db.assetCategory.create({ data: input })),
 
-  getAllCategories: protectedProcedure.query(({ ctx }) =>
+  getAllCategories: financeProcedure.query(({ ctx }) =>
     ctx.db.assetCategory.findMany({ orderBy: { name: "asc" } }),
   ),
 
   // FR-ERP-24: Create Asset
-  createAsset: protectedProcedure
+  createAsset: financeProcedure
     .input(
       z.object({
         serialNumber: z.string().optional(),
@@ -38,7 +38,7 @@ export const assetsRouter = createTRPCRouter({
       return ctx.db.asset.create({ data: { ...input, assetTag } });
     }),
 
-  updateAsset: protectedProcedure
+  updateAsset: financeProcedure
     .input(
       z.object({
         assetId: z.string().cuid(),
@@ -54,7 +54,7 @@ export const assetsRouter = createTRPCRouter({
     }),
 
   // FR-ERP-25: Compute depreciation
-  computeDepreciation: protectedProcedure
+  computeDepreciation: financeProcedure
     .input(z.object({ assetId: z.string().cuid(), period: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const asset = await ctx.db.asset.findUnique({ where: { assetId: input.assetId } });
@@ -95,7 +95,7 @@ export const assetsRouter = createTRPCRouter({
     }),
 
   // FR-ERP-26: Schedule/record maintenance
-  recordMaintenance: protectedProcedure
+  recordMaintenance: financeProcedure
     .input(
       z.object({
         assetId: z.string().cuid(),
@@ -118,7 +118,7 @@ export const assetsRouter = createTRPCRouter({
     }),
 
   // FR-ERP-27: Asset transfer
-  recordTransfer: protectedProcedure
+  recordTransfer: financeProcedure
     .input(
       z.object({
         assetId: z.string().cuid(),
@@ -157,7 +157,7 @@ export const assetsRouter = createTRPCRouter({
     }),
 
   // FR-ERP-28: Dispose asset
-  disposeAsset: protectedProcedure
+  disposeAsset: financeProcedure
     .input(
       z.object({
         assetId: z.string().cuid(),
@@ -188,7 +188,7 @@ export const assetsRouter = createTRPCRouter({
     }),
 
   // FR-ERP-29: Asset utilisation report
-  getAssetRegister: protectedProcedure
+  getAssetRegister: financeProcedure
     .input(
       z.object({
         assetCategoryId: z.string().optional(),
@@ -224,7 +224,7 @@ export const assetsRouter = createTRPCRouter({
       return { assets, categoryDistribution: summary, totalAssets: assets.length };
     }),
 
-  getOverdueMaintenance: protectedProcedure.query(({ ctx }) =>
+  getOverdueMaintenance: financeProcedure.query(({ ctx }) =>
     ctx.db.assetMaintenance.findMany({
       where: {
         scheduledDate: { lt: new Date() },

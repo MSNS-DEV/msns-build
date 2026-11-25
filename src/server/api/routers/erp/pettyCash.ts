@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, financeProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
 export const pettyCashRouter = createTRPCRouter({
   // FR-ERP-30: Initialize petty cash register for a session
-  initRegister: protectedProcedure
+  initRegister: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),
@@ -34,7 +34,7 @@ export const pettyCashRouter = createTRPCRouter({
     }),
 
   // FR-ERP-31: Record disbursement
-  recordDisbursement: protectedProcedure
+  recordDisbursement: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),
@@ -84,7 +84,7 @@ export const pettyCashRouter = createTRPCRouter({
     }),
 
   // FR-ERP-32: Replenishment
-  recordReplenishment: protectedProcedure
+  recordReplenishment: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),
@@ -107,7 +107,7 @@ export const pettyCashRouter = createTRPCRouter({
     }),
 
   // FR-ERP-33: Reconciliation
-  recordReconciliation: protectedProcedure
+  recordReconciliation: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),
@@ -146,7 +146,7 @@ export const pettyCashRouter = createTRPCRouter({
       return { success: true, variance };
     }),
 
-  getRegister: protectedProcedure
+  getRegister: financeProcedure
     .input(z.object({ sessionId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const register = await ctx.db.pettyCashRegister.findUnique({

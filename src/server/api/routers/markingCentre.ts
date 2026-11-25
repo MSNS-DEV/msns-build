@@ -4,9 +4,15 @@
  * Extends existing marks.ts capabilities
  */
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, teacherProcedure } from "../trpc";
 import { z } from "zod";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
+import {
+  isOffice,
+  requireSessionEmployee,
+  roleOf,
+  type AccessCtx,
+} from "~/server/api/access";
 
 const markingGridCellSchema = z.object({
   studentId: z.string().cuid(),
@@ -15,9 +21,47 @@ const markingGridCellSchema = z.object({
   obtainedMarks: z.number().min(0),
 });
 
+/**
+ * Every cell must target a ClassSubject of the exam's class; teachers may only
+ * write subjects they are allotted to.
+ */
+async function assertCanWriteCells(
+  ctx: AccessCtx,
+  exam: { classId: string; sessionId: string },
+  cells: { classSubjectId: string; subjectId: string }[],
+) {
+  const csIds = [...new Set(cells.map((c) => c.classSubjectId))];
+  if (csIds.length === 0) return;
+  const classSubjects = await ctx.db.classSubject.findMany({
+    where: { csId: { in: csIds } },
+    select: { csId: true, classId: true, subjectId: true, employeeId: true },
+  });
+  const byId = new Map(classSubjects.map((cs) => [cs.csId, cs]));
+  for (const cell of cells) {
+    const cs = byId.get(cell.classSubjectId);
+    if (cs?.classId !== exam.classId || cs.subjectId !== cell.subjectId) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: "Marks target a subject that does not belong to this exam's class",
+      });
+    }
+  }
+  if (isOffice(ctx)) return;
+  if (roleOf(ctx) !== "TEACHER") {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Not allowed to enter marks" });
+  }
+  const employee = await requireSessionEmployee(ctx);
+  if (classSubjects.some((cs) => cs.employeeId !== employee.employeeId)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "You can only enter marks for subjects you teach",
+    });
+  }
+}
+
 export const markingCentreRouter = createTRPCRouter({
   // FR-EXM-27: Get the full marking grid for an exam (students × subjects)
-  getMarkingGrid: protectedProcedure
+  getMarkingGrid: teacherProcedure
     .input(
       z.object({
         examId: z.string().cuid(),
@@ -190,7 +234,7 @@ export const markingCentreRouter = createTRPCRouter({
     }),
 
   // FR-EXM-30: Save a single row (all marks for one student)
-  saveStudentRow: protectedProcedure
+  saveStudentRow: teacherProcedure
     .input(
       z.object({
         examId: z.string().cuid(),
@@ -208,6 +252,7 @@ export const markingCentreRouter = createTRPCRouter({
 
       const exam = await ctx.db.exam.findUnique({ where: { examId: input.examId } });
       if (!exam) throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
+      await assertCanWriteCells(ctx, exam, input.marks);
 
       // FR-EXM-31: Validate marks don't exceed total
       for (const cell of input.marks) {
@@ -250,7 +295,7 @@ export const markingCentreRouter = createTRPCRouter({
     }),
 
   // FR-EXM-30: Save all (bulk grid save)
-  saveAll: protectedProcedure
+  saveAll: teacherProcedure
     .input(
       z.object({
         examId: z.string().cuid(),
@@ -266,6 +311,7 @@ export const markingCentreRouter = createTRPCRouter({
 
       const exam = await ctx.db.exam.findUnique({ where: { examId: input.examId } });
       if (!exam) throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
+      await assertCanWriteCells(ctx, exam, input.cells);
 
       // FR-EXM-31: Validate all cells
       const invalid = input.cells.filter((c) => c.obtainedMarks > exam.totalMarks);
@@ -307,7 +353,7 @@ export const markingCentreRouter = createTRPCRouter({
     }),
 
   // FR-EXM-33: CSV import validation (parse and return diff preview)
-  previewCSVImport: protectedProcedure
+  previewCSVImport: teacherProcedure
     .input(
       z.object({
         examId: z.string().cuid(),
@@ -403,7 +449,7 @@ export const markingCentreRouter = createTRPCRouter({
     }),
 
   // FR-EXM-36: Log marking session for audit
-  logMarkingSession: protectedProcedure
+  logMarkingSession: teacherProcedure
     .input(z.object({ examId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session?.user?.id;

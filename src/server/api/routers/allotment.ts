@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { getOwnStudentIds } from "~/server/api/access";
+import { createTRPCRouter, protectedProcedure, officeProcedure, teacherProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import type { StudentClass, Grades, Sessions, Students } from "@prisma/client";
 
@@ -11,7 +12,7 @@ type StudentClassWithRelations = StudentClass & {
 };
 
 export const AllotmentRouter = createTRPCRouter({
-  addToClass: protectedProcedure
+  addToClass: officeProcedure
     .input(
       z.object({
         classId: z.string().cuid(),
@@ -69,7 +70,7 @@ export const AllotmentRouter = createTRPCRouter({
       }
     }),
 
-  getStudentsInClass: protectedProcedure
+  getStudentsInClass: teacherProcedure
     .input(z.object({ classId: z.string().cuid() }))
     .query<StudentClassWithRelations[]>(async ({ ctx, input }) => {
       try {
@@ -123,12 +124,17 @@ export const AllotmentRouter = createTRPCRouter({
           });
         }
 
+        // Students/parents only see their own enrolment row (no classmates' PII).
+        const ownIds = await getOwnStudentIds(ctx);
+        const rosterWhere = {
+          classId: input.classId,
+          sessionId: input.sessionId,
+          ...(ownIds !== null && { studentId: { in: ownIds } }),
+        };
+
         const [data, total] = await Promise.all([
           ctx.db.studentClass.findMany({
-            where: {
-              classId: input.classId,
-              sessionId: input.sessionId,
-            },
+            where: rosterWhere,
             include: {
               Grades: true,
               Students: true, // Corrected relation name
@@ -138,12 +144,7 @@ export const AllotmentRouter = createTRPCRouter({
             skip: (input.page - 1) * input.pageSize,
             take: input.pageSize,
           }),
-          ctx.db.studentClass.count({
-            where: {
-              classId: input.classId,
-              sessionId: input.sessionId,
-            },
-          }),
+          ctx.db.studentClass.count({ where: rosterWhere }),
         ]);
 
         return {
@@ -164,7 +165,7 @@ export const AllotmentRouter = createTRPCRouter({
       }
     }),
 
-  deleteStudentsFromClass: protectedProcedure
+  deleteStudentsFromClass: officeProcedure
     .input(
       z.object({
         studentIds: z.array(z.string().cuid()),

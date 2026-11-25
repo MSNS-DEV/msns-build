@@ -1,5 +1,7 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server";
+import { isOffice, type AccessCtx } from "~/server/api/access";
+import { createTRPCRouter, protectedProcedure, employeeProcedure, officeProcedure } from "../trpc";
 import { type Prisma } from "@prisma/client";
 import {
   AttendeeStatusSchema,
@@ -10,18 +12,32 @@ import {
 import {
   safeTransformEventForDatabase,
   safeTransformEventForFrontend,
+  safeEventUserSelect,
   type FrontendEventData,
 } from "~/lib/event-helpers";
 
+/** Only the event's creator or office staff may change an event. */
+async function assertCanEditEvent(ctx: AccessCtx, eventId: string) {
+  if (isOffice(ctx)) return;
+  const event = await ctx.db.event.findUnique({
+    where: { id: eventId },
+    select: { User: { select: { id: true } } },
+  });
+  if (!event) throw new TRPCError({ code: "NOT_FOUND", message: "Event not found" });
+  if (!event.User.some((u) => u.id === ctx.session?.user.id)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: "Only the organiser can change this event" });
+  }
+}
+
 export const EventRouter = createTRPCRouter({
-  create: protectedProcedure
+  create: employeeProcedure
     .input(CreateEventSchema)
     .mutation(async ({ ctx, input }): Promise<FrontendEventData> => {
       const eventData = safeTransformEventForDatabase(input);
       const event = await ctx.db.event.create({
         data: {
           ...eventData,
-          User: { connect: { id: input.creatorId } },
+          User: { connect: { id: ctx.session.user.id } },
           tags: input.tagIds
             ? {
               create: input.tagIds.map((tagId: string) => ({
@@ -47,24 +63,24 @@ export const EventRouter = createTRPCRouter({
             : undefined,
         },
         include: {
-          User: true,
+          User: { select: safeEventUserSelect },
           tags: { include: { tag: true } },
-          attendees: { include: { user: true } },
+          attendees: { include: { user: { select: { id: true } } } },
           reminders: true,
         },
       });
       return safeTransformEventForFrontend(event);
     }),
 
-  update: protectedProcedure
+  update: employeeProcedure
     .input(UpdateEventSchema)
     .mutation(async ({ ctx, input }): Promise<FrontendEventData> => {
+      await assertCanEditEvent(ctx, input.id);
       const eventData = safeTransformEventForDatabase(input);
       const event = await ctx.db.event.update({
         where: { id: input.id },
         data: {
           ...eventData,
-          User: { connect: { id: input.creatorId } },
           tags: input.tagIds
             ? {
               deleteMany: {},
@@ -93,9 +109,9 @@ export const EventRouter = createTRPCRouter({
             : undefined,
         },
         include: {
-          User: true,
+          User: { select: safeEventUserSelect },
           tags: { include: { tag: true } },
-          attendees: { include: { user: true } },
+          attendees: { include: { user: { select: { id: true } } } },
           reminders: true,
         },
       });
@@ -108,9 +124,9 @@ export const EventRouter = createTRPCRouter({
       const event = await ctx.db.event.findUnique({
         where: { id: input.id },
         include: {
-          User: true,
+          User: { select: safeEventUserSelect },
           tags: { include: { tag: true } },
-          attendees: { include: { user: true } },
+          attendees: { include: { user: { select: { id: true } } } },
           reminders: true,
         },
       });
@@ -160,9 +176,9 @@ export const EventRouter = createTRPCRouter({
           ctx.db.event.findMany({
             where,
             include: {
-              User: true,
+              User: { select: safeEventUserSelect },
               tags: { include: { tag: true } },
-              attendees: { include: { user: true } },
+              attendees: { include: { user: { select: { id: true } } } },
               reminders: true,
             },
             skip: input.offset,
@@ -178,9 +194,10 @@ export const EventRouter = createTRPCRouter({
       },
     ),
 
-  delete: protectedProcedure
+  delete: employeeProcedure
     .input(z.object({ id: z.string().min(1, "Event ID is required") }))
     .mutation(async ({ ctx, input }): Promise<{ success: boolean }> => {
+      await assertCanEditEvent(ctx, input.id);
       await ctx.db.event.delete({
         where: { id: input.id },
       });
@@ -197,6 +214,9 @@ export const EventRouter = createTRPCRouter({
     )
     .mutation(
       async ({ ctx, input }): Promise<{ userId: string; status: string }> => {
+        if (input.userId !== ctx.session.user.id) {
+          await assertCanEditEvent(ctx, input.eventId);
+        }
         const attendee = await ctx.db.attendee.upsert({
           where: {
             eventId_userId: { eventId: input.eventId, userId: input.userId },
@@ -207,13 +227,13 @@ export const EventRouter = createTRPCRouter({
             userId: input.userId,
             status: input.status,
           },
-          include: { user: true },
+          include: { user: { select: { id: true } } },
         });
         return { userId: attendee.userId, status: attendee.status };
       },
     ),
 
-  createTag: protectedProcedure
+  createTag: employeeProcedure
     .input(
       z.object({
         name: z.string().min(1, "Tag name is required"),
@@ -238,7 +258,7 @@ export const EventRouter = createTRPCRouter({
     },
   ),
 
-  getRecentActivity: protectedProcedure
+  getRecentActivity: officeProcedure
     .input(z.object({ limit: z.number().int().positive().default(8) }))
     .query(async ({ ctx, input }) => {
       const perSource = Math.max(3, Math.ceil(input.limit / 2));

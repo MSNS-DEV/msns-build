@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, officeProcedure, teacherProcedure } from "../trpc";
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
+import type { ExamTypeEnum, Prisma } from "@prisma/client";
 
 const createExamSchema = z.object({
   sessionId: z.string().cuid(),
@@ -42,7 +42,7 @@ const updateExamSchema = z.object({
 });
 
 export const examRouter = createTRPCRouter({
-  createExam: protectedProcedure
+  createExam: officeProcedure
     .input(createExamSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -135,7 +135,7 @@ export const examRouter = createTRPCRouter({
           const exam = await ctx.db.exam.create({
             data: {
               examTypeId: examType.examTypeId,
-              examTypeEnum: input.examTypeEnum as any,
+              examTypeEnum: input.examTypeEnum as ExamTypeEnum,
               sessionId: input.sessionId,
               classId,
               startDate: input.startDate,
@@ -186,7 +186,7 @@ export const examRouter = createTRPCRouter({
       }
     }),
 
-  updateExam: protectedProcedure
+  updateExam: officeProcedure
     .input(updateExamSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -347,7 +347,7 @@ export const examRouter = createTRPCRouter({
       }
     }),
 
-  deleteExam: protectedProcedure
+  deleteExam: officeProcedure
     .input(z.object({ examId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -494,7 +494,7 @@ export const examRouter = createTRPCRouter({
       }
     }),
 
-  getResultsAnalytics: protectedProcedure
+  getResultsAnalytics: teacherProcedure
     .input(
       z.object({
         sessionId: z.string().optional(),

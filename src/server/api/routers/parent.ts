@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { assertCanReadStudent } from "~/server/api/access";
 
 export const parentRouter = createTRPCRouter({
   getLinkedStudents: protectedProcedure.query(async ({ ctx }) => {
@@ -28,6 +29,7 @@ export const parentRouter = createTRPCRouter({
   getStudentDashboardData: protectedProcedure
     .input(z.object({ studentId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
+      await assertCanReadStudent(ctx, input.studentId);
       const student = await ctx.db.students.findUnique({
         where: { studentId: input.studentId },
       });

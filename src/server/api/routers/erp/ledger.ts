@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, financeProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { type Prisma } from "@prisma/client";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
@@ -7,7 +7,7 @@ import { getSessionEmployee } from "~/server/utils/credential-generator";
 export const ledgerRouter = createTRPCRouter({
   // FR-ERP-34/35: Create immutable double-entry ledger record
   // NFR-SEC-10: append-only, no update/delete
-  createEntry: protectedProcedure
+  createEntry: financeProcedure
     .input(
       z.object({
         entries: z
@@ -50,7 +50,7 @@ export const ledgerRouter = createTRPCRouter({
     }),
 
   // FR-ERP-36: General Ledger view
-  getGeneralLedger: protectedProcedure
+  getGeneralLedger: financeProcedure
     .input(
       z.object({
         fromDate: z.date().optional(),
@@ -86,7 +86,7 @@ export const ledgerRouter = createTRPCRouter({
     }),
 
   // FR-ERP-37: Trial Balance
-  getTrialBalance: protectedProcedure
+  getTrialBalance: financeProcedure
     .input(
       z.object({
         fromDate: z.date().optional(),
@@ -133,7 +133,7 @@ export const ledgerRouter = createTRPCRouter({
     }),
 
   // FR-ERP-38/39: P&L Statement
-  getProfitLoss: protectedProcedure
+  getProfitLoss: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),

@@ -7,15 +7,29 @@ import {
 } from "@prisma/client";
 import { CreateEventSchema } from "./event-schemas";
 
+/** User fields that are safe to return to any client (never the password hash). */
+export const safeEventUserSelect = {
+  id: true,
+  username: true,
+  email: true,
+  profilePic: true,
+  accountType: true,
+} satisfies Prisma.UserSelect;
+
+export type SafeEventUser = Pick<
+  User,
+  "id" | "username" | "email" | "profilePic" | "accountType"
+>;
+
 export type EventWithRelations = Event & {
-  User: User[];
+  User: SafeEventUser[];
   tags: { tag: Tag }[];
-  attendees: { user: User; status: string }[];
+  attendees: { user: Pick<User, "id">; status: string }[];
   reminders: Reminder[];
 };
 
 export interface FrontendEventData {
-  organizer: User | null;
+  organizer: SafeEventUser | null;
   id: string;
   title: string;
   description?: string;
@@ -125,7 +139,15 @@ export function safeTransformEventForFrontend(
     : undefined;
 
   return {
-    organizer: event.User[0] ?? null,
+    organizer: event.User[0]
+      ? {
+          id: event.User[0].id,
+          username: event.User[0].username,
+          email: event.User[0].email,
+          profilePic: event.User[0].profilePic,
+          accountType: event.User[0].accountType,
+        }
+      : null,
     id: event.id,
     title: event.title,
     description: event.description ?? undefined,

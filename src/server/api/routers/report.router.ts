@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, officeProcedure } from "../trpc";
 import { generatePdf } from "~/lib/pdf-reports";
 
 const reportTypeSchema = z.enum([
@@ -10,7 +10,7 @@ const reportTypeSchema = z.enum([
 ]);
 
 export const ReportRouter = createTRPCRouter({
-  generateReport: protectedProcedure
+  generateReport: officeProcedure
     .input(z.object({ reportType: reportTypeSchema }))
     .output(
       z.object({

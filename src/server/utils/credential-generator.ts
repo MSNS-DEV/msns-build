@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import type { Prisma, PrismaClient, Designation } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 export interface UniqueCredentials {
   accountId: string;
@@ -262,23 +262,7 @@ export async function getSessionEmployee(ctx: {
     });
   }
 
-  // Fallback for administrators / management if an explicit employee profile wasn't found
-  if (!employee && user.accountType && ["ADMIN", "PRINCIPAL", "HEAD", "CLERK"].includes(user.accountType.toUpperCase())) {
-    employee = await ctx.db.employees.findFirst({
-      where: {
-        designation: user.accountType as Designation,
-        status: "Active",
-      },
-    });
-    if (!employee) {
-      employee = await ctx.db.employees.findFirst({
-        where: {
-          designation: { in: ["ADMIN", "PRINCIPAL", "HEAD"] },
-          status: "Active",
-        },
-      });
-    }
-  }
-
+  // No fallback: mapping an account to "some other employee with the same
+  // designation" would record approvals and audit entries under the wrong person.
   return employee;
 }

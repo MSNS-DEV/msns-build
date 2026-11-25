@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, managementProcedure } from "../trpc";
+import { assertCanReadEmployee, isOffice } from "~/server/api/access";
+import { createTRPCRouter, managementProcedure, employeeProcedure, financeProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import { type Prisma } from "@prisma/client";
 
@@ -167,7 +168,7 @@ export const salaryRouter = createTRPCRouter({
       });
     }),
 
-  getAll: protectedProcedure
+  getAll: financeProcedure
     .input(
       z.object({
         sessionId: z.string().optional(),
@@ -204,7 +205,7 @@ export const salaryRouter = createTRPCRouter({
       return { salaries, nextCursor };
     }),
 
-  getPendingSalaries: protectedProcedure
+  getPendingSalaries: financeProcedure
     .input(
       z.object({ month: z.number(), year: z.number(), sessionId: z.string() }),
     )
@@ -275,7 +276,7 @@ export const salaryRouter = createTRPCRouter({
       return { generatedCount: createdCount };
     }),
 
-  getMonthlyPayouts: protectedProcedure
+  getMonthlyPayouts: financeProcedure
     .input(z.object({ year: z.number(), sessionId: z.string().optional() }))
     .query(async ({ ctx, input }) => {
       const where: Prisma.SalaryWhereInput = {
@@ -308,7 +309,7 @@ export const salaryRouter = createTRPCRouter({
       }));
     }),
 
-  getTotalPayrollCost: protectedProcedure
+  getTotalPayrollCost: financeProcedure
     .input(
       z.object({
         month: z.number().optional(),
@@ -336,7 +337,7 @@ export const salaryRouter = createTRPCRouter({
       return { totalPayroll: total };
     }),
 
-  getUnpaidEmployees: protectedProcedure
+  getUnpaidEmployees: financeProcedure
     .input(
       z.object({ month: z.number(), year: z.number(), sessionId: z.string() }),
     )
@@ -357,7 +358,7 @@ export const salaryRouter = createTRPCRouter({
       return allEmployees.filter((emp) => !paidIds.has(emp.employeeId));
     }),
 
-  getEmployeeSalarySummary: protectedProcedure
+  getEmployeeSalarySummary: employeeProcedure
     .input(
       z.object({
         employeeId: z.string(),
@@ -365,6 +366,7 @@ export const salaryRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
+      await assertCanReadEmployee(ctx, input.employeeId);
       const where: Prisma.SalaryWhereInput = {
         employeeId: input.employeeId,
       };
@@ -390,7 +392,7 @@ export const salaryRouter = createTRPCRouter({
       return { records: salaries, totalPaid };
     }),
 
-  getSalarySlipData: protectedProcedure
+  getSalarySlipData: employeeProcedure
     .input(
       z.object({
         salaryId: z.string().optional(),
@@ -400,6 +402,17 @@ export const salaryRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
+      if (!isOffice(ctx)) {
+        const slipOwner = input.salaryId
+          ? (
+              await ctx.db.salary.findUnique({
+                where: { id: input.salaryId },
+                select: { employeeId: true },
+              })
+            )?.employeeId
+          : input.employeeId;
+        await assertCanReadEmployee(ctx, slipOwner);
+      }
       const where: Prisma.SalaryWhereInput = {};
       if (input.salaryId) {
         where.id = input.salaryId;
@@ -503,9 +516,10 @@ export const salaryRouter = createTRPCRouter({
       });
     }),
 
-  getSalaryHistory: protectedProcedure
+  getSalaryHistory: employeeProcedure
     .input(z.object({ employeeId: z.string() }))
     .query(async ({ ctx, input }) => {
+      await assertCanReadEmployee(ctx, input.employeeId);
       return ctx.db.salaryAssignment.findMany({
         where: { employeeId: input.employeeId },
         orderBy: { assignedDate: "desc" },
@@ -545,9 +559,10 @@ export const salaryRouter = createTRPCRouter({
       });
     }),
 
-  getCurrentSalary: protectedProcedure
+  getCurrentSalary: employeeProcedure
     .input(z.object({ employeeId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
+      await assertCanReadEmployee(ctx, input.employeeId);
       const salary = await ctx.db.salaryAssignment.findFirst({
         where: { employeeId: input.employeeId },
         orderBy: { assignedDate: "desc" },
@@ -563,7 +578,7 @@ export const salaryRouter = createTRPCRouter({
       return salary;
     }),
 
-  getSalaries: protectedProcedure
+  getSalaries: financeProcedure
     .input(getSalariesInputSchema)
     .query(async ({ ctx, input }) => {
       const { page, pageSize, searchTerm, sortField, sortOrder } = input;

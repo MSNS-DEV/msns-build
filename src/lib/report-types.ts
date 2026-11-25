@@ -208,7 +208,7 @@ export const REPORT_DEFINITIONS: Record<string, ReportDefinition> = {
 
   "student-credentials": {
     id: "student-credentials",
-    title: "Student Username and Password",
+    title: "Student Portal Accounts",
     shortTitle: "Portal Credentials",
     category: "students",
     description: "School ERP portal user credentials register for student and parent self-service logins.",
@@ -221,7 +221,7 @@ export const REPORT_DEFINITIONS: Record<string, ReportDefinition> = {
       { key: "section", label: "Section", width: 70 },
       { key: "username", label: "Login Username", width: 160 },
       { key: "email", label: "Portal Email", width: 180 },
-      { key: "initialPassword", label: "Default Key / Password", width: 140 },
+      { key: "passwordStatus", label: "Password Status", width: 170 },
       { key: "accountStatus", label: "Portal Status", width: 90, format: "badge" },
       { key: "lastLogin", label: "Last Active", width: 100, format: "date" },
     ],

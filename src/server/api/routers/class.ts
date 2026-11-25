@@ -1,4 +1,4 @@
-import { createTRPCRouter, protectedProcedure, managementProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, managementProcedure, officeProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { ClassCategory, type Grades } from "@prisma/client";
@@ -314,7 +314,7 @@ export const ClassRouter = createTRPCRouter({
       }
     }),
 
-  generateClassReport: protectedProcedure.query<{ pdf: string; filename: string }>(
+  generateClassReport: officeProcedure.query<{ pdf: string; filename: string }>(
     async ({ ctx }) => {
       try {
         const classesWithStats = await ctx.db.grades.findMany({

@@ -1,7 +1,8 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, managementProcedure } from "../../trpc";
+import { createTRPCRouter, financeProcedure, leadershipProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
+import { assertNotSelfApproval } from "~/server/api/access";
 
 const poLineItemSchema = z.object({
   description: z.string().min(1),
@@ -32,7 +33,7 @@ const grnLineItemSchema = z.object({
 
 export const purchaseOrdersRouter = createTRPCRouter({
   // FR-ERP-06: Create Purchase Order Request
-  create: managementProcedure
+  create: financeProcedure
     .input(createPOSchema)
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
@@ -80,7 +81,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-07: Submit for approval (Draft → PendingApprovalL1)
-  submitForApproval: managementProcedure
+  submitForApproval: financeProcedure
     .input(z.object({ poId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       const po = await ctx.db.purchaseOrder.findUnique({ where: { poId: input.poId } });
@@ -97,7 +98,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
         try {
           const approvers = await ctx.db.user.findMany({
             where: {
-              accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD", "CLERK"] }
+              accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD"] }
             },
             select: { id: true }
           });
@@ -120,7 +121,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-07: L1 Approval
-  approveL1: managementProcedure
+  approveL1: leadershipProcedure
     .input(z.object({ poId: z.string().cuid(), comments: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
@@ -131,6 +132,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
       if (po.status !== "PendingApprovalL1") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "PO is not pending L1 approval" });
       }
+      assertNotSelfApproval(employeeRecord.employeeId, po.createdBy);
 
       // Determine if L2 is needed (above PKR 10,000 threshold)
       const nextStatus = po.estimatedTotal > 10000 ? "PendingApprovalL2" : "Approved";
@@ -161,7 +163,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
           try {
             const approvers = await ctx.db.user.findMany({
               where: {
-                accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD", "CLERK"] }
+                accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD"] }
               },
               select: { id: true }
             });
@@ -185,7 +187,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-07: L2 Approval
-  approveL2: managementProcedure
+  approveL2: leadershipProcedure
     .input(z.object({ poId: z.string().cuid(), comments: z.string().optional() }))
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
@@ -196,6 +198,8 @@ export const purchaseOrdersRouter = createTRPCRouter({
       if (po.status !== "PendingApprovalL2") {
         throw new TRPCError({ code: "BAD_REQUEST", message: "PO is not pending L2 approval" });
       }
+      // L2 must be a different person from both the requester and the L1 approver.
+      assertNotSelfApproval(employeeRecord.employeeId, po.createdBy, po.approvalL1By);
 
       const [updatedPO] = await ctx.db.$transaction([
         ctx.db.purchaseOrder.update({
@@ -222,7 +226,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-07: Reject PO
-  reject: managementProcedure
+  reject: leadershipProcedure
     .input(z.object({ poId: z.string().cuid(), reason: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
@@ -252,7 +256,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-09: Update PO status (Approved → Ordered, Ordered → Received, etc.)
-  updateStatus: managementProcedure
+  updateStatus: financeProcedure
     .input(
       z.object({
         poId: z.string().cuid(),
@@ -267,7 +271,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-10: Record Goods Receipt Note
-  recordGRN: managementProcedure
+  recordGRN: financeProcedure
     .input(
       z.object({
         poId: z.string().cuid(),
@@ -334,7 +338,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // Get all POs with filters
-  getAll: protectedProcedure
+  getAll: financeProcedure
     .input(
       z.object({
         status: z
@@ -380,7 +384,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // Get PO by ID with full details
-  getById: protectedProcedure
+  getById: financeProcedure
     .input(z.object({ poId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const po = await ctx.db.purchaseOrder.findUnique({

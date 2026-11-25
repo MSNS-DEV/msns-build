@@ -1,6 +1,6 @@
 // File: user.ts
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, adminProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, officeProcedure, leadershipProcedure } from "../trpc";
 import { z } from "zod";
 import { generatePdf } from "~/lib/pdf-reports";
 import { generateUniqueUserCredentials } from "~/server/utils/credential-generator";
@@ -8,10 +8,11 @@ import type { Designation } from "@prisma/client";
 
 import dayjs from "dayjs";
 import { hash } from "bcryptjs";
+import { assertCanAssignRole } from "~/server/api/access";
 const userSchema = z.object({
   username: z.string().min(2).max(100),
   email: z.string().email(),
-  password: z.string().min(6).max(100),
+  password: z.string().min(8).max(100),
   accountType: z.enum([
     "STUDENT",
     "FACULTY",
@@ -27,7 +28,7 @@ const userSchema = z.object({
 });
 
 export const UserRouter = createTRPCRouter({
-  getUsers: protectedProcedure.query(async ({ ctx }) => {
+  getUsers: officeProcedure.query(async ({ ctx }) => {
     try {
       const users = await ctx.db.user.findMany({
         select: {
@@ -72,7 +73,7 @@ export const UserRouter = createTRPCRouter({
     }
   }),
 
-  getUnAllocatedUsers: protectedProcedure.query(async ({ ctx }) => {
+  getUnAllocatedUsers: officeProcedure.query(async ({ ctx }) => {
     try {
       const users = await ctx.db.user.findMany({
         select: {
@@ -94,9 +95,10 @@ export const UserRouter = createTRPCRouter({
     }
   }),
 
-  createUser: adminProcedure
+  createUser: officeProcedure
     .input(userSchema)
     .mutation(async ({ ctx, input }) => {
+      assertCanAssignRole(ctx, input.accountType);
       try {
         const password = await hash(input.password, 10);
         return await ctx.db.$transaction(async (tx) => {
@@ -147,7 +149,7 @@ export const UserRouter = createTRPCRouter({
       }
     }),
 
-  deleteEmployeesByIds: adminProcedure
+  deleteEmployeesByIds: leadershipProcedure
     .input(
       z.object({
         employeeIds: z.string().array(),
@@ -415,7 +417,7 @@ export const UserRouter = createTRPCRouter({
       }
     }),
 
-  getEmployeesByDesignation: protectedProcedure
+  getEmployeesByDesignation: officeProcedure
     .input(
       z.object({
         designation: z.enum([
@@ -444,7 +446,7 @@ export const UserRouter = createTRPCRouter({
       }
     }),
 
-  generateEmployeeReport: protectedProcedure.query(async ({ ctx }) => {
+  generateEmployeeReport: officeProcedure.query(async ({ ctx }) => {
     const employees = await ctx.db.employees.findMany();
     const headers = [
       { key: "employeeId", label: "Employee ID" },

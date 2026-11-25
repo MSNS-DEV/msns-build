@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, financeProcedure, leadershipProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
+import { assertNotSelfApproval } from "~/server/api/access";
 
 export const directExpenseRouter = createTRPCRouter({
   // FR-ERP-13: Record direct expense
-  create: protectedProcedure
+  create: financeProcedure
     .input(
       z.object({
         expenseDate: z.date(),
@@ -42,7 +43,7 @@ export const directExpenseRouter = createTRPCRouter({
           try {
             const approvers = await ctx.db.user.findMany({
               where: {
-                accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD", "CLERK"] }
+                accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD"] }
               },
               select: { id: true }
             });
@@ -66,7 +67,7 @@ export const directExpenseRouter = createTRPCRouter({
     }),
 
   // FR-ERP-14: Approve direct expense
-  approve: protectedProcedure
+  approve: leadershipProcedure
     .input(z.object({ directExpenseId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
@@ -79,6 +80,7 @@ export const directExpenseRouter = createTRPCRouter({
       if (expense.isApproved) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Expense already approved" });
       }
+      assertNotSelfApproval(employeeRecord.employeeId, expense.createdBy);
 
       return ctx.db.directExpense.update({
         where: { directExpenseId: input.directExpenseId },
@@ -91,7 +93,7 @@ export const directExpenseRouter = createTRPCRouter({
     }),
 
   // Reject expense
-  reject: protectedProcedure
+  reject: leadershipProcedure
     .input(z.object({ directExpenseId: z.string().cuid(), reason: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       return ctx.db.directExpense.update({
@@ -100,7 +102,7 @@ export const directExpenseRouter = createTRPCRouter({
       });
     }),
 
-  getAll: protectedProcedure
+  getAll: financeProcedure
     .input(
       z.object({
         isApproved: z.boolean().optional(),
@@ -144,7 +146,7 @@ export const directExpenseRouter = createTRPCRouter({
     }),
 
   // FR-ERP-16: Recurring expense templates
-  createRecurringTemplate: protectedProcedure
+  createRecurringTemplate: financeProcedure
     .input(
       z.object({
         name: z.string().min(1),
@@ -158,7 +160,7 @@ export const directExpenseRouter = createTRPCRouter({
     )
     .mutation(({ ctx, input }) => ctx.db.recurringExpenseTemplate.create({ data: input })),
 
-  getRecurringTemplates: protectedProcedure
+  getRecurringTemplates: financeProcedure
     .input(z.object({ isActive: z.boolean().default(true) }))
     .query(({ ctx, input }) =>
       ctx.db.recurringExpenseTemplate.findMany({
@@ -167,7 +169,7 @@ export const directExpenseRouter = createTRPCRouter({
       }),
     ),
 
-  updateRecurringTemplate: protectedProcedure
+  updateRecurringTemplate: financeProcedure
     .input(
       z.object({
         templateId: z.string().cuid(),

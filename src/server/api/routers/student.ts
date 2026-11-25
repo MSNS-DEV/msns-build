@@ -1,10 +1,11 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, clerkProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, clerkProcedure, officeProcedure, teacherProcedure } from "../trpc";
 import { z } from "zod";
 import { generatePdf } from "~/lib/pdf-reports";
-import { type Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { userReg } from "~/lib/utils";
 import { hash } from "bcryptjs";
+import { assertCanReadStudent } from "~/server/api/access";
 import { studentSchema, studentCSVSchema } from "~/lib/schemas/student";
 import { generateUniqueStudentCredentials } from "~/server/utils/credential-generator";
 
@@ -24,7 +25,7 @@ type StudentReportData = {
 };
 
 export const StudentRouter = createTRPCRouter({
-  getStudents: protectedProcedure.query(async ({ ctx }) => {
+  getStudents: officeProcedure.query(async ({ ctx }) => {
     try {
       const students = await ctx.db.students.findMany({
         orderBy: { createdAt: "desc" },
@@ -69,7 +70,7 @@ export const StudentRouter = createTRPCRouter({
     }
   }),
 
-  getStudentsByClassAndSession: protectedProcedure
+  getStudentsByClassAndSession: teacherProcedure
     .input(z.object({ classId: z.string(), sessionId: z.string() }))
     .query(async ({ ctx, input }) => {
       const studentClasses = await ctx.db.studentClass.findMany({
@@ -79,7 +80,7 @@ export const StudentRouter = createTRPCRouter({
       return studentClasses.map((sc) => sc.Students);
     }),
 
-  getUnAllocateStudents: protectedProcedure
+  getUnAllocateStudents: officeProcedure
     .input(
       z.object({
         searchTerm: z.string().optional(),
@@ -237,6 +238,7 @@ export const StudentRouter = createTRPCRouter({
               email: credentials.email.toLowerCase(),
               password,
               accountType: "STUDENT",
+              mustChangePassword: true, // default password = admission number
             },
           });
 
@@ -245,10 +247,14 @@ export const StudentRouter = createTRPCRouter({
       } catch (error) {
         console.error("Error creating student:", error);
         if (error instanceof TRPCError) throw error;
-        const msg = error instanceof Error ? error.message : "Failed to create student record";
+        // Don't leak raw database errors to the client.
+        const isDuplicate =
+          error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
         throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: msg,
+          code: isDuplicate ? "CONFLICT" : "INTERNAL_SERVER_ERROR",
+          message: isDuplicate
+            ? "A student with these details already exists"
+            : "Failed to create student record",
         });
       }
     }),
@@ -256,6 +262,7 @@ export const StudentRouter = createTRPCRouter({
   getStudentById: protectedProcedure
     .input(z.object({ studentId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
+      await assertCanReadStudent(ctx, input.studentId);
       try {
         const student = await ctx.db.students.findUnique({
           where: { studentId: input.studentId },
@@ -405,6 +412,7 @@ export const StudentRouter = createTRPCRouter({
             email: userInfo.email.toLowerCase(),
             password: password,
             accountType: "STUDENT",
+            mustChangePassword: true, // default password = admission number
           });
 
           usersCount++;
@@ -510,7 +518,7 @@ export const StudentRouter = createTRPCRouter({
       }
     }),
 
-  generateStudentReport: protectedProcedure.query(async ({ ctx }) => {
+  generateStudentReport: officeProcedure.query(async ({ ctx }) => {
     try {
       const students = await ctx.db.students.findMany({
         select: {

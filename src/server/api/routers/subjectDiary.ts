@@ -1,24 +1,43 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { TRPCError } from "@trpc/server";
+import { createTRPCRouter, protectedProcedure, teacherProcedure } from "../trpc";
+import {
+  assertCanTeachClassSubject,
+  requireSessionEmployee,
+  roleOf,
+} from "~/server/api/access";
 import type { Prisma } from "@prisma/client";
 
 export const subjectDiaryRouter = createTRPCRouter({
-  createDiary: protectedProcedure
+  createDiary: teacherProcedure
     .input(
       z.object({
         classSubjectId: z.string(),
-        teacherId: z.string(),
+        // Ignored for teachers (taken from the session); office staff may set it.
+        teacherId: z.string().optional(),
         date: z.date(),
         content: z.string(),
         attachments: z.array(z.string()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCanTeachClassSubject(ctx, input.classSubjectId);
+      let teacherId: string;
+      if (roleOf(ctx) === "TEACHER") {
+        teacherId = (await requireSessionEmployee(ctx)).employeeId;
+      } else {
+        const cs = await ctx.db.classSubject.findUnique({
+          where: { csId: input.classSubjectId },
+          select: { employeeId: true },
+        });
+        if (!cs) throw new TRPCError({ code: "NOT_FOUND", message: "Class subject not found" });
+        teacherId = input.teacherId ?? cs.employeeId;
+      }
       try {
         const diary = await ctx.db.subjectDiary.create({
           data: {
             classSubjectId: input.classSubjectId,
-            teacherId: input.teacherId,
+            teacherId,
             date: input.date,
             content: input.content,
             attachments: input.attachments ?? [],
@@ -65,7 +84,7 @@ export const subjectDiaryRouter = createTRPCRouter({
       }
     }),
 
-  updateDiary: protectedProcedure
+  updateDiary: teacherProcedure
     .input(
       z.object({
         subjectDiaryId: z.string(),
@@ -74,6 +93,12 @@ export const subjectDiaryRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.subjectDiary.findUnique({
+        where: { subjectDiaryId: input.subjectDiaryId },
+        select: { classSubjectId: true },
+      });
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Diary not found" });
+      await assertCanTeachClassSubject(ctx, existing.classSubjectId);
       try {
         return await ctx.db.subjectDiary.update({
           where: { subjectDiaryId: input.subjectDiaryId },
@@ -88,9 +113,15 @@ export const subjectDiaryRouter = createTRPCRouter({
       }
     }),
 
-  deleteDiary: protectedProcedure
+  deleteDiary: teacherProcedure
     .input(z.object({ subjectDiaryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.subjectDiary.findUnique({
+        where: { subjectDiaryId: input.subjectDiaryId },
+        select: { classSubjectId: true },
+      });
+      if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Diary not found" });
+      await assertCanTeachClassSubject(ctx, existing.classSubjectId);
       try {
         await ctx.db.subjectDiary.delete({
           where: { subjectDiaryId: input.subjectDiaryId },
@@ -102,7 +133,7 @@ export const subjectDiaryRouter = createTRPCRouter({
       }
     }),
 
-  getTeacherDiaries: protectedProcedure
+  getTeacherDiaries: teacherProcedure
     .input(
       z.object({
         teacherId: z.string(),

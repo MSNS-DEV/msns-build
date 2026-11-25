@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, financeProcedure, leadershipProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
 export const budgetRouter = createTRPCRouter({
   // FR-ERP-01: Create Cost Centre
-  createCostCentre: protectedProcedure
+  createCostCentre: financeProcedure
     .input(
       z.object({
         name: z.string().min(1).max(100),
@@ -18,7 +18,7 @@ export const budgetRouter = createTRPCRouter({
       return ctx.db.costCentre.create({ data: { ...input, code } });
     }),
 
-  updateCostCentre: protectedProcedure
+  updateCostCentre: financeProcedure
     .input(
       z.object({
         costCentreId: z.string().cuid(),
@@ -32,7 +32,7 @@ export const budgetRouter = createTRPCRouter({
       return ctx.db.costCentre.update({ where: { costCentreId }, data });
     }),
 
-  getAllCostCentres: protectedProcedure.query(({ ctx }) =>
+  getAllCostCentres: financeProcedure.query(({ ctx }) =>
     ctx.db.costCentre.findMany({
       include: { Manager: { select: { employeeName: true } } },
       orderBy: { code: "asc" },
@@ -40,7 +40,7 @@ export const budgetRouter = createTRPCRouter({
   ),
 
   // FR-ERP-02: Create Budget Plan for a session
-  createBudgetPlan: protectedProcedure
+  createBudgetPlan: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),
@@ -71,7 +71,7 @@ export const budgetRouter = createTRPCRouter({
     }),
 
   // FR-ERP-03: Get budget utilisation per cost centre
-  getBudgetUtilisation: protectedProcedure
+  getBudgetUtilisation: financeProcedure
     .input(z.object({ budgetPlanId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const plan = await ctx.db.budgetPlan.findUnique({
@@ -132,7 +132,7 @@ export const budgetRouter = createTRPCRouter({
     }),
 
   // FR-ERP-05: Budget reallocation
-  reallocateBudget: protectedProcedure
+  reallocateBudget: leadershipProcedure
     .input(
       z.object({
         budgetPlanId: z.string().cuid(),
@@ -182,7 +182,7 @@ export const budgetRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  getBudgetPlansForSession: protectedProcedure
+  getBudgetPlansForSession: financeProcedure
     .input(z.object({ sessionId: z.string().cuid() }))
     .query(({ ctx, input }) =>
       ctx.db.budgetPlan.findMany({

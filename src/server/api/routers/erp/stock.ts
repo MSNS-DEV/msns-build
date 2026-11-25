@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, financeProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
 export const stockRouter = createTRPCRouter({
   // FR-ERP-18: Inventory item management
-  createItem: protectedProcedure
+  createItem: financeProcedure
     .input(
       z.object({
         itemName: z.string().min(1).max(200),
@@ -19,7 +19,7 @@ export const stockRouter = createTRPCRouter({
     )
     .mutation(({ ctx, input }) => ctx.db.inventoryItem.create({ data: input })),
 
-  updateItem: protectedProcedure
+  updateItem: financeProcedure
     .input(
       z.object({
         inventoryItemId: z.string().cuid(),
@@ -36,7 +36,7 @@ export const stockRouter = createTRPCRouter({
     }),
 
   // FR-ERP-20: Record stock-out
-  recordStockOut: protectedProcedure
+  recordStockOut: financeProcedure
     .input(
       z.object({
         inventoryItemId: z.string().cuid(),
@@ -79,7 +79,7 @@ export const stockRouter = createTRPCRouter({
     }),
 
   // FR-ERP-22: Stock reconciliation
-  recordReconciliation: protectedProcedure
+  recordReconciliation: financeProcedure
     .input(
       z.object({
         inventoryItemId: z.string().cuid(),
@@ -127,7 +127,7 @@ export const stockRouter = createTRPCRouter({
     }),
 
   // FR-ERP-21: Get all items with low-stock alerts
-  getAll: protectedProcedure
+  getAll: financeProcedure
     .input(
       z.object({
         category: z.string().optional(),
@@ -154,7 +154,7 @@ export const stockRouter = createTRPCRouter({
     }),
 
   // FR-ERP-23: Inventory valuation report
-  getValuationReport: protectedProcedure.query(async ({ ctx }) => {
+  getValuationReport: financeProcedure.query(async ({ ctx }) => {
     const items = await ctx.db.inventoryItem.findMany({
       where: { isActive: true },
       orderBy: { category: "asc" },
@@ -178,7 +178,7 @@ export const stockRouter = createTRPCRouter({
     };
   }),
 
-  getTransactionHistory: protectedProcedure
+  getTransactionHistory: financeProcedure
     .input(
       z.object({
         inventoryItemId: z.string().cuid(),

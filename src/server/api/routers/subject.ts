@@ -1,4 +1,4 @@
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, officeProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
@@ -123,7 +123,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  assignSubjectToClass: protectedProcedure
+  assignSubjectToClass: officeProcedure
     .input(classAssignmentSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -178,7 +178,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  createSubject: protectedProcedure
+  createSubject: officeProcedure
     .input(createSubjectSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -222,7 +222,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  updateSubject: protectedProcedure
+  updateSubject: officeProcedure
     .input(updateSubjectSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -285,7 +285,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  deleteSubject: protectedProcedure
+  deleteSubject: officeProcedure
     .input(deleteSubjectSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -406,7 +406,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  updateClassAssignment: protectedProcedure
+  updateClassAssignment: officeProcedure
     .input(
       classAssignmentSchema.extend({
         csId: z.string().cuid("Invalid assignment ID"),
@@ -446,7 +446,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  removeSubjectFromClass: protectedProcedure
+  removeSubjectFromClass: officeProcedure
     .input(
       z.object({
         csId: z.string().cuid("Invalid assignment ID"),

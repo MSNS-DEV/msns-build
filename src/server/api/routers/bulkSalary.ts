@@ -4,7 +4,7 @@
  * Extends existing salary.ts (preserved unchanged)
  */
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, financeProcedure } from "../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
@@ -16,7 +16,7 @@ const bulkSalaryItemSchema = z.object({
 
 export const bulkSalaryRouter = createTRPCRouter({
   // FR-SAL-01/FR-SAL-02: Preview bulk salary creation grid
-  previewBulkCreation: protectedProcedure
+  previewBulkCreation: financeProcedure
     .input(
       z.object({
         toSessionId: z.string().cuid(),
@@ -84,7 +84,7 @@ export const bulkSalaryRouter = createTRPCRouter({
     }),
 
   // FR-SAL-03/FR-SAL-04: Apply global increment and preview
-  applyGlobalIncrement: protectedProcedure
+  applyGlobalIncrement: financeProcedure
     .input(
       z.object({
         items: z.array(
@@ -113,7 +113,7 @@ export const bulkSalaryRouter = createTRPCRouter({
     }),
 
   // FR-SAL-06: Execute bulk salary creation (single Prisma transaction)
-  executeBulkCreation: protectedProcedure
+  executeBulkCreation: financeProcedure
     .input(
       z.object({
         toSessionId: z.string().cuid(),
@@ -222,7 +222,7 @@ export const bulkSalaryRouter = createTRPCRouter({
     }),
 
   // FR-SAL-08: Get batch summary report
-  getBatchReport: protectedProcedure
+  getBatchReport: financeProcedure
     .input(z.object({ batchId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       return ctx.db.bulkSalaryCreationBatch.findUnique({
@@ -240,7 +240,7 @@ export const bulkSalaryRouter = createTRPCRouter({
     }),
 
   // FR-SAL-09/FR-SAL-10: Batch increment for a group of employees
-  batchIncrement: protectedProcedure
+  batchIncrement: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),

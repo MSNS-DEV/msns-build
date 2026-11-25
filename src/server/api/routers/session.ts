@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, managementProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, managementProcedure, officeProcedure } from "../trpc";
 import { z } from "zod";
 
 interface SessionProps {
@@ -408,7 +408,7 @@ export const SessionRouter = createTRPCRouter({
     }),
 
   // Validate all relational logics for all modules within a session
-  validateSessionRelations: protectedProcedure
+  validateSessionRelations: officeProcedure
     .input(z.object({ sessionId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
       try {

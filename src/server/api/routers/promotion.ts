@@ -1,5 +1,5 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, managementProcedure } from "../trpc";
+import { createTRPCRouter, managementProcedure, officeProcedure, teacherProcedure } from "../trpc";
 import { z } from "zod";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
@@ -232,7 +232,7 @@ export const promotionRouter = createTRPCRouter({
       }
     }),
 
-  getPromotionHistory: protectedProcedure
+  getPromotionHistory: teacherProcedure
     .input(
       z.object({
         studentId: z.string().cuid().optional(),
@@ -285,7 +285,7 @@ export const promotionRouter = createTRPCRouter({
       }
     }),
 
-  getStudentPromotionStatus: protectedProcedure
+  getStudentPromotionStatus: teacherProcedure
     .input(z.object({ studentId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       try {
@@ -333,7 +333,7 @@ export const promotionRouter = createTRPCRouter({
       }
     }),
 
-  canPromoteClass: protectedProcedure
+  canPromoteClass: teacherProcedure
     .input(
       z.object({
         fromClassId: z.string().cuid(),
@@ -422,7 +422,7 @@ export const promotionRouter = createTRPCRouter({
       return ctx.db.promotionEligibilityRule.create({ data: input });
     }),
 
-  getEligibilityRules: protectedProcedure.query(({ ctx }) =>
+  getEligibilityRules: teacherProcedure.query(({ ctx }) =>
     ctx.db.promotionEligibilityRule.findMany({ orderBy: { examTypeEnum: "asc" } }),
   ),
 
@@ -544,7 +544,7 @@ export const promotionRouter = createTRPCRouter({
     }),
 
   // FR-PRM-08: Get promotion eligibility report for a class/exam
-  getEligibilityReport: protectedProcedure
+  getEligibilityReport: teacherProcedure
     .input(
       z.object({
         examId: z.string().cuid(),
@@ -708,7 +708,7 @@ export const promotionRouter = createTRPCRouter({
     }),
 
   // FR-PRM-15: Get promotion audit trail per class or student
-  getPromotionAuditTrail: protectedProcedure
+  getPromotionAuditTrail: officeProcedure
     .input(
       z.object({
         studentId: z.string().cuid().optional(),

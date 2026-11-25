@@ -1,11 +1,8 @@
 import { z } from "zod";
+import { assertCanReadStudent } from "~/server/api/access";
 import { TRPCError } from "@trpc/server";
 import { type Prisma } from "@prisma/client";
-import {
-  createTRPCRouter,
-  protectedProcedure,
-  clerkProcedure,
-} from "~/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, clerkProcedure, financeProcedure, officeProcedure } from "~/server/api/trpc";
 
 // --- Input Schemas ---
 
@@ -187,7 +184,7 @@ export const feeRouter = createTRPCRouter({
       }
     }),
 
-  getAllFees: protectedProcedure.query(async ({ ctx }) => {
+  getAllFees: officeProcedure.query(async ({ ctx }) => {
     return await ctx.db.fees.findMany({ orderBy: { level: "asc" } });
   }),
   assignFeeToClass: clerkProcedure
@@ -379,7 +376,7 @@ export const feeRouter = createTRPCRouter({
 
   // --- Queries for Dashboard ---
 
-  getClassFeeSummary: protectedProcedure
+  getClassFeeSummary: financeProcedure
     .input(z.object({ sessionId: z.string(), year: z.number() }))
     .query(async ({ ctx, input }) => {
       try {
@@ -505,7 +502,7 @@ export const feeRouter = createTRPCRouter({
       }
     }),
 
-  getDefaultersList: protectedProcedure
+  getDefaultersList: financeProcedure
     .input(
       z.object({ sessionId: z.string(), month: z.number(), year: z.number() }),
     )
@@ -563,7 +560,7 @@ export const feeRouter = createTRPCRouter({
         .filter((d): d is NonNullable<typeof d> => d !== null);
     }),
 
-  getFeeByEachMonth: protectedProcedure
+  getFeeByEachMonth: financeProcedure
     .input(z.object({ month: z.number(), year: z.number() }))
     .query(async ({ ctx, input }) => {
       const assignments = await ctx.db.feeStudentClass.findMany({
@@ -617,7 +614,7 @@ export const feeRouter = createTRPCRouter({
       };
     }),
 
-  getFeeAnalytics: protectedProcedure
+  getFeeAnalytics: financeProcedure
     .input(z.object({ sessionId: z.string(), year: z.number() }))
     .query(async ({ ctx, input }) => {
       const assignments = await ctx.db.feeStudentClass.findMany({
@@ -692,7 +689,7 @@ export const feeRouter = createTRPCRouter({
       };
     }),
 
-  getYearComparison: protectedProcedure
+  getYearComparison: financeProcedure
     .input(z.object({ sessionId: z.string(), years: z.array(z.number()) }))
     .query(async ({ ctx, input }) => {
       const result = [];
@@ -718,7 +715,7 @@ export const feeRouter = createTRPCRouter({
       return result;
     }),
 
-  getClassFees: protectedProcedure
+  getClassFees: financeProcedure
     .input(
       z.object({
         classId: z.string(),
@@ -769,6 +766,7 @@ export const feeRouter = createTRPCRouter({
   getStudentFees: protectedProcedure
     .input(z.object({ studentId: z.string(), year: z.number().optional() }))
     .query(async ({ ctx, input }) => {
+      await assertCanReadStudent(ctx, input.studentId);
       const student = await ctx.db.students.findUnique({
         where: { studentId: input.studentId },
       });

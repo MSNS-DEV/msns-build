@@ -1,9 +1,11 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, officeProcedure, teacherProcedure, protectedProcedure } from "../trpc";
 import dayjs from "dayjs";
+import { TRPCError } from "@trpc/server";
+import { assertCanTeachClass, getOwnStudentIds } from "~/server/api/access";
 
 export const attendanceRouter = createTRPCRouter({
-  addEmployeeAttendance: protectedProcedure
+  addEmployeeAttendance: officeProcedure
     .input(
       z.object({
         employeeId: z.string(),
@@ -35,7 +37,7 @@ export const attendanceRouter = createTRPCRouter({
         throw new Error("Something went wrong");
       }
     }),
-  getAllEmployeeAttendance: protectedProcedure.query(async ({ ctx }) => {
+  getAllEmployeeAttendance: officeProcedure.query(async ({ ctx }) => {
     try {
       return await ctx.db.employeeAttendance.findMany();
     } catch (error) {
@@ -45,7 +47,7 @@ export const attendanceRouter = createTRPCRouter({
   }),
 
   // --- Student Attendance ---
-  markStudentAttendance: protectedProcedure
+  markStudentAttendance: teacherProcedure
     .input(
       z.object({
         classId: z.string(),
@@ -61,6 +63,20 @@ export const attendanceRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCanTeachClass(ctx, { classId: input.classId, sessionId: input.sessionId });
+      const enrolled = await ctx.db.studentClass.count({
+        where: {
+          classId: input.classId,
+          sessionId: input.sessionId,
+          studentId: { in: input.records.map((r) => r.studentId) },
+        },
+      });
+      if (enrolled !== new Set(input.records.map((r) => r.studentId)).size) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Some students are not enrolled in this class for this session",
+        });
+      }
       try {
         const upsertPromises = input.records.map((record) =>
           ctx.db.studentAttendance.upsert({
@@ -130,11 +146,14 @@ export const attendanceRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
+        // Students/parents only see their own rows; staff see the whole class.
+        const ownIds = await getOwnStudentIds(ctx);
         return await ctx.db.studentAttendance.findMany({
           where: {
             classId: input.classId,
             sessionId: input.sessionId,
             date: input.date,
+            ...(ownIds !== null && { studentId: { in: ownIds } }),
           },
         });
       } catch (error) {

@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, officeProcedure, teacherProcedure } from "../trpc";
 import { z } from "zod";
+import { assertCanReadStudent, assertCanTeachClass } from "~/server/api/access";
 
 const generateReportCardSchema = z.object({
   studentId: z.string().cuid(),
@@ -8,7 +9,7 @@ const generateReportCardSchema = z.object({
 });
 
 export const reportCardRouter = createTRPCRouter({
-  generateClassReportCards: protectedProcedure
+  generateClassReportCards: teacherProcedure
     .input(
       z.object({
         classId: z.string().cuid(),
@@ -17,6 +18,7 @@ export const reportCardRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCanTeachClass(ctx, { classId: input.classId });
       try {
         const exam = await ctx.db.exam.findUnique({
           where: { examId: input.examId },
@@ -171,9 +173,16 @@ export const reportCardRouter = createTRPCRouter({
       }
     }),
 
-  generateReportCard: protectedProcedure
+  generateReportCard: teacherProcedure
     .input(generateReportCardSchema)
     .mutation(async ({ ctx, input }) => {
+      const examForAccess = await ctx.db.exam.findUnique({
+        where: { examId: input.examId },
+        select: { classId: true },
+      });
+      if (examForAccess) {
+        await assertCanTeachClass(ctx, { classId: examForAccess.classId });
+      }
       try {
         // Get all marks for the student in the exam
         const marks = await ctx.db.marks.findMany({
@@ -348,7 +357,7 @@ export const reportCardRouter = createTRPCRouter({
       }
     }),
 
-  updateReportCard: protectedProcedure
+  updateReportCard: officeProcedure
     .input(
       z.object({
         reportCardId: z.string().cuid(),
@@ -442,6 +451,7 @@ export const reportCardRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
+      await assertCanReadStudent(ctx, input.studentId);
       try {
         const reportCard = await ctx.db.reportCard.findFirst({
           where: {
@@ -481,7 +491,7 @@ export const reportCardRouter = createTRPCRouter({
       }
     }),
 
-  getClassReportCards: protectedProcedure
+  getClassReportCards: teacherProcedure
     .input(
       z.object({
         examId: z.string().cuid(),
@@ -526,6 +536,7 @@ export const reportCardRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
+      await assertCanReadStudent(ctx, input.studentId);
       try {
         const reports = await ctx.db.reportCard.findMany({
           where: {
@@ -576,7 +587,7 @@ export const reportCardRouter = createTRPCRouter({
       }
     }),
 
-  deleteReportCard: protectedProcedure
+  deleteReportCard: officeProcedure
     .input(z.object({ reportCardId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       try {
