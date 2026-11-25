@@ -9,26 +9,30 @@ datasource db {
 }
 
 model User {
-  id                 String      @id @default(cuid())
+  id                 String               @id @default(cuid())
   accountId          String
-  accountType        Designation @default(ADMIN)
-  createdAt          DateTime    @default(now())
+  accountType        Designation          @default(ADMIN)
+  createdAt          DateTime             @default(now())
   password           String
-  username           String      @unique
-  email              String      @unique
-  bio                String?     @default("")
-  profilePic         String?     @default("/user.jpg")
-  emailNotifications Boolean     @default(true)
-  marketingEmails    Boolean     @default(false)
-  profileVisibility  Boolean     @default(true)
-  pushNotifications  Boolean     @default(false)
-  twoFactorAuth      Boolean     @default(false)
+  username           String               @unique
+  email              String               @unique
+  bio                String?              @default("")
+  profilePic         String?              @default("/user.jpg")
+  emailNotifications Boolean              @default(true)
+  marketingEmails    Boolean              @default(false)
+  profileVisibility  Boolean              @default(true)
+  pushNotifications  Boolean              @default(false)
+  twoFactorAuth      Boolean              @default(false)
   /// Set when the account still has a generated default password.
-  mustChangePassword Boolean     @default(false)
+  mustChangePassword Boolean              @default(false)
   /// Bumped to invalidate existing sessions (password change, role change, removal).
-  tokenVersion       Int         @default(0)
+  tokenVersion       Int                  @default(0)
+  /// Suspended accounts cannot sign in; existing sessions end on revalidation.
+  isActive           Boolean              @default(true)
+  suspendedAt        DateTime?
+  suspendedReason    String?
   EventAttendee      Attendee[]
-  Event              Event[]     @relation("EventCreator")
+  Event              Event[]              @relation("EventCreator")
   DeviceRegistration DeviceRegistration[]
   Notification       Notification[]
 }
@@ -162,68 +166,68 @@ model EmployeeAttendance {
 }
 
 model FeeStudentClass {
-  sfcId                String             @id @default(cuid())
-  studentClassId       String
-  feeId                String
-  month                Int                @default(1)
-  year                 Int                @default(2024)
-  installmentNo        Int                @default(1)
-  voucherNumber        String             @unique @default(cuid())
-  voucherType          VoucherType        @default(REGULAR_INSTALLMENT)
+  sfcId          String      @id @default(cuid())
+  studentClassId String
+  feeId          String
+  month          Int         @default(1)
+  year           Int         @default(2024)
+  installmentNo  Int         @default(1)
+  voucherNumber  String      @unique @default(cuid())
+  voucherType    VoucherType @default(REGULAR_INSTALLMENT)
 
   // Validity & Confirmation
-  issueDate            DateTime           @default(now())
-  dueDate              DateTime           @default(now())
-  paidAt               DateTime?
-  confirmedByUserId    String?
-  collectingBank       String?            @default("CASH_COUNTER")
-  collectorName        String?
+  issueDate         DateTime  @default(now())
+  dueDate           DateTime  @default(now())
+  paidAt            DateTime?
+  confirmedByUserId String?
+  collectingBank    String?   @default("CASH_COUNTER")
+  collectorName     String?
 
   // Concession (Policy/Merit) vs Exemption (Principal Discretion)
-  concessionCategory   ConcessionCategory @default(NONE)
-  concessionScope      ConcessionScope?
-  concessionAmount     Float              @default(0)
-  exemptionAmount      Float              @default(0)
-  exemptionApprovedBy  String?
-  exemptionReason      String?
+  concessionCategory  ConcessionCategory @default(NONE)
+  concessionScope     ConcessionScope?
+  concessionAmount    Float              @default(0)
+  exemptionAmount     Float              @default(0)
+  exemptionApprovedBy String?
+  exemptionReason     String?
 
   // Legacy & Total Discount Compatibility
-  discount             Float              @default(0)
-  discountByPercent    Float              @default(0)
-  discountDescription  String?
+  discount            Float   @default(0)
+  discountByPercent   Float   @default(0)
+  discountDescription String?
 
   // Sub-Installment & Merging Hierarchy
   parentVoucherId      String?
-  parentVoucher        FeeStudentClass?   @relation("SubInstallmentHierarchy", fields: [parentVoucherId], references: [sfcId], onDelete: Restrict)
-  subInstallments      FeeStudentClass[]  @relation("SubInstallmentHierarchy")
+  parentVoucher        FeeStudentClass?  @relation("SubInstallmentHierarchy", fields: [parentVoucherId], references: [sfcId], onDelete: Restrict)
+  subInstallments      FeeStudentClass[] @relation("SubInstallmentHierarchy")
   /// 0 = the whole voucher (regular/merged/parent); 1..N = sub-installments of a split parent.
-  subInstallmentIndex  Int                @default(0)
-  totalSubInstallments Int                @default(1)
-  isSplitLocked        Boolean            @default(false)
+  subInstallmentIndex  Int               @default(0)
+  totalSubInstallments Int               @default(1)
+  isSplitLocked        Boolean           @default(false)
   mergedIntoVoucherId  String?
 
   // Fine & Adjustment Metadata
-  lateFee              Float              @default(0)
-  fineNature           FineNature?
-  adjustmentAmount     Float              @default(0)
-  adjustmentReason     String?
+  lateFee          Float       @default(0)
+  fineNature       FineNature?
+  adjustmentAmount Float       @default(0)
+  adjustmentReason String?
 
   // Payment Status & Ledger Flags
-  tuitionPaid          Boolean            @default(false)
-  examFundPaid         Boolean            @default(false)
-  computerLabPaid      Boolean            @default(false)
-  studentIdCardPaid    Boolean            @default(false)
-  infoAndCallsPaid     Boolean            @default(false)
-  admissionFeePaid     Boolean            @default(false)
-  paymentStatus        PaymentStatus      @default(PENDING)
-  amountPaid           Float              @default(0)
-  paymentHistory       Json?              @default("[]")
+  tuitionPaid       Boolean       @default(false)
+  examFundPaid      Boolean       @default(false)
+  computerLabPaid   Boolean       @default(false)
+  studentIdCardPaid Boolean       @default(false)
+  infoAndCallsPaid  Boolean       @default(false)
+  admissionFeePaid  Boolean       @default(false)
+  paymentStatus     PaymentStatus @default(PENDING)
+  amountPaid        Float         @default(0)
+  paymentHistory    Json?         @default("[]")
 
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  fees                 Fees               @relation(fields: [feeId], references: [feeId])
-  StudentClass         StudentClass       @relation(fields: [studentClassId], references: [scId])
+  fees         Fees         @relation(fields: [feeId], references: [feeId])
+  StudentClass StudentClass @relation(fields: [studentClassId], references: [scId])
 
   @@unique([studentClassId, feeId, month, year, subInstallmentIndex])
   @@index([studentClassId])
@@ -247,8 +251,8 @@ model ChallanValidity {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  session           Sessions @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
-  grade             Grades   @relation(fields: [gradeId], references: [classId], onDelete: Cascade)
+  session Sessions @relation(fields: [sessionId], references: [sessionId], onDelete: Cascade)
+  grade   Grades   @relation(fields: [gradeId], references: [classId], onDelete: Cascade)
 
   @@unique([sessionId, gradeId, installmentNo])
   @@index([sessionId, gradeId])
@@ -1267,15 +1271,18 @@ model LeaveBalance {
 }
 
 model ParentGuardian {
-  guardentId        String   @id @default(cuid())
-  username          String   @unique
-  passwordHash      String
-  mobileNumber      String
-  linkedStudentIds  String[] @default([])
-  notificationPrefs String?  @db.Text // JSON
-  isActive          Boolean  @default(true)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  guardentId         String               @id @default(cuid())
+  username           String               @unique
+  passwordHash       String
+  mobileNumber       String
+  linkedStudentIds   String[]             @default([])
+  notificationPrefs  String?              @db.Text // JSON
+  isActive           Boolean              @default(true)
+  /// Bumped to invalidate existing sessions.
+  tokenVersion       Int                  @default(0)
+  mustChangePassword Boolean              @default(false)
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
   DeviceRegistration DeviceRegistration[]
 }
 
@@ -1596,16 +1603,16 @@ model Broadcast {
 }
 
 model DeviceRegistration {
-  id               String          @id @default(cuid())
-  token            String          @unique
+  id               String   @id @default(cuid())
+  token            String   @unique
   platform         String
   userId           String?
   parentGuardianId String?
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
-  User             User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  ParentGuardian   ParentGuardian? @relation(fields: [parentGuardianId], references: [guardentId], onDelete: Cascade)
+  User           User?           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ParentGuardian ParentGuardian? @relation(fields: [parentGuardianId], references: [guardentId], onDelete: Cascade)
 }
 
 enum NotificationCategory {
@@ -1631,8 +1638,8 @@ model Notification {
   createdAt  DateTime             @default(now())
   updatedAt  DateTime             @updatedAt
 
-  User       User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  Receipts   NotificationReceipt[]
+  User     User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  Receipts NotificationReceipt[]
 
   @@index([userId, read])
   @@index([targetRole])
@@ -1662,3 +1669,169 @@ model LoginAttempt {
   updatedAt   DateTime  @updatedAt
 }
 
+// ─── Account security: 2FA, passkeys, sessions, audit ──────────────────────
+// Security rows are keyed by principal (User.id or ParentGuardian.guardentId)
+// because staff/students and parents live in different tables.
+
+enum PrincipalType {
+  USER
+  PARENT
+}
+
+enum OtpPurpose {
+  LOGIN
+  VERIFY_PHONE
+  VERIFY_EMAIL
+  STEP_UP
+}
+
+enum OtpChannel {
+  SMS
+  EMAIL
+}
+
+enum WebAuthnPurpose {
+  REGISTER
+  LOGIN
+  STEP_UP
+}
+
+/// Per-account second-factor settings.
+model AccountSecurity {
+  principalId            String        @id
+  principalType          PrincipalType
+  /// AES-256-GCM encrypted base32 TOTP secret (see src/server/security/crypto.ts).
+  totpSecretEnc          String?
+  totpEnabledAt          DateTime?
+  /// Last accepted TOTP time step, to stop a code being replayed.
+  totpLastStep           Int?
+  /// Secret being enrolled; promoted to totpSecretEnc once a code verifies.
+  totpPendingSecretEnc   String?
+  phone                  String?
+  phoneVerifiedAt        DateTime?
+  smsEnabled             Boolean       @default(false)
+  contactEmail           String?
+  contactEmailVerifiedAt DateTime?
+  emailOtpEnabled        Boolean       @default(false)
+  /// Bumped to forget all "remember this device" cookies.
+  deviceTrustVersion     Int           @default(0)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+}
+
+model WebAuthnCredential {
+  id            String        @id @default(cuid())
+  principalId   String
+  principalType PrincipalType
+  /// base64url credential ID
+  credentialId  String        @unique
+  publicKey     Bytes
+  counter       BigInt        @default(0)
+  transports    String[]      @default([])
+  deviceType    String
+  backedUp      Boolean       @default(false)
+  name          String
+  createdAt     DateTime      @default(now())
+  lastUsedAt    DateTime?
+
+  @@index([principalId])
+}
+
+model WebAuthnChallenge {
+  id             String          @id @default(cuid())
+  challenge      String
+  purpose        WebAuthnPurpose
+  principalId    String?
+  principalType  PrincipalType?
+  /// SHA-256 of the one-time token handed out after a passwordless passkey login.
+  loginTokenHash String?         @unique
+  expiresAt      DateTime
+  consumedAt     DateTime?
+  createdAt      DateTime        @default(now())
+
+  @@index([expiresAt])
+}
+
+model OtpChallenge {
+  id            String        @id @default(cuid())
+  principalId   String
+  principalType PrincipalType
+  purpose       OtpPurpose
+  channel       OtpChannel
+  /// Normalised phone (E.164) or email the code was sent to.
+  destination   String
+  codeHash      String
+  attempts      Int           @default(0)
+  expiresAt     DateTime
+  consumedAt    DateTime?
+  createdAt     DateTime      @default(now())
+
+  @@index([principalId, purpose, createdAt])
+}
+
+model BackupCode {
+  id          String    @id @default(cuid())
+  principalId String
+  codeHash    String
+  usedAt      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([principalId])
+}
+
+/// One row per signed-in browser/device; the JWT carries its id (sid).
+model AuthSession {
+  id            String        @id @default(cuid())
+  principalId   String
+  principalType PrincipalType
+  createdAt     DateTime      @default(now())
+  lastSeenAt    DateTime      @default(now())
+  revokedAt     DateTime?
+  ip            String?
+  userAgent     String?
+  /// True until the second factor is verified for this sign-in.
+  mfaPending    Boolean       @default(false)
+  mfaVerifiedAt DateTime?
+  /// How the sign-in was completed: password, password+totp, passkey, ...
+  method        String?
+
+  @@index([principalId, revokedAt])
+}
+
+model SecurityEvent {
+  id            String        @id @default(cuid())
+  principalId   String
+  principalType PrincipalType
+  type          String
+  detail        Json?
+  ip            String?
+  userAgent     String?
+  createdAt     DateTime      @default(now())
+
+  @@index([principalId, createdAt])
+}
+
+model AdminAuditLog {
+  id         String   @id @default(cuid())
+  actorId    String
+  actorRole  String
+  actorName  String?
+  targetId   String?
+  targetType String?
+  targetName String?
+  action     String
+  detail     Json?
+  ip         String?
+  createdAt  DateTime @default(now())
+
+  @@index([targetId, createdAt])
+  @@index([createdAt])
+}
+
+/// Roles whose members must have a second factor before using the portal.
+model RoleSecurityPolicy {
+  role       String   @id
+  require2fa Boolean  @default(false)
+  updatedAt  DateTime @updatedAt
+  updatedBy  String?
+}
