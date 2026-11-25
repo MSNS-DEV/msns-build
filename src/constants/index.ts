@@ -7,5 +7,6 @@ export const RedirectMap: Record<string, string> = {
   WORKER: "/worker",
   ALL: "/sign-in",
   STUDENT: "/student",
+  PARENT: "/parent/dashboard",
   NONE: "/sign-in",
 };

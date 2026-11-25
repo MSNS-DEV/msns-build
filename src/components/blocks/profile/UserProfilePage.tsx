@@ -19,15 +19,13 @@ import { Switch } from "~/components/ui/switch";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
 import { toast } from "~/hooks/use-toast";
+import SecuritySettings from "~/components/blocks/security/SecuritySettings";
 import {
   User,
   Mail,
   Shield,
   Calendar,
-  Lock,
   Camera,
-  Eye,
-  EyeOff,
   Bell,
   Save,
   Loader2,
@@ -102,15 +100,6 @@ export default function UserProfilePage() {
   const { data: user, isLoading } = api.profile.getProfile.useQuery();
   const roleTheme = getRoleTheme(session?.user?.accountType ?? "");
 
-  // Password state
-  const [showCurrent, setShowCurrent] = useState(false);
-  const [showNew, setShowNew] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [currentPw, setCurrentPw] = useState("");
-  const [newPw, setNewPw] = useState("");
-  const [confirmPw, setConfirmPw] = useState("");
-  const [pwLoading, setPwLoading] = useState(false);
-
   // Profile details state
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
@@ -121,7 +110,6 @@ export default function UserProfilePage() {
   const [pushNotifs, setPushNotifs] = useState(false);
   const [marketing, setMarketing] = useState(false);
   const [visibility, setVisibility] = useState(true);
-  const [twoFactor, setTwoFactor] = useState(false);
   const [settingsLoading, setSettingsLoading] = useState(false);
 
   // Avatar upload state
@@ -136,27 +124,8 @@ export default function UserProfilePage() {
       setPushNotifs(user.pushNotifications);
       setMarketing(user.marketingEmails);
       setVisibility(user.profileVisibility);
-      setTwoFactor(user.twoFactorAuth);
     }
   }, [user]);
-
-  const changePassword = api.profile.updateProfile.useMutation({
-    onSuccess: () => {
-      toast({ title: "Password changed successfully." });
-      setCurrentPw("");
-      setNewPw("");
-      setConfirmPw("");
-      setPwLoading(false);
-    },
-    onError: (err) => {
-      toast({
-        title: "Error",
-        description: err.message,
-        variant: "destructive",
-      });
-      setPwLoading(false);
-    },
-  });
 
   const updateProfile = api.profile.updateProfile.useMutation({
     onSuccess: () => {
@@ -190,41 +159,6 @@ export default function UserProfilePage() {
     },
   });
 
-  const handleChangePassword = () => {
-    if (!currentPw) {
-      toast({
-        title: "Validation Error",
-        description: "Current password is required.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (newPw.length < 6) {
-      toast({
-        title: "Validation Error",
-        description: "New password must be at least 6 characters.",
-        variant: "destructive",
-      });
-      return;
-    }
-    if (newPw !== confirmPw) {
-      toast({
-        title: "Validation Error",
-        description: "Passwords do not match.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setPwLoading(true);
-    changePassword.mutate({
-      username: user?.username ?? "",
-      email: user?.email ?? "",
-      currentPassword: currentPw,
-      newPassword: newPw,
-    });
-  };
-
   const handleUpdateProfile = () => {
     setProfileLoading(true);
     updateProfile.mutate({ username, bio, email: user?.email ?? "" });
@@ -237,7 +171,6 @@ export default function UserProfilePage() {
       pushNotifications: pushNotifs,
       marketingEmails: marketing,
       profileVisibility: visibility,
-      twoFactorAuth: twoFactor,
     });
   };
 
@@ -435,110 +368,11 @@ export default function UserProfilePage() {
               </Button>
             </CardContent>
           </Card>
-
-          {/* Change Password Card */}
-          <Card className="border-border bg-card shadow-sm">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Lock className="h-4 w-4 text-amber-500" /> Change Password
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Ensure your account is using a strong password.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Current Password</Label>
-                <div className="relative">
-                  <Input
-                    type={showCurrent ? "text" : "password"}
-                    value={currentPw}
-                    onChange={(e) => setCurrentPw(e.target.value)}
-                    placeholder="••••••••"
-                    className="pr-9 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowCurrent(!showCurrent)}
-                    className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
-                  >
-                    {showCurrent ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5">
-                  <Label className="text-xs">New Password</Label>
-                  <div className="relative">
-                    <Input
-                      type={showNew ? "text" : "password"}
-                      value={newPw}
-                      onChange={(e) => setNewPw(e.target.value)}
-                      placeholder="••••••••"
-                      className="pr-9 text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowNew(!showNew)}
-                      className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
-                    >
-                      {showNew ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs">Confirm New Password</Label>
-                  <div className="relative">
-                    <Input
-                      type={showConfirm ? "text" : "password"}
-                      value={confirmPw}
-                      onChange={(e) => setConfirmPw(e.target.value)}
-                      placeholder="••••••••"
-                      className="pr-9 text-sm"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowConfirm(!showConfirm)}
-                      className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
-                    >
-                      {showConfirm ? (
-                        <EyeOff className="h-4 w-4" />
-                      ) : (
-                        <Eye className="h-4 w-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleChangePassword}
-                disabled={pwLoading || !currentPw || !newPw}
-                size="sm"
-                variant="outline"
-                className="border-amber-500/30 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400"
-              >
-                {pwLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Lock className="mr-2 h-4 w-4" />
-                )}
-                Update Password
-              </Button>
-            </CardContent>
-          </Card>
         </div>
       </div>
+
+      {/* Security: password, two-factor methods, devices, activity */}
+      <SecuritySettings />
     </div>
   );
 }

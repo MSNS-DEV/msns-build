@@ -14,6 +14,7 @@ import {
   Images,
   BarChart3,
   FileSpreadsheet,
+  ShieldCheck,
 } from "lucide-react";
 import {
   Sidebar,
@@ -122,6 +123,11 @@ const data: NavigationConfig = {
       url: "/admin/users/student/view",
       icon: GraduationCap,
     },
+    {
+      title: "Accounts & Access",
+      url: "/admin/users/accounts",
+      icon: ShieldCheck,
+    },
     { title: "Documents", url: "/documents", icon: FileText },
     { title: "Profile", url: "/admin/users/profile", icon: User },
     { title: "Gallery", url: "/admin/gallery", icon: Images },
@@ -157,6 +163,11 @@ const data: NavigationConfig = {
       title: "Students",
       url: "/admin/users/student/view",
       icon: GraduationCap,
+    },
+    {
+      title: "Accounts & Access",
+      url: "/admin/users/accounts",
+      icon: ShieldCheck,
     },
     { title: "Documents", url: "/documents", icon: FileText },
     { title: "Profile", url: "/principal/profile", icon: User },

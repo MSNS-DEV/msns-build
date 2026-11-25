@@ -3,7 +3,8 @@
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { LogOut, GraduationCap, User } from "lucide-react";
+import Link from "next/link";
+import { LogOut, GraduationCap, ShieldCheck, User } from "lucide-react";
 import { Button } from "~/components/ui/button";
 
 export default function ParentLayout({
@@ -52,6 +53,13 @@ export default function ParentLayout({
           </div>
 
           <div className="flex items-center gap-2">
+            <Link
+              href="/parent/security"
+              className="flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
+            >
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
+              Security
+            </Link>
             <div className="hidden items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-400 sm:flex">
               <User className="h-3.5 w-3.5 text-emerald-400" />
               <span>{session?.user?.username ?? "Parent"}</span>

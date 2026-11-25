@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
+  Fingerprint,
+  Loader2,
   Lock,
   Mail,
 } from "lucide-react";
@@ -26,6 +28,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { RedirectMap } from "~/constants";
+import { api } from "~/trpc/react";
+import { usePasskeySupport } from "~/components/blocks/security/shared";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -37,7 +41,13 @@ export const LoginForm = () => {
   const session = useSession();
   const [visible, setVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [alert, setAlert] = useState(false);
+  const [alert, setAlert] = useState<
+    null | "credentials" | "suspended" | "passkey"
+  >(null);
+  const [passkeyBusy, setPasskeyBusy] = useState(false);
+  const passkeySupport = usePasskeySupport();
+  const passkeyOptions = api.security.passkeyLoginOptions.useMutation();
+  const passkeyVerify = api.security.passkeyLoginVerify.useMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -46,6 +56,19 @@ export const LoginForm = () => {
   useEffect(() => {
     if (session.data) {
       const user = session.data.user;
+      // Finish sign-in first: second factor, then any required account setup.
+      if (user.twoFactorPending) {
+        router.push("/sign-in/verify");
+        return;
+      }
+      if (user.mustChangePassword) {
+        router.push("/account/change-password");
+        return;
+      }
+      if (user.twoFactorEnrollRequired) {
+        router.push("/account/security-setup");
+        return;
+      }
       void import("~/lib/mobile/device-auth").then(
         ({ saveDeviceAuthSession }) => {
           void saveDeviceAuthSession({
@@ -79,7 +102,7 @@ export const LoginForm = () => {
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
-      setAlert(false);
+      setAlert(null);
       setSubmitting(true);
       const signInData = await signIn("credentials", {
         email: values.email,
@@ -87,7 +110,7 @@ export const LoginForm = () => {
         redirect: false,
       });
       if (signInData?.error) {
-        setAlert(true);
+        setAlert(signInData.code === "suspended" ? "suspended" : "credentials");
       } else {
         void import("~/lib/mobile/device-auth").then(
           ({ saveDeviceAuthSession }) => {
@@ -109,6 +132,28 @@ export const LoginForm = () => {
     }
   };
 
+  const signInWithPasskey = async () => {
+    setAlert(null);
+    setPasskeyBusy(true);
+    try {
+      const { startAuthentication } = await import("@simplewebauthn/browser");
+      const { challengeId, options } = await passkeyOptions.mutateAsync();
+      const response = await startAuthentication({ optionsJSON: options });
+      const { token } = await passkeyVerify.mutateAsync({
+        challengeId,
+        response,
+      });
+      const result = await signIn("passkey", { token, redirect: false });
+      if (result?.error) {
+        setAlert(result.code === "suspended" ? "suspended" : "passkey");
+      }
+    } catch (error) {
+      if ((error as Error).name !== "NotAllowedError") setAlert("passkey");
+    } finally {
+      setPasskeyBusy(false);
+    }
+  };
+
   return (
     <div className="relative mx-auto w-full max-w-md sm:max-w-lg lg:max-w-xl">
       <div className="overflow-hidden rounded-2xl bg-green-700/20 shadow-xl backdrop-blur-md transition-all duration-300 hover:shadow-blue-100/50 dark:bg-card dark:hover:shadow-blue-900/20">
@@ -123,9 +168,17 @@ export const LoginForm = () => {
               {alert && (
                 <Alert variant="destructive" className="animate-shake">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Authentication Failed</AlertTitle>
+                  <AlertTitle>
+                    {alert === "suspended"
+                      ? "Account suspended"
+                      : "Authentication Failed"}
+                  </AlertTitle>
                   <AlertDescription>
-                    The email or password you entered is incorrect
+                    {alert === "suspended"
+                      ? "This account has been suspended. Please contact the school office."
+                      : alert === "passkey"
+                        ? "That passkey couldn't sign you in. Try again or use your password."
+                        : "The email or password you entered is incorrect"}
                   </AlertDescription>
                 </Alert>
               )}
@@ -212,6 +265,30 @@ export const LoginForm = () => {
                   </div>
                 )}
               </Button>
+
+              {passkeySupport.supported && (
+                <>
+                  <div className="flex items-center gap-3 text-xs text-foreground/60">
+                    <span className="h-px flex-1 bg-border" />
+                    or
+                    <span className="h-px flex-1 bg-border" />
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    disabled={passkeyBusy || submitting}
+                    onClick={() => void signInWithPasskey()}
+                  >
+                    {passkeyBusy ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Fingerprint className="mr-2 h-4 w-4" />
+                    )}
+                    Sign in with a passkey
+                  </Button>
+                </>
+              )}
             </form>
           </Form>
 
