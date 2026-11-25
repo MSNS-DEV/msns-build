@@ -9,7 +9,7 @@ const updateProfileSchema = z.object({
   bio: z.string().max(500).optional(),
   profilePic: z.string().optional(),
   currentPassword: z.string().optional(),
-  newPassword: z.string().min(6).max(100).optional(),
+  newPassword: z.string().min(8).max(100).optional(),
 });
 
 const updateBioSchema = z.object({
@@ -44,6 +44,7 @@ export const ProfileRouter = createTRPCRouter({
           profileVisibility: true,
           pushNotifications: true,
           twoFactorAuth: true,
+          mustChangePassword: true,
         },
       });
 
@@ -81,6 +82,7 @@ export const ProfileRouter = createTRPCRouter({
           bio?: string;
           profilePic?: string;
           password?: string;
+          mustChangePassword?: boolean;
         } = {
           username,
           email: email.toLowerCase(),
@@ -117,7 +119,15 @@ export const ProfileRouter = createTRPCRouter({
             });
           }
 
+          if (newPassword === currentPassword) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "New password must be different from the current password",
+            });
+          }
+
           updateData.password = await hash(newPassword, 10);
+          updateData.mustChangePassword = false;
         }
 
         const updatedUser = await ctx.db.user.update({
