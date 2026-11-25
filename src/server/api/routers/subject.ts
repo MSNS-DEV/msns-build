@@ -154,13 +154,17 @@ export const subjectRouter = createTRPCRouter({
           });
         }
 
-        return await ctx.db.classSubject.create({
-          data: {
-            classId: input.classId,
-            subjectId: input.subjectId,
-            employeeId: input.employeeId,
-            sessionId: input.sessionId,
-          },
+        const key = {
+          classId: input.classId,
+          subjectId: input.subjectId,
+          employeeId: input.employeeId,
+          sessionId: input.sessionId,
+        };
+        // Re-assigning the same teacher to the same class subject is a no-op, not an error.
+        return await ctx.db.classSubject.upsert({
+          where: { classId_subjectId_employeeId_sessionId: key },
+          update: {},
+          create: key,
           include: {
             Subject: true,
             Employees: true,

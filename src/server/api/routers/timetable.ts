@@ -1,7 +1,7 @@
 import { createTRPCRouter, protectedProcedure, officeProcedure, teacherProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import type { DayOfWeek } from "@prisma/client";
+import type { DayOfWeek, PrismaClient } from "@prisma/client";
 
 const dayEnum = z.enum([
   "Monday",
@@ -12,6 +12,59 @@ const dayEnum = z.enum([
   "Saturday",
   "Sunday",
 ] as const);
+
+/**
+ * Refuses to book a teacher (primary or co-teacher) into two classes in the same lecture.
+ * Co-teachers are the ClassSubject allotments for a slot's class and subject.
+ */
+async function assertNoTeacherClash(
+  db: PrismaClient,
+  args: {
+    sessionId: string;
+    classId: string;
+    days: DayOfWeek[];
+    lectureNumber: number;
+    employeeIds: string[];
+  },
+) {
+  const others = await db.timetable.findMany({
+    where: {
+      sessionId: args.sessionId,
+      lectureNumber: args.lectureNumber,
+      dayOfWeek: { in: args.days },
+      classId: { not: args.classId },
+    },
+    select: {
+      classId: true,
+      subjectId: true,
+      dayOfWeek: true,
+      employeeId: true,
+      Grades: { select: { grade: true, section: true } },
+    },
+  });
+  if (others.length === 0) return;
+
+  const coTeachers = await db.classSubject.findMany({
+    where: {
+      sessionId: args.sessionId,
+      employeeId: { in: args.employeeIds },
+      OR: others.map((o) => ({ classId: o.classId, subjectId: o.subjectId })),
+    },
+    select: { classId: true, subjectId: true, employeeId: true },
+  });
+
+  for (const o of others) {
+    const busy =
+      args.employeeIds.includes(o.employeeId) ||
+      coTeachers.some((c) => c.classId === o.classId && c.subjectId === o.subjectId);
+    if (busy) {
+      throw new TRPCError({
+        code: "CONFLICT",
+        message: `A selected teacher already teaches ${o.Grades.grade} ${o.Grades.section} in lecture ${args.lectureNumber} on ${o.dayOfWeek}.`,
+      });
+    }
+  }
+}
 
 export const timetableRouter = createTRPCRouter({
   // Get all timetable entries with relations
@@ -61,30 +114,33 @@ export const timetableRouter = createTRPCRouter({
 
   // Get timetable for a specific teacher (includes primary and co-assigned lectures)
   getTimetableByTeacher: protectedProcedure
-    .input(z.object({ employeeId: z.string().min(1) }))
+    .input(z.object({ employeeId: z.string().min(1), sessionId: z.string().optional() }))
     .query(async ({ ctx, input }) => {
       try {
-        // Find class-subjects where this teacher is assigned as primary or co-teacher
+        // Default to the active session so past years' slots are not mixed in.
+        const sessionId =
+          input.sessionId ??
+          (await ctx.db.sessions.findFirst({ where: { isActive: true }, select: { sessionId: true } }))
+            ?.sessionId;
+
+        // Class-subjects where this teacher is primary or co-teacher
         const teacherCS = await ctx.db.classSubject.findMany({
-          where: { employeeId: input.employeeId },
+          where: { employeeId: input.employeeId, ...(sessionId ? { sessionId } : {}) },
           select: { classId: true, subjectId: true, sessionId: true },
         });
 
-        const subjectIds = Array.from(new Set(teacherCS.map((cs) => cs.subjectId)));
-        const classIds = Array.from(new Set(teacherCS.map((cs) => cs.classId)));
-
         return await ctx.db.timetable.findMany({
           where: {
+            ...(sessionId ? { sessionId } : {}),
             OR: [
               { employeeId: input.employeeId },
-              ...(classIds.length > 0 && subjectIds.length > 0
-                ? [
-                    {
-                      classId: { in: classIds },
-                      subjectId: { in: subjectIds },
-                    },
-                  ]
-                : []),
+              // Exact (class, subject, session) allotments only; matching any of the
+              // teacher's classes with any of their subjects showed other teachers' slots.
+              ...teacherCS.map((cs) => ({
+                classId: cs.classId,
+                subjectId: cs.subjectId,
+                sessionId: cs.sessionId,
+              })),
             ],
           },
           include: {
@@ -191,29 +247,30 @@ export const timetableRouter = createTRPCRouter({
           finalSubjectId = combinedSubject.subjectId;
         }
 
+        await assertNoTeacherClash(ctx.db, {
+          sessionId: input.sessionId,
+          classId: input.classId,
+          days: [input.dayOfWeek as DayOfWeek],
+          lectureNumber: input.lectureNumber,
+          employeeIds,
+        });
+
         // Ensure ClassSubject allotment exists for each subject and teacher combination
         const allSubjectIds = Array.from(new Set([...subjectIds, finalSubjectId]));
         for (const sId of allSubjectIds) {
           for (const eId of employeeIds) {
-            const existingCS = await ctx.db.classSubject.findFirst({
-              where: {
-                classId: input.classId,
-                sessionId: input.sessionId,
-                subjectId: sId,
-                employeeId: eId,
-              },
+            // Upsert on the unique allotment key: safe if two requests race.
+            const key = {
+              classId: input.classId,
+              subjectId: sId,
+              employeeId: eId,
+              sessionId: input.sessionId,
+            };
+            await ctx.db.classSubject.upsert({
+              where: { classId_subjectId_employeeId_sessionId: key },
+              update: {},
+              create: key,
             });
-
-            if (!existingCS) {
-              await ctx.db.classSubject.create({
-                data: {
-                  classId: input.classId,
-                  sessionId: input.sessionId,
-                  subjectId: sId,
-                  employeeId: eId,
-                },
-              });
-            }
           }
         }
 
@@ -349,29 +406,30 @@ export const timetableRouter = createTRPCRouter({
           finalSubjectId = combinedSubject.subjectId;
         }
 
+        await assertNoTeacherClash(ctx.db, {
+          sessionId: input.sessionId,
+          classId: input.classId,
+          days: input.days as DayOfWeek[],
+          lectureNumber: input.lectureNumber,
+          employeeIds,
+        });
+
         // Ensure ClassSubject allotment exists for each subject and teacher combination
         const allSubjectIds = Array.from(new Set([...subjectIds, finalSubjectId]));
         for (const sId of allSubjectIds) {
           for (const eId of employeeIds) {
-            const existingCS = await ctx.db.classSubject.findFirst({
-              where: {
-                classId: input.classId,
-                sessionId: input.sessionId,
-                subjectId: sId,
-                employeeId: eId,
-              },
+            // Upsert on the unique allotment key: safe if two requests race.
+            const key = {
+              classId: input.classId,
+              subjectId: sId,
+              employeeId: eId,
+              sessionId: input.sessionId,
+            };
+            await ctx.db.classSubject.upsert({
+              where: { classId_subjectId_employeeId_sessionId: key },
+              update: {},
+              create: key,
             });
-
-            if (!existingCS) {
-              await ctx.db.classSubject.create({
-                data: {
-                  classId: input.classId,
-                  sessionId: input.sessionId,
-                  subjectId: sId,
-                  employeeId: eId,
-                },
-              });
-            }
           }
         }
 
