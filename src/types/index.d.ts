@@ -496,5 +496,5 @@ type FingerPrintResponseProps = {
 
 declare module "@vercel/speed-insights/next" {
   import type { ComponentType } from "react";
-  export const SpeedInsights: ComponentType<any>;
+  export const SpeedInsights: ComponentType<Record<string, unknown>>;
 }

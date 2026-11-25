@@ -97,17 +97,16 @@ export function SubjectAssignmentDialog({
   );
 
   const subjects = subjectsQuery.data ?? [];
-  const rawEmployees = employeesQuery.data ?? [];
+  const employeesData = employeesQuery.data;
 
   // Enforce active only and exclude workers strictly
   const eligibleEmployees = useMemo(() => {
-    return rawEmployees.filter(
+    return (employeesData ?? []).filter(
       (e) =>
         e.status === "Active" &&
-        e.designation !== "WORKER" &&
-        e.designation !== ("Worker" as any),
+        String(e.designation).toUpperCase() !== "WORKER",
     );
-  }, [rawEmployees]);
+  }, [employeesData]);
 
   const assignToSlotSingle = api.timetable.assignTeacher.useMutation();
   const assignToSlotBulk = api.timetable.assignTeacherBulk.useMutation();

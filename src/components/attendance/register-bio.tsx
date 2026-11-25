@@ -157,6 +157,7 @@ export const RegisterEmployeeBioMetric = ({
     }
   }, [
     employeeId,
+    employeeName,
     fingerMutation,
     currentCapture,
     totalCaptures,
