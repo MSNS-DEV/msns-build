@@ -18,7 +18,8 @@ export default function SecuritySetupPage() {
     if (status === "unauthenticated") router.replace("/sign-in");
   }, [status, router]);
 
-  if (status !== "authenticated") {
+  // Only the first load shows a spinner; session refreshes must not unmount the form.
+  if (!session) {
     return (
       <AuthShell title="Set up two-factor authentication">
         <div className="flex justify-center py-8">

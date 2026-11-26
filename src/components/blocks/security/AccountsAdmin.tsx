@@ -61,7 +61,7 @@ import {
 } from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { Textarea } from "~/components/ui/textarea";
-import { toast } from "~/hooks/use-toast";
+import { toast } from "~/components/blocks/security/notify";
 import {
   describeDevice,
   eventLabel,

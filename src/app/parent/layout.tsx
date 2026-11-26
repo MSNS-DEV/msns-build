@@ -21,7 +21,8 @@ export default function ParentLayout({
     }
   }, [status, router]);
 
-  if (status === "loading") {
+  // Only on first load: session refreshes (e.g. after enabling 2FA) must not unmount the page.
+  if (status === "loading" && !session) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-slate-950 text-emerald-400">
         <div className="flex flex-col items-center gap-3">

@@ -27,7 +27,7 @@ import {
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Skeleton } from "~/components/ui/skeleton";
-import { toast } from "~/hooks/use-toast";
+import { toast } from "~/components/blocks/security/notify";
 import {
   describeDevice,
   eventLabel,

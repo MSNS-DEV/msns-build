@@ -18,7 +18,7 @@ import { Textarea } from "~/components/ui/textarea";
 import { Switch } from "~/components/ui/switch";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
-import { toast } from "~/hooks/use-toast";
+import { toast } from "~/components/blocks/security/notify";
 import SecuritySettings from "~/components/blocks/security/SecuritySettings";
 import {
   User,

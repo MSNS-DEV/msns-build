@@ -25,7 +25,8 @@ export default function ForcedChangePasswordPage() {
     router.refresh();
   };
 
-  if (status !== "authenticated") {
+  // Only the first load shows a spinner; session refreshes must not unmount the form.
+  if (!session) {
     return (
       <AuthShell title="Change your password">
         <div className="flex justify-center py-8">

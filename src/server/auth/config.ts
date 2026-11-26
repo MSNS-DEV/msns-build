@@ -353,6 +353,24 @@ export const authConfig = {
       }
     },
   },
+  events: {
+    /** Signing out ends this device's server-side session too. */
+    async signOut(message) {
+      const sid =
+        "token" in message
+          ? (message.token as (AppToken & Record<string, unknown>) | null)?.sid
+          : undefined;
+      if (!sid) return;
+      await db.authSession
+        .updateMany({
+          where: { id: sid, revokedAt: null },
+          data: { revokedAt: new Date() },
+        })
+        .catch((error: unknown) =>
+          console.error("Failed to end session on sign-out", error),
+        );
+    },
+  },
   pages: {
     signIn: "/",
     error: "/auth/error",
