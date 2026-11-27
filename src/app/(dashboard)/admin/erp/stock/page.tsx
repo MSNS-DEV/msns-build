@@ -8,10 +8,33 @@ import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "~/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "~/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Package, Plus, Loader2, AlertTriangle, ArrowDown, RefreshCw, Layers, DollarSign, ShoppingBag } from "lucide-react";
+import {
+  Package,
+  Plus,
+  Loader2,
+  AlertTriangle,
+  ArrowDown,
+  RefreshCw,
+  Layers,
+  DollarSign,
+  ShoppingBag,
+} from "lucide-react";
 import { toast } from "sonner";
 import { GradientStatCard } from "~/components/shared/GradientStatCard";
 import { PageExportButton } from "~/components/shared/PageExportButton";
@@ -19,41 +42,74 @@ import { Separator } from "~/components/ui/separator";
 
 export default function StockPage() {
   const [showItemDialog, setShowItemDialog] = useState(false);
-  const [showStockOutDialog, setShowStockOutDialog] = useState<string | null>(null);
+  const [showStockOutDialog, setShowStockOutDialog] = useState<string | null>(
+    null,
+  );
   const [showReconDialog, setShowReconDialog] = useState<string | null>(null);
-  const [itemForm, setItemForm] = useState({ itemName: "", category: "", unit: "pcs", reorderLevel: 10, costPerUnit: 0 });
-  const [stockOutForm, setStockOutForm] = useState({ quantity: 1, purpose: "" });
-  const [reconForm, setReconForm] = useState({ physicalCount: 0, explanation: "" });
+  const [itemForm, setItemForm] = useState({
+    itemName: "",
+    category: "",
+    unit: "pcs",
+    reorderLevel: 10,
+    costPerUnit: 0,
+  });
+  const [stockOutForm, setStockOutForm] = useState({
+    quantity: 1,
+    purpose: "",
+  });
+  const [reconForm, setReconForm] = useState({
+    physicalCount: 0,
+    explanation: "",
+  });
   const [lowStockOnly, setLowStockOnly] = useState(false);
 
   // Fetch all items (without low stock filter) for general stats & export
-  const { data: allItems, isLoading: isItemsLoading, refetch } = api.erp.stock.getAll.useQuery({ lowStockOnly: false });
-  const { data: valuation, isLoading: isValuationLoading } = api.erp.stock.getValuationReport.useQuery();
+  const {
+    data: allItems,
+    isLoading: isItemsLoading,
+    refetch,
+  } = api.erp.stock.getAll.useQuery({ lowStockOnly: false });
+  const { data: valuation, isLoading: isValuationLoading } =
+    api.erp.stock.getValuationReport.useQuery();
 
   const createItem = api.erp.stock.createItem.useMutation({
-    onSuccess: () => { toast.success("Item created"); setShowItemDialog(false); void refetch(); },
-    onError: e => toast.error(e.message),
+    onSuccess: () => {
+      toast.success("Item created");
+      setShowItemDialog(false);
+      void refetch();
+    },
+    onError: (e) => toast.error(e.message),
   });
   const stockOut = api.erp.stock.recordStockOut.useMutation({
-    onSuccess: () => { toast.success("Stock-out recorded"); setShowStockOutDialog(null); void refetch(); },
-    onError: e => toast.error(e.message),
+    onSuccess: () => {
+      toast.success("Stock-out recorded");
+      setShowStockOutDialog(null);
+      void refetch();
+    },
+    onError: (e) => toast.error(e.message),
   });
   const reconcile = api.erp.stock.recordReconciliation.useMutation({
-    onSuccess: (data) => { toast.success(`Reconciled. Variance: ${data.variance > 0 ? "+" : ""}${data.variance}`); setShowReconDialog(null); void refetch(); },
-    onError: e => toast.error(e.message),
+    onSuccess: (data) => {
+      toast.success(
+        `Reconciled. Variance: ${data.variance > 0 ? "+" : ""}${data.variance}`,
+      );
+      setShowReconDialog(null);
+      void refetch();
+    },
+    onError: (e) => toast.error(e.message),
   });
 
   // Calculate filtered list for table view if lowStockOnly is true
   const displayedItems = useMemo(() => {
     if (!allItems) return [];
-    return lowStockOnly ? allItems.filter(i => i.isLowStock) : allItems;
+    return lowStockOnly ? allItems.filter((i) => i.isLowStock) : allItems;
   }, [allItems, lowStockOnly]);
 
   const totalValue = valuation?.totalValue ?? 0;
-  const lowStockCount = allItems?.filter(i => i.isLowStock).length ?? 0;
+  const lowStockCount = allItems?.filter((i) => i.isLowStock).length ?? 0;
   const totalCategoriesCount = useMemo(() => {
     if (!allItems) return 0;
-    return new Set(allItems.map(i => i.category)).size;
+    return new Set(allItems.map((i) => i.category)).size;
   }, [allItems]);
   const totalStockQuantity = useMemo(() => {
     if (!allItems) return 0;
@@ -74,7 +130,7 @@ export default function StockPage() {
         { key: "stockValue", label: "Stock Value (PKR)" },
         { key: "status", label: "Status" },
       ],
-      rows: allItems.map(item => ({
+      rows: allItems.map((item) => ({
         itemName: item.itemName,
         category: item.category,
         quantityOnHand: item.quantityOnHand,
@@ -101,34 +157,111 @@ export default function StockPage() {
           </div>
           <div>
             <h1 className="bg-gradient-to-r from-white via-amber-200 to-amber-400 bg-clip-text font-serif text-3xl font-bold tracking-tight text-transparent drop-shadow-sm sm:text-4xl">
-              Inventory <span className="text-amber-500 dark:text-amber-400">&amp; Stock</span>
+              Inventory{" "}
+              <span className="text-amber-500 dark:text-amber-400">
+                &amp; Stock
+              </span>
             </h1>
-            <p className="text-sm text-muted-foreground">Track items, movements, and valuations</p>
+            <p className="text-sm text-muted-foreground">
+              Track items, movements, and valuations
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <PageExportButton exportData={exportData} csvFilename="inventory-stock-register" />
+          <PageExportButton
+            exportData={exportData}
+            csvFilename="inventory-stock-register"
+          />
 
           <Dialog open={showItemDialog} onOpenChange={setShowItemDialog}>
             <DialogTrigger asChild>
-              <Button className="bg-amber-600 text-white hover:bg-amber-700 shadow-md shadow-amber-900/20">
+              <Button className="bg-amber-600 text-white shadow-md shadow-amber-900/20 hover:bg-amber-700">
                 <Plus className="mr-2 h-4 w-4" /> Add Item
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
-              <DialogHeader><DialogTitle>New Inventory Item</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>New Inventory Item</DialogTitle>
+              </DialogHeader>
               <div className="space-y-3 pt-2">
-                <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Item Name</Label><Input value={itemForm.itemName} onChange={e => setItemForm({ ...itemForm, itemName: e.target.value })} /></div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Category</Label><Input value={itemForm.category} onChange={e => setItemForm({ ...itemForm, category: e.target.value })} /></div>
-                  <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Unit</Label><Input value={itemForm.unit} onChange={e => setItemForm({ ...itemForm, unit: e.target.value })} /></div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Item Name
+                  </Label>
+                  <Input
+                    value={itemForm.itemName}
+                    onChange={(e) =>
+                      setItemForm({ ...itemForm, itemName: e.target.value })
+                    }
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Reorder Level</Label><Input type="number" value={itemForm.reorderLevel} onChange={e => setItemForm({ ...itemForm, reorderLevel: parseInt(e.target.value) })} /></div>
-                  <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Cost/Unit (PKR)</Label><Input type="number" value={itemForm.costPerUnit || ""} onChange={e => setItemForm({ ...itemForm, costPerUnit: parseFloat(e.target.value) })} /></div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Category
+                    </Label>
+                    <Input
+                      value={itemForm.category}
+                      onChange={(e) =>
+                        setItemForm({ ...itemForm, category: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Unit
+                    </Label>
+                    <Input
+                      value={itemForm.unit}
+                      onChange={(e) =>
+                        setItemForm({ ...itemForm, unit: e.target.value })
+                      }
+                    />
+                  </div>
                 </div>
-                <Button className="w-full bg-amber-600 text-white hover:bg-amber-700" disabled={createItem.isPending || !itemForm.itemName} onClick={() => createItem.mutate(itemForm)}>
-                  {createItem.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />} Create Item
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Reorder Level
+                    </Label>
+                    <Input
+                      type="number"
+                      value={itemForm.reorderLevel}
+                      onChange={(e) =>
+                        setItemForm({
+                          ...itemForm,
+                          reorderLevel: parseInt(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Cost/Unit (PKR)
+                    </Label>
+                    <Input
+                      type="number"
+                      value={itemForm.costPerUnit || ""}
+                      onChange={(e) =>
+                        setItemForm({
+                          ...itemForm,
+                          costPerUnit: parseFloat(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <Button
+                  className="w-full bg-amber-600 text-white hover:bg-amber-700"
+                  disabled={createItem.isPending || !itemForm.itemName}
+                  onClick={() => createItem.mutate(itemForm)}
+                >
+                  {createItem.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Plus className="mr-2 h-4 w-4" />
+                  )}{" "}
+                  Create Item
                 </Button>
               </div>
             </DialogContent>
@@ -139,10 +272,12 @@ export default function StockPage() {
       <Separator className="bg-amber-500/20" />
 
       {/* Metrics Cards */}
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+      <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
         <GradientStatCard
           title="Stock Items Value"
-          value={isValuationLoading ? "..." : `PKR ${totalValue.toLocaleString()}`}
+          value={
+            isValuationLoading ? "..." : `PKR ${totalValue.toLocaleString()}`
+          }
           icon={<DollarSign className="h-5 w-5" />}
           theme="amber"
           subtitle="Total valuation of assets"
@@ -156,7 +291,11 @@ export default function StockPage() {
         />
         <GradientStatCard
           title="Total Stock Count"
-          value={isItemsLoading ? "..." : `${totalStockQuantity.toLocaleString()} units`}
+          value={
+            isItemsLoading
+              ? "..."
+              : `${totalStockQuantity.toLocaleString()} units`
+          }
           icon={<ShoppingBag className="h-5 w-5" />}
           theme="emerald"
           subtitle="Total units currently on hand"
@@ -180,9 +319,17 @@ export default function StockPage() {
           <Card className="border-slate-200 bg-white/50 shadow-sm dark:border-border dark:bg-card">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-border dark:bg-black/20">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold">Inventory Register</CardTitle>
-                <Button size="sm" variant="outline" onClick={() => setLowStockOnly(!lowStockOnly)} className="h-7 text-xs">
-                  <AlertTriangle className="mr-1 h-3 w-3" /> {lowStockOnly ? "Show All" : "Low Stock Only"}
+                <CardTitle className="text-sm font-bold">
+                  Inventory Register
+                </CardTitle>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setLowStockOnly(!lowStockOnly)}
+                  className="h-7 text-xs"
+                >
+                  <AlertTriangle className="mr-1 h-3 w-3" />{" "}
+                  {lowStockOnly ? "Show All" : "Low Stock Only"}
                 </Button>
               </div>
             </CardHeader>
@@ -190,31 +337,86 @@ export default function StockPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-b border-slate-100 bg-slate-50/80 dark:border-border dark:bg-black/10">
-                    {["Item", "Category", "On Hand", "Reorder", "Value", "Status", "Actions"].map(h => (
-                      <TableHead key={h} className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{h}</TableHead>
+                    {[
+                      "Item",
+                      "Category",
+                      "On Hand",
+                      "Reorder",
+                      "Value",
+                      "Status",
+                      "Actions",
+                    ].map((h) => (
+                      <TableHead
+                        key={h}
+                        className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                      >
+                        {h}
+                      </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {displayedItems.map(item => (
-                    <TableRow key={item.inventoryItemId} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-border dark:hover:bg-white/5">
-                      <TableCell className="text-sm font-semibold text-slate-900 dark:text-foreground">{item.itemName}</TableCell>
-                      <TableCell className="text-xs text-muted-foreground">{item.category}</TableCell>
-                      <TableCell className="font-mono text-sm font-bold">{item.quantityOnHand} {item.unit}</TableCell>
-                      <TableCell className="font-mono text-xs text-muted-foreground">{item.reorderLevel}</TableCell>
-                      <TableCell className="font-mono text-sm">PKR {item.stockValue.toLocaleString()}</TableCell>
+                  {displayedItems.map((item) => (
+                    <TableRow
+                      key={item.inventoryItemId}
+                      className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-border dark:hover:bg-white/5"
+                    >
+                      <TableCell className="text-sm font-semibold text-slate-900 dark:text-foreground">
+                        {item.itemName}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {item.category}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm font-bold">
+                        {item.quantityOnHand} {item.unit}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground">
+                        {item.reorderLevel}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">
+                        PKR {item.stockValue.toLocaleString()}
+                      </TableCell>
                       <TableCell>
-                        {item.isLowStock
-                          ? <Badge variant="outline" className="border-red-300 bg-red-50 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400">Low Stock</Badge>
-                          : <Badge variant="outline" className="border-emerald-300 bg-emerald-50 text-xs text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400">OK</Badge>
-                        }
+                        {item.isLowStock ? (
+                          <Badge
+                            variant="outline"
+                            className="border-red-300 bg-red-50 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"
+                          >
+                            Low Stock
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="outline"
+                            className="border-emerald-300 bg-emerald-50 text-xs text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"
+                          >
+                            OK
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button size="sm" variant="ghost" onClick={() => setShowStockOutDialog(item.inventoryItemId)} className="h-7 px-2 text-xs text-red-500">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() =>
+                              setShowStockOutDialog(item.inventoryItemId)
+                            }
+                            className="h-7 px-2 text-xs text-red-500"
+                          >
                             <ArrowDown className="mr-1 h-3 w-3" /> Out
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={() => { setShowReconDialog(item.inventoryItemId); setReconForm({ physicalCount: item.quantityOnHand, explanation: "" }); }} className="h-7 px-2 text-xs text-amber-600">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              setShowReconDialog(item.inventoryItemId);
+                              setReconForm({
+                                physicalCount: item.quantityOnHand,
+                                explanation: "",
+                              });
+                            }}
+                            className="h-7 px-2 text-xs text-amber-600"
+                          >
                             <RefreshCw className="mr-1 h-3 w-3" /> Recon
                           </Button>
                         </div>
@@ -222,7 +424,14 @@ export default function StockPage() {
                     </TableRow>
                   ))}
                   {!displayedItems.length && (
-                    <TableRow><TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">No inventory items yet.</TableCell></TableRow>
+                    <TableRow>
+                      <TableCell
+                        colSpan={7}
+                        className="py-10 text-center text-sm text-muted-foreground"
+                      >
+                        No inventory items yet.
+                      </TableCell>
+                    </TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -232,18 +441,32 @@ export default function StockPage() {
         <TabsContent value="valuation" className="mt-4">
           <Card className="border-slate-200 bg-white/50 shadow-sm dark:border-border dark:bg-card">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-border dark:bg-black/20">
-              <CardTitle className="text-sm font-bold">Stock Valuation by Category</CardTitle>
+              <CardTitle className="text-sm font-bold">
+                Stock Valuation by Category
+              </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 space-y-2">
-              {valuation && Object.entries(valuation.byCategory).map(([cat, val]) => (
-                <div key={cat} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-border dark:bg-white/5">
-                  <span className="text-sm font-semibold text-slate-800 dark:text-foreground">{cat}</span>
-                  <span className="font-mono text-sm font-bold text-amber-600 dark:text-amber-400">PKR {val.toLocaleString()}</span>
-                </div>
-              ))}
-              <div className="flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10 mt-4">
-                <span className="font-semibold text-amber-800 dark:text-amber-300">Grand Total</span>
-                <span className="font-mono text-lg font-bold text-amber-700 dark:text-amber-400">PKR {totalValue.toLocaleString()}</span>
+            <CardContent className="space-y-2 p-4">
+              {valuation &&
+                Object.entries(valuation.byCategory).map(([cat, val]) => (
+                  <div
+                    key={cat}
+                    className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50/50 p-3 dark:border-border dark:bg-white/5"
+                  >
+                    <span className="text-sm font-semibold text-slate-800 dark:text-foreground">
+                      {cat}
+                    </span>
+                    <span className="font-mono text-sm font-bold text-amber-600 dark:text-amber-400">
+                      PKR {val.toLocaleString()}
+                    </span>
+                  </div>
+                ))}
+              <div className="mt-4 flex items-center justify-between rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10">
+                <span className="font-semibold text-amber-800 dark:text-amber-300">
+                  Grand Total
+                </span>
+                <span className="font-mono text-lg font-bold text-amber-700 dark:text-amber-400">
+                  PKR {totalValue.toLocaleString()}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -251,28 +474,114 @@ export default function StockPage() {
       </Tabs>
 
       {/* Stock-Out Dialog */}
-      <Dialog open={!!showStockOutDialog} onOpenChange={open => !open && setShowStockOutDialog(null)}>
+      <Dialog
+        open={!!showStockOutDialog}
+        onOpenChange={(open) => !open && setShowStockOutDialog(null)}
+      >
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>Record Stock-Out</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Record Stock-Out</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 pt-2">
-            <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Quantity</Label><Input type="number" min={1} value={stockOutForm.quantity} onChange={e => setStockOutForm({ ...stockOutForm, quantity: parseInt(e.target.value) })} /></div>
-            <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Purpose</Label><Input value={stockOutForm.purpose} onChange={e => setStockOutForm({ ...stockOutForm, purpose: e.target.value })} placeholder="e.g. Classroom use" /></div>
-            <Button className="w-full bg-red-600 text-white hover:bg-red-700" disabled={stockOut.isPending || !stockOutForm.purpose} onClick={() => stockOut.mutate({ inventoryItemId: showStockOutDialog!, ...stockOutForm })}>
-              {stockOut.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Record Stock-Out
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Quantity
+              </Label>
+              <Input
+                type="number"
+                min={1}
+                value={stockOutForm.quantity}
+                onChange={(e) =>
+                  setStockOutForm({
+                    ...stockOutForm,
+                    quantity: parseInt(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Purpose
+              </Label>
+              <Input
+                value={stockOutForm.purpose}
+                onChange={(e) =>
+                  setStockOutForm({ ...stockOutForm, purpose: e.target.value })
+                }
+                placeholder="e.g. Classroom use"
+              />
+            </div>
+            <Button
+              className="w-full bg-red-600 text-white hover:bg-red-700"
+              disabled={stockOut.isPending || !stockOutForm.purpose}
+              onClick={() =>
+                stockOut.mutate({
+                  inventoryItemId: showStockOutDialog!,
+                  ...stockOutForm,
+                })
+              }
+            >
+              {stockOut.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}{" "}
+              Record Stock-Out
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Recon Dialog */}
-      <Dialog open={!!showReconDialog} onOpenChange={open => !open && setShowReconDialog(null)}>
+      <Dialog
+        open={!!showReconDialog}
+        onOpenChange={(open) => !open && setShowReconDialog(null)}
+      >
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader><DialogTitle>Reconcile Stock</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Reconcile Stock</DialogTitle>
+          </DialogHeader>
           <div className="space-y-3 pt-2">
-            <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Physical Count</Label><Input type="number" min={0} value={reconForm.physicalCount} onChange={e => setReconForm({ ...reconForm, physicalCount: parseInt(e.target.value) })} /></div>
-            <div className="space-y-1.5"><Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Explanation</Label><Input value={reconForm.explanation} onChange={e => setReconForm({ ...reconForm, explanation: e.target.value })} placeholder="Reason for variance" /></div>
-            <Button className="w-full bg-amber-600 text-white hover:bg-amber-700" disabled={reconcile.isPending || !reconForm.explanation} onClick={() => reconcile.mutate({ inventoryItemId: showReconDialog!, ...reconForm })}>
-              {reconcile.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null} Save Reconciliation
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Physical Count
+              </Label>
+              <Input
+                type="number"
+                min={0}
+                value={reconForm.physicalCount}
+                onChange={(e) =>
+                  setReconForm({
+                    ...reconForm,
+                    physicalCount: parseInt(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Explanation
+              </Label>
+              <Input
+                value={reconForm.explanation}
+                onChange={(e) =>
+                  setReconForm({ ...reconForm, explanation: e.target.value })
+                }
+                placeholder="Reason for variance"
+              />
+            </div>
+            <Button
+              className="w-full bg-amber-600 text-white hover:bg-amber-700"
+              disabled={reconcile.isPending || !reconForm.explanation}
+              onClick={() =>
+                reconcile.mutate({
+                  inventoryItemId: showReconDialog!,
+                  ...reconForm,
+                })
+              }
+            >
+              {reconcile.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}{" "}
+              Save Reconciliation
             </Button>
           </div>
         </DialogContent>

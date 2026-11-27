@@ -101,10 +101,15 @@ export const RegisterEmployeeBioMetric = ({
           if (response.data?.ErrorCode === 0) {
             isoTemplate = response.data.ISOTemplateBase64;
           } else {
-            throw new Error(`Scanner error code: ${response.data?.ErrorCode ?? "unknown"}`);
+            throw new Error(
+              `Scanner error code: ${response.data?.ErrorCode ?? "unknown"}`,
+            );
           }
         } catch (scannerErr) {
-          console.warn("Hardware scanner offline or unreachable, using web simulation fallback:", scannerErr);
+          console.warn(
+            "Hardware scanner offline or unreachable, using web simulation fallback:",
+            scannerErr,
+          );
           isoTemplate = `SIMULATED_BIO_TEMPLATE_${employeeId}_${Date.now()}_SAMPLE_${i + 1}`;
         }
 
@@ -139,9 +144,15 @@ export const RegisterEmployeeBioMetric = ({
         description: "Multiple thumb captures have been successfully stored.",
       });
 
-      void import("~/lib/mobile/notification-service").then(({ sendModuleActionNotification }) => {
-        void sendModuleActionNotification("Attendance & Biometrics", "Fingerprint Registered", `Biometric template updated for ${employeeName}`);
-      });
+      void import("~/lib/mobile/notification-service").then(
+        ({ sendModuleActionNotification }) => {
+          void sendModuleActionNotification(
+            "Attendance & Biometrics",
+            "Fingerprint Registered",
+            `Biometric template updated for ${employeeName}`,
+          );
+        },
+      );
     } catch (error) {
       console.error("Fingerprint capture error:", error);
       setDeviceStatus("error");
@@ -157,6 +168,7 @@ export const RegisterEmployeeBioMetric = ({
     }
   }, [
     employeeId,
+    employeeName,
     fingerMutation,
     currentCapture,
     totalCaptures,

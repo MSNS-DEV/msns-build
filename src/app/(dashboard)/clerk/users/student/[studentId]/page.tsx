@@ -228,7 +228,11 @@ export default function StudentProfilePage() {
                 </h4>
                 <div className="grid gap-4">
                   <InfoItem
-                    label={student.gender?.toUpperCase() === "FEMALE" ? "Father Name (D/O)" : "Father Name (S/O)"}
+                    label={
+                      student.gender?.toUpperCase() === "FEMALE"
+                        ? "Father Name (D/O)"
+                        : "Father Name (S/O)"
+                    }
                     value={student.fatherName}
                   />
                   <InfoItem label="Father CNIC" value={student.fatherCNIC} />

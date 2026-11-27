@@ -16,16 +16,58 @@ interface TestResult {
 }
 
 const results: TestResult[] = [];
-const prisma = new PrismaClient();
 
-function recordResult(tier: string, testId: string, title: string, passed: boolean, message: string, durationMs: number) {
+// This suite creates and deletes real rows. Refuse to run against anything but
+// a local database, unless a dedicated TEST_DATABASE_URL is given explicitly.
+function resolveTestDatabaseUrl(): string {
+  const explicit = process.env.TEST_DATABASE_URL;
+  if (explicit) return explicit;
+  const url = process.env.DATABASE_URL;
+  if (!url)
+    throw new Error(
+      "Set TEST_DATABASE_URL (or a local DATABASE_URL) to run this suite.",
+    );
+  let host = "";
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    throw new Error("DATABASE_URL is not a valid URL.");
+  }
+  if (!["localhost", "127.0.0.1", "::1", "[::1]"].includes(host)) {
+    throw new Error(
+      "Refusing to run: DATABASE_URL is not a local database. Point TEST_DATABASE_URL at a throwaway test database.",
+    );
+  }
+  return url;
+}
+
+const prisma = new PrismaClient({
+  datasources: { db: { url: resolveTestDatabaseUrl() } },
+});
+
+function recordResult(
+  tier: string,
+  testId: string,
+  title: string,
+  passed: boolean,
+  message: string,
+  durationMs: number,
+) {
   results.push({ tier, testId, title, passed, message, durationMs });
-  const statusBadge = passed ? "\x1b[32m[PASS]\x1b[0m" : "\x1b[31m[FAIL]\x1b[0m";
-  console.log(`  ${statusBadge} ${tier} [${testId}] ${title}: ${message} (${durationMs}ms)`);
+  const statusBadge = passed
+    ? "\x1b[32m[PASS]\x1b[0m"
+    : "\x1b[31m[FAIL]\x1b[0m";
+  console.log(
+    `  ${statusBadge} ${tier} [${testId}] ${title}: ${message} (${durationMs}ms)`,
+  );
 }
 
 // Retry wrapper for network resilience against cloud database proxy drops
-async function withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 1500): Promise<T> {
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  retries = 3,
+  delayMs = 1500,
+): Promise<T> {
   let lastErr: any;
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -45,7 +87,7 @@ async function runStep(
   tier: string,
   testId: string,
   title: string,
-  fn: () => Promise<void>
+  fn: () => Promise<void>,
 ) {
   const start = Date.now();
   try {
@@ -128,7 +170,7 @@ async function setupFixtures() {
         admissionNumber: `ADM_EMP_${RUN_ID}`,
         employeeName: "Principal Test Approver",
         fatherName: "Audit Father",
-        gender: "Male",
+        gender: "MALE",
         maritalStatus: "Married",
         residentialAddress: "MSNS Head Office",
         designation: "PRINCIPAL",
@@ -189,7 +231,7 @@ async function setupFixtures() {
         registrationNumber: `REG_S1_${RUN_ID}`,
         admissionNumber: `ADM_S1_${RUN_ID}`,
         studentName: "Regular Student One",
-        gender: "Male",
+        gender: "MALE",
       },
     });
     await prisma.students.upsert({
@@ -200,7 +242,7 @@ async function setupFixtures() {
         registrationNumber: `REG_S2_${RUN_ID}`,
         admissionNumber: `ADM_S2_${RUN_ID}`,
         studentName: "Hardship Student Two",
-        gender: "Female",
+        gender: "FEMALE",
       },
     });
     await prisma.students.upsert({
@@ -211,13 +253,17 @@ async function setupFixtures() {
         registrationNumber: `REG_S3_${RUN_ID}`,
         admissionNumber: `ADM_S3_${RUN_ID}`,
         studentName: "Transfer Defaulter Student Three",
-        gender: "Male",
+        gender: "MALE",
       },
     });
 
     // 7. Allot Students to Class
     const existingSc1 = await prisma.studentClass.findFirst({
-      where: { sessionId: TEST_SESSION_ID, classId: TEST_GRADE_1_ID, studentId: TEST_STUDENT_1_ID },
+      where: {
+        sessionId: TEST_SESSION_ID,
+        classId: TEST_GRADE_1_ID,
+        studentId: TEST_STUDENT_1_ID,
+      },
     });
     if (existingSc1) {
       SC_1_ID = existingSc1.scId;
@@ -233,7 +279,11 @@ async function setupFixtures() {
     }
 
     const existingSc2 = await prisma.studentClass.findFirst({
-      where: { sessionId: TEST_SESSION_ID, classId: TEST_GRADE_1_ID, studentId: TEST_STUDENT_2_ID },
+      where: {
+        sessionId: TEST_SESSION_ID,
+        classId: TEST_GRADE_1_ID,
+        studentId: TEST_STUDENT_2_ID,
+      },
     });
     if (existingSc2) {
       SC_2_ID = existingSc2.scId;
@@ -249,7 +299,11 @@ async function setupFixtures() {
     }
 
     const existingSc3 = await prisma.studentClass.findFirst({
-      where: { sessionId: TEST_SESSION_ID, classId: TEST_GRADE_1_ID, studentId: TEST_STUDENT_3_ID },
+      where: {
+        sessionId: TEST_SESSION_ID,
+        classId: TEST_GRADE_1_ID,
+        studentId: TEST_STUDENT_3_ID,
+      },
     });
     if (existingSc3) {
       SC_3_ID = existingSc3.scId;
@@ -313,7 +367,11 @@ async function cleanupFixtures() {
     // Clean up Students
     try {
       await prisma.students.deleteMany({
-        where: { studentId: { in: [TEST_STUDENT_1_ID, TEST_STUDENT_2_ID, TEST_STUDENT_3_ID] } },
+        where: {
+          studentId: {
+            in: [TEST_STUDENT_1_ID, TEST_STUDENT_2_ID, TEST_STUDENT_3_ID],
+          },
+        },
       });
     } catch (_) {}
 
@@ -327,7 +385,9 @@ async function cleanupFixtures() {
     // Clean up User & Employee
     try {
       await prisma.user.deleteMany({ where: { id: TEST_USER_ID } });
-      await prisma.employees.deleteMany({ where: { employeeId: TEST_EMPLOYEE_ID } });
+      await prisma.employees.deleteMany({
+        where: { employeeId: TEST_EMPLOYEE_ID },
+      });
     } catch (_) {}
 
     // Clean up Grades
@@ -339,7 +399,9 @@ async function cleanupFixtures() {
 
     // Clean up Session
     try {
-      await prisma.sessions.deleteMany({ where: { sessionId: TEST_SESSION_ID } });
+      await prisma.sessions.deleteMany({
+        where: { sessionId: TEST_SESSION_ID },
+      });
     } catch (_) {}
 
     console.log(">>> Teardown complete. Zero test artifacts left in database.");
@@ -376,9 +438,15 @@ async function getTrpcCaller() {
 // MAIN TEST SUITE EXECUTION
 // ============================================================================
 async function runTestSuite() {
-  console.log("================================================================================");
-  console.log("MSNS ENTERPRISE FEE VOUCHER SYSTEM: 4-TIER E2E VERIFICATION TEST SUITE");
-  console.log("================================================================================");
+  console.log(
+    "================================================================================",
+  );
+  console.log(
+    "MSNS ENTERPRISE FEE VOUCHER SYSTEM: 4-TIER E2E VERIFICATION TEST SUITE",
+  );
+  console.log(
+    "================================================================================",
+  );
 
   let setupSucceeded = false;
   try {
@@ -393,9 +461,13 @@ async function runTestSuite() {
   // --------------------------------------------------------------------------
   // TIER 1: FEATURE COVERAGE (R1 - R6 CORE REQUIREMENTS)
   // --------------------------------------------------------------------------
-  console.log("\n================================================================================");
+  console.log(
+    "\n================================================================================",
+  );
   console.log("TIER 1: FEATURE COVERAGE (R1 - R6)");
-  console.log("================================================================================");
+  console.log(
+    "================================================================================",
+  );
 
   // T1.1: Challan Validity Windows & Bulk Sync Engine (R1)
   await runStep(
@@ -404,7 +476,9 @@ async function runTestSuite() {
     "Challan Validity Windows & Atomic Bulk Sync Engine",
     async () => {
       if (!(prisma as any).challanValidity) {
-        throw new Error("Model 'ChallanValidity' not present in Prisma Client. M1 schema pending.");
+        throw new Error(
+          "Model 'ChallanValidity' not present in Prisma Client. M1 schema pending.",
+        );
       }
 
       const fromDate1 = new Date("2026-04-01T00:00:00.000Z");
@@ -451,7 +525,10 @@ async function runTestSuite() {
       });
 
       // Execute bulk sync
-      if (caller && (caller as any).challanValidity?.syncChallanValidityToVouchers) {
+      if (
+        caller &&
+        (caller as any).challanValidity?.syncChallanValidityToVouchers
+      ) {
         await (caller as any).challanValidity.syncChallanValidityToVouchers({
           sessionId: TEST_SESSION_ID,
           gradeId: TEST_GRADE_1_ID,
@@ -462,7 +539,10 @@ async function runTestSuite() {
       } else {
         await (prisma as any).feeStudentClass.updateMany({
           where: {
-            StudentClass: { sessionId: TEST_SESSION_ID, classId: TEST_GRADE_1_ID },
+            StudentClass: {
+              sessionId: TEST_SESSION_ID,
+              classId: TEST_GRADE_1_ID,
+            },
             installmentNo: 1,
             tuitionPaid: false,
           },
@@ -476,10 +556,16 @@ async function runTestSuite() {
       const syncedVoucher = await prisma.feeStudentClass.findUnique({
         where: { sfcId: voucher1.sfcId },
       });
-      if (!syncedVoucher || (syncedVoucher as any).dueDate.toISOString() !== extendedDueDate.toISOString()) {
-        throw new Error(`Bulk sync failed: Expected dueDate ${extendedDueDate.toISOString()} but got ${(syncedVoucher as any)?.dueDate?.toISOString()}`);
+      if (
+        !syncedVoucher ||
+        (syncedVoucher as any).dueDate.toISOString() !==
+          extendedDueDate.toISOString()
+      ) {
+        throw new Error(
+          `Bulk sync failed: Expected dueDate ${extendedDueDate.toISOString()} but got ${(syncedVoucher as any)?.dueDate?.toISOString()}`,
+        );
       }
-    }
+    },
   );
 
   // T1.2: Concession vs Exemption Separation & Attendance Rule (R2)
@@ -504,17 +590,28 @@ async function runTestSuite() {
           exemptionApprovedBy: TEST_EMPLOYEE_ID,
           exemptionReason: "Principal Hardship Discretionary Waiver",
           discount: 1500,
-          discountDescription: "Sibling Concession (1000) + Principal Waiver (500)",
+          discountDescription:
+            "Sibling Concession (1000) + Principal Waiver (500)",
         } as any,
       });
 
-      const fetched = (await prisma.feeStudentClass.findUnique({ where: { sfcId: testVoucher.sfcId } })) as any;
+      const fetched = (await prisma.feeStudentClass.findUnique({
+        where: { sfcId: testVoucher.sfcId },
+      })) as any;
       if (!fetched) throw new Error("Voucher record not found.");
 
       // Check backward compatibility
-      if (fetched.concessionAmount !== undefined && fetched.exemptionAmount !== undefined) {
-        if (Number(fetched.discount) !== Number(fetched.concessionAmount) + Number(fetched.exemptionAmount)) {
-          throw new Error(`Backward compatibility violated: discount (${fetched.discount}) !== concession (${fetched.concessionAmount}) + exemption (${fetched.exemptionAmount})`);
+      if (
+        fetched.concessionAmount !== undefined &&
+        fetched.exemptionAmount !== undefined
+      ) {
+        if (
+          Number(fetched.discount) !==
+          Number(fetched.concessionAmount) + Number(fetched.exemptionAmount)
+        ) {
+          throw new Error(
+            `Backward compatibility violated: discount (${fetched.discount}) !== concession (${fetched.concessionAmount}) + exemption (${fetched.exemptionAmount})`,
+          );
         }
       }
 
@@ -540,22 +637,38 @@ async function runTestSuite() {
       await prisma.studentAttendance.createMany({ data: attendanceData });
 
       const s1Present = await prisma.studentAttendance.count({
-        where: { studentId: TEST_STUDENT_1_ID, sessionId: TEST_SESSION_ID, status: { in: ["P", "L"] } },
+        where: {
+          studentId: TEST_STUDENT_1_ID,
+          sessionId: TEST_SESSION_ID,
+          status: { in: ["P", "L"] },
+        },
       });
       const s1Rate = (s1Present / 20) * 100;
-      if (s1Rate < 80) throw new Error(`Student 1 attendance calculation incorrect: ${s1Rate}%`);
+      if (s1Rate < 80)
+        throw new Error(
+          `Student 1 attendance calculation incorrect: ${s1Rate}%`,
+        );
 
       const s2Present = await prisma.studentAttendance.count({
-        where: { studentId: TEST_STUDENT_2_ID, sessionId: TEST_SESSION_ID, status: { in: ["P", "L"] } },
+        where: {
+          studentId: TEST_STUDENT_2_ID,
+          sessionId: TEST_SESSION_ID,
+          status: { in: ["P", "L"] },
+        },
       });
       const s2Rate = (s2Present / 20) * 100;
-      if (s2Rate >= 80) throw new Error(`Student 2 attendance calculation incorrect: ${s2Rate}%`);
+      if (s2Rate >= 80)
+        throw new Error(
+          `Student 2 attendance calculation incorrect: ${s2Rate}%`,
+        );
 
       // Student 2 must be marked suspended
       if (s2Rate >= 80) {
-        throw new Error("Attendance continuation rule failed: <80% attendance did not trigger suspension condition.");
+        throw new Error(
+          "Attendance continuation rule failed: <80% attendance did not trigger suspension condition.",
+        );
       }
-    }
+    },
   );
 
   // T1.3: Sub-Installment Splitting State Machine & Sequence Locking (R3)
@@ -611,7 +724,9 @@ async function runTestSuite() {
       })) as any;
 
       if (!updatedParent.isSplitLocked) {
-        throw new Error("Parent voucher isSplitLocked must be true after split.");
+        throw new Error(
+          "Parent voucher isSplitLocked must be true after split.",
+        );
       }
 
       const children = await (prisma as any).feeStudentClass.findMany({
@@ -625,9 +740,11 @@ async function runTestSuite() {
 
       // Invariant: Parent cannot be settled directly while split
       if (!updatedParent.isSplitLocked) {
-        throw new Error("Direct settlement of parent voucher must be rejected while isSplitLocked is true.");
+        throw new Error(
+          "Direct settlement of parent voucher must be rejected while isSplitLocked is true.",
+        );
       }
-    }
+    },
   );
 
   // T1.4: Multi-Month Merged Challan & Cascading Settlement (R4)
@@ -719,10 +836,12 @@ async function runTestSuite() {
 
       for (const cv of updatedConstituents) {
         if (!cv.tuitionPaid || (cv as any).paymentStatus !== "PAID") {
-          throw new Error(`Cascading settlement failed on constituent ${cv.sfcId}`);
+          throw new Error(
+            `Cascading settlement failed on constituent ${cv.sfcId}`,
+          );
         }
       }
-    }
+    },
   );
 
   // T1.5: Idempotent Payment Recording & Financial Ledger Posting (R5)
@@ -752,7 +871,9 @@ async function runTestSuite() {
 
       const paidTime = new Date();
       await prisma.$transaction(async (tx: any) => {
-        const existing = await tx.feeStudentClass.findUnique({ where: { sfcId: voucher.sfcId } });
+        const existing = await tx.feeStudentClass.findUnique({
+          where: { sfcId: voucher.sfcId },
+        });
         if (existing.paymentStatus === "PAID") {
           throw new Error("Voucher has already been settled in full.");
         }
@@ -842,17 +963,27 @@ async function runTestSuite() {
         .filter((e) => e.entryType === "CREDIT")
         .reduce((sum, e) => sum + e.amount, 0);
 
-      if (totalDebits !== 4300 || totalCredits !== 4300 || totalDebits !== totalCredits) {
-        throw new Error(`Double-entry unbalanced: Debits (${totalDebits}) !== Credits (${totalCredits})`);
+      if (
+        totalDebits !== 4300 ||
+        totalCredits !== 4300 ||
+        totalDebits !== totalCredits
+      ) {
+        throw new Error(
+          `Double-entry unbalanced: Debits (${totalDebits}) !== Credits (${totalCredits})`,
+        );
       }
 
       // Idempotency check: Duplicate settlement must be rejected
       let duplicateRejected = false;
       try {
         await prisma.$transaction(async (tx: any) => {
-          const check = await tx.feeStudentClass.findUnique({ where: { sfcId: voucher.sfcId } });
+          const check = await tx.feeStudentClass.findUnique({
+            where: { sfcId: voucher.sfcId },
+          });
           if (check.paymentStatus === "PAID") {
-            throw new Error("BAD_REQUEST: Voucher has already been settled in full.");
+            throw new Error(
+              "BAD_REQUEST: Voucher has already been settled in full.",
+            );
           }
         });
       } catch (err: any) {
@@ -862,9 +993,11 @@ async function runTestSuite() {
       }
 
       if (!duplicateRejected) {
-        throw new Error("Idempotency failure: Duplicate payment on settled voucher was not rejected.");
+        throw new Error(
+          "Idempotency failure: Duplicate payment on settled voucher was not rejected.",
+        );
       }
-    }
+    },
   );
 
   // T1.6: Allotment Deletion Guard & Promotion Clearance Guardrails (R6)
@@ -874,20 +1007,26 @@ async function runTestSuite() {
     "Allotment Deletion Guard & Promotion Clearance Arrears Guardrail",
     async () => {
       // 1. Allotment Deletion Guard: Student 1 has PAID vouchers
-      const paidVoucherExists = await (prisma as any).feeStudentClass.findFirst({
-        where: {
-          studentClassId: SC_1_ID,
-          paymentStatus: { in: ["PAID", "PARTIALLY_PAID"] },
+      const paidVoucherExists = await (prisma as any).feeStudentClass.findFirst(
+        {
+          where: {
+            studentClassId: SC_1_ID,
+            paymentStatus: { in: ["PAID", "PARTIALLY_PAID"] },
+          },
         },
-      });
+      );
 
       if (!paidVoucherExists) {
-        throw new Error("Precondition setup failed: Paid voucher not found for Student 1.");
+        throw new Error(
+          "Precondition setup failed: Paid voucher not found for Student 1.",
+        );
       }
 
       const canDeleteAllotment = !paidVoucherExists;
       if (canDeleteAllotment) {
-        throw new Error("Allotment guardrail failed: Allowed destructive deletion when paid financial records exist.");
+        throw new Error(
+          "Allotment guardrail failed: Allowed destructive deletion when paid financial records exist.",
+        );
       }
 
       // 2. Promotion Clearance Guard: Student 3 has UNPAID arrears
@@ -907,35 +1046,49 @@ async function runTestSuite() {
 
       const unpaidCount = await (prisma as any).feeStudentClass.count({
         where: {
-          StudentClass: { studentId: TEST_STUDENT_3_ID, sessionId: TEST_SESSION_ID },
+          StudentClass: {
+            studentId: TEST_STUDENT_3_ID,
+            sessionId: TEST_SESSION_ID,
+          },
           paymentStatus: { in: ["PENDING", "PARTIALLY_PAID", "OVERDUE"] },
         },
       });
 
       if (unpaidCount === 0) {
-        throw new Error("Student 3 must have unpaid arrears for promotion guardrail test.");
+        throw new Error(
+          "Student 3 must have unpaid arrears for promotion guardrail test.",
+        );
       }
 
       const clearanceBypassCodeProvided = false;
-      const promotionAllowedWithoutBypass = unpaidCount === 0 || clearanceBypassCodeProvided;
+      const promotionAllowedWithoutBypass =
+        unpaidCount === 0 || clearanceBypassCodeProvided;
       if (promotionAllowedWithoutBypass) {
-        throw new Error("Promotion guardrail failed: Allowed promotion of defaulter student without clearance bypass code.");
+        throw new Error(
+          "Promotion guardrail failed: Allowed promotion of defaulter student without clearance bypass code.",
+        );
       }
 
       const validBypassCode = "PRIN-BYPASS-2026-OK";
       const promotionAllowedWithBypass = unpaidCount === 0 || !!validBypassCode;
       if (!promotionAllowedWithBypass) {
-        throw new Error("Promotion guardrail failed: Blocked promotion even when authorized clearance bypass code was supplied.");
+        throw new Error(
+          "Promotion guardrail failed: Blocked promotion even when authorized clearance bypass code was supplied.",
+        );
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
   // TIER 2: BOUNDARY & CORNER CASES
   // --------------------------------------------------------------------------
-  console.log("\n================================================================================");
+  console.log(
+    "\n================================================================================",
+  );
   console.log("TIER 2: BOUNDARY & CORNER CASES");
-  console.log("================================================================================");
+  console.log(
+    "================================================================================",
+  );
 
   // T2.1: Exact Division Remainder Preservation during Split
   await runStep(
@@ -951,8 +1104,15 @@ async function runTestSuite() {
       const child1_3 = P1 - (child1_1 + child1_2); // 1668
       const sum1 = child1_1 + child1_2 + child1_3;
 
-      if (sum1 !== P1 || child1_1 !== 1666 || child1_2 !== 1666 || child1_3 !== 1668) {
-        throw new Error(`Remainder math mismatch for 5000 / 3: parts=[${child1_1}, ${child1_2}, ${child1_3}], sum=${sum1}`);
+      if (
+        sum1 !== P1 ||
+        child1_1 !== 1666 ||
+        child1_2 !== 1666 ||
+        child1_3 !== 1668
+      ) {
+        throw new Error(
+          `Remainder math mismatch for 5000 / 3: parts=[${child1_1}, ${child1_2}, ${child1_3}], sum=${sum1}`,
+        );
       }
 
       // Test Case 2: Indivisible amount PKR 10,001 split into 3
@@ -964,7 +1124,9 @@ async function runTestSuite() {
       const sum2 = child2_1 + child2_2 + child2_3;
 
       if (sum2 !== P2 || child2_3 !== 3335) {
-        throw new Error(`Remainder math mismatch for 10001 / 3: parts=[${child2_1}, ${child2_2}, ${child2_3}], sum=${sum2}`);
+        throw new Error(
+          `Remainder math mismatch for 10001 / 3: parts=[${child2_1}, ${child2_2}, ${child2_3}], sum=${sum2}`,
+        );
       }
 
       // Test Case 3: 10,000 split into 7
@@ -982,9 +1144,11 @@ async function runTestSuite() {
       const totalSum = parts.reduce((a, b) => a + b, 0);
 
       if (totalSum !== P3) {
-        throw new Error(`Remainder preservation failed for 10000 / 7: sum=${totalSum} !== 10000`);
+        throw new Error(
+          `Remainder preservation failed for 10000 / 7: sum=${totalSum} !== 10000`,
+        );
       }
-    }
+    },
   );
 
   // T2.2: 0 Rupees Collected Revert vs 1 Rupee Collected Permanent Lock
@@ -1038,24 +1202,35 @@ async function runTestSuite() {
       const childrenA = await (prisma as any).feeStudentClass.findMany({
         where: { parentVoucherId: parentA.sfcId },
       });
-      const totalPaidA = childrenA.reduce((sum: number, c: any) => sum + Number(c.amountPaid || 0), 0);
+      const totalPaidA = childrenA.reduce(
+        (sum: number, c: any) => sum + Number(c.amountPaid || 0),
+        0,
+      );
       const revertAllowedA = totalPaidA === 0;
 
       if (!revertAllowedA) {
-        throw new Error("Scenario A: Revert should be allowed when 0 rupees collected.");
+        throw new Error(
+          "Scenario A: Revert should be allowed when 0 rupees collected.",
+        );
       }
 
       await prisma.$transaction(async (tx: any) => {
-        await tx.feeStudentClass.deleteMany({ where: { parentVoucherId: parentA.sfcId } });
+        await tx.feeStudentClass.deleteMany({
+          where: { parentVoucherId: parentA.sfcId },
+        });
         await tx.feeStudentClass.update({
           where: { sfcId: parentA.sfcId },
           data: { isSplitLocked: false },
         });
       });
 
-      const restoredParent = (await prisma.feeStudentClass.findUnique({ where: { sfcId: parentA.sfcId } })) as any;
+      const restoredParent = (await prisma.feeStudentClass.findUnique({
+        where: { sfcId: parentA.sfcId },
+      })) as any;
       if (restoredParent.isSplitLocked) {
-        throw new Error("Parent isSplitLocked was not reset to false after revert.");
+        throw new Error(
+          "Parent isSplitLocked was not reset to false after revert.",
+        );
       }
 
       // Scenario B: Child 1 receives even 1 rupee -> Revert Permanently Locked
@@ -1089,13 +1264,18 @@ async function runTestSuite() {
       const childrenB = await (prisma as any).feeStudentClass.findMany({
         where: { parentVoucherId: parentB.sfcId },
       });
-      const totalPaidB = childrenB.reduce((sum: number, c: any) => sum + Number(c.amountPaid || 0), 0);
+      const totalPaidB = childrenB.reduce(
+        (sum: number, c: any) => sum + Number(c.amountPaid || 0),
+        0,
+      );
       const revertAllowedB = totalPaidB === 0;
 
       if (revertAllowedB) {
-        throw new Error("Scenario B: Revert must be PERMANENTLY LOCKED once even 1 rupee has been collected.");
+        throw new Error(
+          "Scenario B: Revert must be PERMANENTLY LOCKED once even 1 rupee has been collected.",
+        );
       }
-    }
+    },
   );
 
   // T2.3: Duplicate Payment Rejection & Settlement Idempotency
@@ -1122,7 +1302,9 @@ async function runTestSuite() {
       let threwExpectedError = false;
       try {
         await prisma.$transaction(async (tx: any) => {
-          const v = await tx.feeStudentClass.findUnique({ where: { sfcId: settledVoucher.sfcId } });
+          const v = await tx.feeStudentClass.findUnique({
+            where: { sfcId: settledVoucher.sfcId },
+          });
           if (v.paymentStatus === "PAID") {
             throw new Error("BAD_REQUEST: Voucher already settled.");
           }
@@ -1134,9 +1316,11 @@ async function runTestSuite() {
       }
 
       if (!threwExpectedError) {
-        throw new Error("Idempotency guard failed: Second payment confirmation was not rejected.");
+        throw new Error(
+          "Idempotency guard failed: Second payment confirmation was not rejected.",
+        );
       }
-    }
+    },
   );
 
   // T2.4: Temporal Non-Overlapping Installment Schedule Boundaries
@@ -1150,22 +1334,29 @@ async function runTestSuite() {
 
       const w2ValidFrom = new Date("2026-05-11T00:00:00.000Z");
       const isValid = w2ValidFrom.getTime() > w1To.getTime();
-      if (!isValid) throw new Error("Adjacent date boundary calculation error.");
+      if (!isValid)
+        throw new Error("Adjacent date boundary calculation error.");
 
       const w2InvalidFrom = new Date("2026-05-08T00:00:00.000Z");
       const isOverlapping = w2InvalidFrom.getTime() <= w1To.getTime();
       if (!isOverlapping) {
-        throw new Error("Non-overlapping boundary check failed: Collision was not detected.");
+        throw new Error(
+          "Non-overlapping boundary check failed: Collision was not detected.",
+        );
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
   // TIER 3: CROSS-FEATURE COMBINATIONS
   // --------------------------------------------------------------------------
-  console.log("\n================================================================================");
+  console.log(
+    "\n================================================================================",
+  );
   console.log("TIER 3: CROSS-FEATURE COMBINATIONS");
-  console.log("================================================================================");
+  console.log(
+    "================================================================================",
+  );
 
   // T3.1: Policy Concession Finalization Prior to Sub-Installment Split
   await runStep(
@@ -1182,9 +1373,11 @@ async function runTestSuite() {
       const child2 = netPayable - child1; // 2500
 
       if (child1 !== 2500 || child2 !== 2500) {
-        throw new Error(`Split after concession calculated on gross instead of net: [${child1}, ${child2}] !== [2500, 2500]`);
+        throw new Error(
+          `Split after concession calculated on gross instead of net: [${child1}, ${child2}] !== [2500, 2500]`,
+        );
       }
-    }
+    },
   );
 
   // T3.2: Multi-Month Merging of Unpaid Installments with Arrears & Cascading Settlement
@@ -1194,13 +1387,15 @@ async function runTestSuite() {
     "Multi-Month Merging of Unpaid Installments with Arrears & Cascading Settlement",
     async () => {
       const net1 = 4000 + 250 - 500; // 3750
-      const net2 = 4000 + 0 - 500;   // 3500
+      const net2 = 4000 + 0 - 500; // 3500
       const masterTotal = net1 + net2; // 7250
 
       if (masterTotal !== 7250) {
-        throw new Error(`Aggregated breakdown math mismatch: ${masterTotal} !== 7250`);
+        throw new Error(
+          `Aggregated breakdown math mismatch: ${masterTotal} !== 7250`,
+        );
       }
-    }
+    },
   );
 
   // T3.3: Mid-Session Class Transfer Prorated Tuition Differential Adjustment
@@ -1216,17 +1411,23 @@ async function runTestSuite() {
       const totalDifferential = monthlyDelta * remainingMonthsInSession; // +9,000
 
       if (totalDifferential !== 9000) {
-        throw new Error(`Differential calculation failed: ${totalDifferential} !== 9000`);
+        throw new Error(
+          `Differential calculation failed: ${totalDifferential} !== 9000`,
+        );
       }
-    }
+    },
   );
 
   // --------------------------------------------------------------------------
   // TIER 4: REAL-WORLD SCENARIOS
   // --------------------------------------------------------------------------
-  console.log("\n================================================================================");
+  console.log(
+    "\n================================================================================",
+  );
   console.log("TIER 4: REAL-WORLD SCENARIOS");
-  console.log("================================================================================");
+  console.log(
+    "================================================================================",
+  );
 
   // T4.1: Full 12-Month Academic Year Student Lifecycle
   await runStep(
@@ -1245,9 +1446,11 @@ async function runTestSuite() {
 
       const balanceRemaining = totalExpected - totalCollected;
       if (balanceRemaining !== 0) {
-        throw new Error(`Academic year reconciliation discrepancy: remaining=${balanceRemaining}`);
+        throw new Error(
+          `Academic year reconciliation discrepancy: remaining=${balanceRemaining}`,
+        );
       }
-    }
+    },
   );
 
   // T4.2: Hardship Split with Incremental Multi-Stage Collection
@@ -1263,15 +1466,18 @@ async function runTestSuite() {
       let collected = 0;
       collected += part;
       const revertLockedStep1 = collected > 0;
-      if (!revertLockedStep1) throw new Error("Revert should be locked after Stage 1 collection.");
+      if (!revertLockedStep1)
+        throw new Error("Revert should be locked after Stage 1 collection.");
 
       collected += part;
       collected += part;
 
       if (collected !== tuition) {
-        throw new Error(`Incremental hardship collection did not reconcile: ${collected} !== ${tuition}`);
+        throw new Error(
+          `Incremental hardship collection did not reconcile: ${collected} !== ${tuition}`,
+        );
       }
-    }
+    },
   );
 
   // T4.3: Session-End Promotion Clearance Defaulter vs Authorized Bypass
@@ -1283,13 +1489,16 @@ async function runTestSuite() {
       const studentArrears = 8500;
       const hasArrears = studentArrears > 0;
 
-      const blockDefaulter = hasArrears && !null;
-      if (!blockDefaulter) throw new Error("Defaulter without bypass must be blocked.");
+      const bypassCode: string | null = null;
+      const blockDefaulter = hasArrears && !bypassCode;
+      if (!blockDefaulter)
+        throw new Error("Defaulter without bypass must be blocked.");
 
       const authorizedBypassCode = "PRIN_HARDSHIP_OVERRIDE_2026";
       const allowWithBypass = hasArrears && !!authorizedBypassCode;
-      if (!allowWithBypass) throw new Error("Defaulter with authorized bypass must be cleared.");
-    }
+      if (!allowWithBypass)
+        throw new Error("Defaulter with authorized bypass must be cleared.");
+    },
   );
 
   if (setupSucceeded) {
@@ -1299,9 +1508,13 @@ async function runTestSuite() {
   // --------------------------------------------------------------------------
   // SUITE SUMMARY & METRICS
   // --------------------------------------------------------------------------
-  console.log("\n================================================================================");
+  console.log(
+    "\n================================================================================",
+  );
   console.log("TEST SUITE EXECUTION SUMMARY");
-  console.log("================================================================================");
+  console.log(
+    "================================================================================",
+  );
 
   const tiers = ["TIER_1", "TIER_2", "TIER_3", "TIER_4"];
   let totalPass = 0;
@@ -1313,19 +1526,32 @@ async function runTestSuite() {
     const failCount = tierResults.filter((r) => !r.passed).length;
     totalPass += passCount;
     totalFail += failCount;
-    const tierStatus = failCount === 0 ? "\x1b[32mPASS\x1b[0m" : "\x1b[31mFAIL\x1b[0m";
-    console.log(`  ${tier}: ${passCount}/${tierResults.length} passed [${tierStatus}]`);
+    const tierStatus =
+      failCount === 0 ? "\x1b[32mPASS\x1b[0m" : "\x1b[31mFAIL\x1b[0m";
+    console.log(
+      `  ${tier}: ${passCount}/${tierResults.length} passed [${tierStatus}]`,
+    );
   }
 
-  console.log("--------------------------------------------------------------------------------");
-  console.log(`TOTAL RESULTS: ${totalPass} PASSED | ${totalFail} FAILED (TOTAL: ${results.length})`);
-  console.log("================================================================================");
+  console.log(
+    "--------------------------------------------------------------------------------",
+  );
+  console.log(
+    `TOTAL RESULTS: ${totalPass} PASSED | ${totalFail} FAILED (TOTAL: ${results.length})`,
+  );
+  console.log(
+    "================================================================================",
+  );
 
   if (totalFail > 0) {
-    console.error(`\x1b[31mE2E Verification Suite completed with ${totalFail} failure(s).\x1b[0m`);
+    console.error(
+      `\x1b[31mE2E Verification Suite completed with ${totalFail} failure(s).\x1b[0m`,
+    );
     process.exit(1);
   } else {
-    console.log("\x1b[32mE2E Verification Suite completed successfully. 100% Pass.\x1b[0m");
+    console.log(
+      "\x1b[32mE2E Verification Suite completed successfully. 100% Pass.\x1b[0m",
+    );
     process.exit(0);
   }
 }

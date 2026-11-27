@@ -1,8 +1,16 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, teacherProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  teacherProcedure,
+} from "../trpc";
 import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
+import {
+  assertCanReadStudent,
+  assertCanTeachClassSubject,
+} from "~/server/api/access";
 
 const uploadMarksSchema = z.object({
   examId: z.string().cuid(),
@@ -24,6 +32,7 @@ export const marksRouter = createTRPCRouter({
   uploadMarks: teacherProcedure
     .input(uploadMarksSchema)
     .mutation(async ({ ctx, input }) => {
+      await assertCanTeachClassSubject(ctx, input.classSubjectId);
       try {
         // Verify teacher is assigned to this class subject
         const classSubject = await ctx.db.classSubject.findUnique({
@@ -102,6 +111,7 @@ export const marksRouter = createTRPCRouter({
             message: "Marks record not found",
           });
         }
+        await assertCanTeachClassSubject(ctx, marks.classSubjectId);
 
         const updated = await ctx.db.marks.update({
           where: { marksId: input.marksId },
@@ -123,7 +133,7 @@ export const marksRouter = createTRPCRouter({
       }
     }),
 
-  getMarksForExam: protectedProcedure
+  getMarksForExam: teacherProcedure
     .input(
       z.object({
         examId: z.string().cuid(),
@@ -165,6 +175,7 @@ export const marksRouter = createTRPCRouter({
       }),
     )
     .query(async ({ ctx, input }) => {
+      await assertCanReadStudent(ctx, input.studentId);
       try {
         const marks = await ctx.db.marks.findMany({
           where: {
@@ -187,7 +198,7 @@ export const marksRouter = createTRPCRouter({
       }
     }),
 
-  checkMarksCoverage: protectedProcedure
+  checkMarksCoverage: teacherProcedure
     .input(
       z.object({
         examId: z.string().cuid(),

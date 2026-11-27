@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-import fs from 'fs';
-import path from 'path';
+import { PrismaClient } from "@prisma/client";
+import fs from "fs";
+import path from "path";
 
 const prisma = new PrismaClient();
 
@@ -31,7 +31,7 @@ function getLevenshteinDistance(a: string, b: string): number {
       tmp[i][j] = Math.min(
         tmp[i - 1][j] + 1,
         tmp[i][j - 1] + 1,
-        tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
       );
     }
   }
@@ -44,7 +44,10 @@ function getSimilarity(a: string, b: string): number {
   return 1.0 - getLevenshteinDistance(a, b) / maxLength;
 }
 
-function mapJsonClassToDbGrade(jsonClass: string): { grade: string; section: string } {
+function mapJsonClassToDbGrade(jsonClass: string): {
+  grade: string;
+  section: string;
+} {
   const normClass = jsonClass.toUpperCase().trim();
   let grade = normClass;
   let section = "ROSE"; // default section
@@ -69,9 +72,18 @@ function mapJsonClassToDbGrade(jsonClass: string): { grade: string; section: str
     grade = "SIX";
   } else if (normClass === "SEVEN" || normClass === "CLASS SEVEN") {
     grade = "SEVEN";
-  } else if (normClass === "NINE" || normClass === "9TH JUNIOR" || normClass === "9TH J" || normClass === "PRE 9") {
+  } else if (
+    normClass === "NINE" ||
+    normClass === "9TH JUNIOR" ||
+    normClass === "9TH J" ||
+    normClass === "PRE 9"
+  ) {
     grade = "PRE 9";
-  } else if (normClass === "9TH SENIOR" || normClass === "9TH S" || normClass === "NINE S") {
+  } else if (
+    normClass === "9TH SENIOR" ||
+    normClass === "9TH S" ||
+    normClass === "NINE S"
+  ) {
     grade = "NINE";
   } else if (normClass === "TEN" || normClass === "10TH") {
     grade = "TEN";
@@ -81,13 +93,18 @@ function mapJsonClassToDbGrade(jsonClass: string): { grade: string; section: str
 }
 
 async function main() {
-  const jsonPath = path.join(process.cwd(), 'prisma', 'fee-collections-2025.json');
-  const rawData = fs.readFileSync(jsonPath, 'utf8');
+  const jsonPath = path.join(
+    process.cwd(),
+    "prisma",
+    "private",
+    "fee-collections-2025.json",
+  );
+  const rawData = fs.readFileSync(jsonPath, "utf8");
   const data = JSON.parse(rawData);
 
   // Active session
   const activeSession = await prisma.sessions.findFirst({
-    where: { isActive: true }
+    where: { isActive: true },
   });
 
   if (!activeSession) {
@@ -98,7 +115,7 @@ async function main() {
   const allStudents = await prisma.students.findMany();
   const allStudentClasses = await prisma.studentClass.findMany({
     where: { sessionId: activeSession.sessionId },
-    include: { Grades: true }
+    include: { Grades: true },
   });
   const allGrades = await prisma.grades.findMany();
 
@@ -110,19 +127,24 @@ async function main() {
 
   for (const monthData of data.months) {
     for (const student of monthData.students) {
-      const jsonName = student.name || '';
-      const jsonClass = student.class || '';
+      const jsonName = student.name || "";
+      const jsonClass = student.class || "";
 
       // Try exact base name match first
       const cleanJson = getBaseName(jsonName);
-      let targetStudent = allStudents.find(s => getBaseName(s.studentName) === cleanJson);
+      let targetStudent = allStudents.find(
+        (s) => getBaseName(s.studentName) === cleanJson,
+      );
 
       // If not found, try fuzzy match
       if (!targetStudent) {
         let bestSim = 0;
         let bestStudent = null;
         for (const s of allStudents) {
-          const sim = getSimilarity(cleanName(jsonName), cleanName(s.studentName));
+          const sim = getSimilarity(
+            cleanName(jsonName),
+            cleanName(s.studentName),
+          );
           if (sim > bestSim) {
             bestSim = sim;
             bestStudent = s;
@@ -135,13 +157,16 @@ async function main() {
 
       if (targetStudent) {
         // Find StudentClass assignment
-        let studentClass = allStudentClasses.find(sc => sc.studentId === targetStudent!.studentId);
+        let studentClass = allStudentClasses.find(
+          (sc) => sc.studentId === targetStudent!.studentId,
+        );
         if (!studentClass) {
           // If they aren't assigned, find the grade to assign them to
           const mapped = mapJsonClassToDbGrade(jsonClass);
-          const gradeRecord = allGrades.find(g => 
-            g.grade.toUpperCase() === mapped.grade && 
-            g.section.toUpperCase() === mapped.section
+          const gradeRecord = allGrades.find(
+            (g) =>
+              g.grade.toUpperCase() === mapped.grade &&
+              g.section.toUpperCase() === mapped.section,
           );
           if (gradeRecord) {
             enrolledCount++;

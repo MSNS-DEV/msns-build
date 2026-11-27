@@ -25,7 +25,7 @@ export default function ExpensePage() {
   ];
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-green-50/50 to-teal-50/50 sm:px-6 sm:py-0 dark:from-slate-950 dark:to-slate-900">
+    <main className="min-h-screen bg-gradient-to-br from-green-50/50 to-teal-50/50 dark:from-slate-950 dark:to-slate-900 sm:px-6 sm:py-0">
       {/* PageHeader in layout */}
 
       {/* Animated background elements */}
@@ -40,7 +40,7 @@ export default function ExpensePage() {
         transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
       />
 
-      <div className="container mx-auto pt-[5rem] relative z-10">
+      <div className="container relative z-10 mx-auto pt-[5rem]">
         <div className="mx-auto w-full space-y-6">
           {/* Header Section */}
           <motion.div
@@ -53,7 +53,8 @@ export default function ExpensePage() {
               Expenses & Financial Management
             </h1>
             <p className="text-md mx-auto max-w-2xl font-medium text-green-700/90 dark:text-emerald-300/80">
-              Track, categorise, and manage institutional operational expenditures and records.
+              Track, categorise, and manage institutional operational
+              expenditures and records.
             </p>
           </motion.div>
 

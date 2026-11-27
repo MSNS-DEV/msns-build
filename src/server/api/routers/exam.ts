@@ -1,7 +1,12 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  officeProcedure,
+  teacherProcedure,
+} from "../trpc";
 import { z } from "zod";
-import type { Prisma } from "@prisma/client";
+import type { ExamTypeEnum, Prisma } from "@prisma/client";
 
 const createExamSchema = z.object({
   sessionId: z.string().cuid(),
@@ -42,15 +47,15 @@ const updateExamSchema = z.object({
 });
 
 export const examRouter = createTRPCRouter({
-  createExam: protectedProcedure
+  createExam: officeProcedure
     .input(createExamSchema)
     .mutation(async ({ ctx, input }) => {
       try {
         const targetClassIds = input.classIds?.length
           ? input.classIds
           : input.classId
-          ? [input.classId]
-          : [];
+            ? [input.classId]
+            : [];
 
         if (targetClassIds.length === 0) {
           throw new TRPCError({
@@ -125,7 +130,9 @@ export const examRouter = createTRPCRouter({
             where: { classId, sessionId: input.sessionId },
             select: { subjectId: true },
           });
-          const validSubjectIds = new Set(classSubjects.map((cs) => cs.subjectId));
+          const validSubjectIds = new Set(
+            classSubjects.map((cs) => cs.subjectId),
+          );
 
           const datesheetForClass = input.datesheet
             ? input.datesheet.filter((ds) => validSubjectIds.has(ds.subjectId))
@@ -135,7 +142,7 @@ export const examRouter = createTRPCRouter({
           const exam = await ctx.db.exam.create({
             data: {
               examTypeId: examType.examTypeId,
-              examTypeEnum: input.examTypeEnum as any,
+              examTypeEnum: input.examTypeEnum as ExamTypeEnum,
               sessionId: input.sessionId,
               classId,
               startDate: input.startDate,
@@ -186,7 +193,7 @@ export const examRouter = createTRPCRouter({
       }
     }),
 
-  updateExam: protectedProcedure
+  updateExam: officeProcedure
     .input(updateExamSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -347,7 +354,7 @@ export const examRouter = createTRPCRouter({
       }
     }),
 
-  deleteExam: protectedProcedure
+  deleteExam: officeProcedure
     .input(z.object({ examId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
       try {
@@ -393,12 +400,21 @@ export const examRouter = createTRPCRouter({
         return { success: true, message: "Exam deleted successfully" };
       } catch (error) {
         console.error("Error deleting exam:", error);
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to delete exam" });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to delete exam",
+        });
       }
     }),
 
   getExamWithSubjects: protectedProcedure
-    .input(z.object({ examId: z.string().cuid(), classId: z.string().cuid(), sessionId: z.string().cuid() }))
+    .input(
+      z.object({
+        examId: z.string().cuid(),
+        classId: z.string().cuid(),
+        sessionId: z.string().cuid(),
+      }),
+    )
     .query(async ({ ctx, input }) => {
       try {
         // Fetch the exam
@@ -407,12 +423,15 @@ export const examRouter = createTRPCRouter({
           include: {
             ExamType: true,
             ExamDatesheet: {
-              include: { Subject: { select: { subjectId: true, subjectName: true } } },
+              include: {
+                Subject: { select: { subjectId: true, subjectName: true } },
+              },
             },
           },
         });
 
-        if (!exam) throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
+        if (!exam)
+          throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
 
         // Fetch all subjects assigned to this class/session
         const classSubjects = await ctx.db.classSubject.findMany({
@@ -427,14 +446,26 @@ export const examRouter = createTRPCRouter({
         // Fetch all marks for this exam
         const marks = await ctx.db.marks.findMany({
           where: { examId: input.examId },
-          select: { subjectId: true, obtainedMarks: true, studentId: true, totalMarks: true },
+          select: {
+            subjectId: true,
+            obtainedMarks: true,
+            studentId: true,
+            totalMarks: true,
+          },
         });
 
         // Build per-subject summary
         const subjectSummary = classSubjects.map((cs) => {
-          const subjectMarks = marks.filter((m) => m.subjectId === cs.Subject.subjectId);
-          const studentsEvaluated = new Set(subjectMarks.map((m) => m.studentId)).size;
-          const totalObtained = subjectMarks.reduce((sum, m) => sum + m.obtainedMarks, 0);
+          const subjectMarks = marks.filter(
+            (m) => m.subjectId === cs.Subject.subjectId,
+          );
+          const studentsEvaluated = new Set(
+            subjectMarks.map((m) => m.studentId),
+          ).size;
+          const totalObtained = subjectMarks.reduce(
+            (sum, m) => sum + m.obtainedMarks,
+            0,
+          );
           const datesheetEntry = exam.ExamDatesheet.find(
             (d) => d.subjectId === cs.Subject.subjectId,
           );
@@ -446,7 +477,10 @@ export const examRouter = createTRPCRouter({
             totalMarks: exam.totalMarks,
             studentsEvaluated,
             totalObtained,
-            averageObtained: studentsEvaluated > 0 ? Math.round(totalObtained / studentsEvaluated) : null,
+            averageObtained:
+              studentsEvaluated > 0
+                ? Math.round(totalObtained / studentsEvaluated)
+                : null,
             examDate: datesheetEntry?.date ?? null,
             startTime: datesheetEntry?.startTime ?? null,
             endTime: datesheetEntry?.endTime ?? null,
@@ -456,7 +490,10 @@ export const examRouter = createTRPCRouter({
         return { exam, subjectSummary };
       } catch (error) {
         if (error instanceof TRPCError) throw error;
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to fetch exam subjects" });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to fetch exam subjects",
+        });
       }
     }),
 
@@ -494,7 +531,7 @@ export const examRouter = createTRPCRouter({
       }
     }),
 
-  getResultsAnalytics: protectedProcedure
+  getResultsAnalytics: teacherProcedure
     .input(
       z.object({
         sessionId: z.string().optional(),
@@ -539,7 +576,12 @@ export const examRouter = createTRPCRouter({
         let totalPossibleMarks = 0;
         const studentScores: Record<
           string,
-          { studentName: string; totalObtained: number; totalMax: number; rollNumber?: string }
+          {
+            studentName: string;
+            totalObtained: number;
+            totalMax: number;
+            rollNumber?: string;
+          }
         > = {};
         const subjectScores: Record<
           string,
@@ -658,4 +700,3 @@ export const examRouter = createTRPCRouter({
       }
     }),
 });
-

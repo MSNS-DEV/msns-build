@@ -18,7 +18,15 @@ import {
   SelectValue,
 } from "~/components/ui/select";
 import { motion, type Variants } from "framer-motion";
-import { Calendar, TrendingUp, Wallet, Filter, DollarSign, Receipt, FileText } from "lucide-react";
+import {
+  Calendar,
+  TrendingUp,
+  Wallet,
+  Filter,
+  DollarSign,
+  Receipt,
+  FileText,
+} from "lucide-react";
 import { Separator } from "~/components/ui/separator";
 import { api } from "~/trpc/react";
 import { GradientStatCard } from "~/components/shared/GradientStatCard";
@@ -45,16 +53,18 @@ export default function RevenuePage() {
   }, [selectedSessionId, sessions]);
 
   // Financial overview stats from ledger Profit & Loss
-  const { data: profitLoss, isLoading: isPLLoading } = api.erp.ledger.getProfitLoss.useQuery(
-    { sessionId: selectedSessionId },
-    { enabled: !!selectedSessionId }
-  );
+  const { data: profitLoss, isLoading: isPLLoading } =
+    api.erp.ledger.getProfitLoss.useQuery(
+      { sessionId: selectedSessionId },
+      { enabled: !!selectedSessionId },
+    );
 
   // Fee Analytics
-  const { data: feeAnalytics, isLoading: isFeeLoading } = api.fee.getFeeAnalytics.useQuery(
-    { sessionId: selectedSessionId, year: selectedYear ?? 2025 },
-    { enabled: !!selectedSessionId && !!selectedYear }
-  );
+  const { data: feeAnalytics, isLoading: isFeeLoading } =
+    api.fee.getFeeAnalytics.useQuery(
+      { sessionId: selectedSessionId, year: selectedYear ?? 2025 },
+      { enabled: !!selectedSessionId && !!selectedYear },
+    );
 
   // All expenses for CSV export
   const { data: allExpensesData } = api.expense.getAllExpenses.useQuery({
@@ -63,14 +73,20 @@ export default function RevenuePage() {
 
   const totalCollected = useMemo(() => {
     if (!feeAnalytics?.monthlyTrend) return 0;
-    return feeAnalytics.monthlyTrend.reduce((sum, item) => sum + item.collected, 0);
+    return feeAnalytics.monthlyTrend.reduce(
+      (sum, item) => sum + item.collected,
+      0,
+    );
   }, [feeAnalytics]);
 
   const totalOutstanding = feeAnalytics?.summary?.totalOutstanding ?? 0;
 
   const totalExpected = useMemo(() => {
     if (!feeAnalytics?.monthlyTrend) return 0;
-    return feeAnalytics.monthlyTrend.reduce((sum, item) => sum + (item.collected + item.outstanding), 0);
+    return feeAnalytics.monthlyTrend.reduce(
+      (sum, item) => sum + (item.collected + item.outstanding),
+      0,
+    );
   }, [feeAnalytics]);
 
   const otherRevenue = useMemo(() => {
@@ -171,7 +187,10 @@ export default function RevenuePage() {
 
             {/* Controls Toolbar */}
             <div className="flex flex-wrap items-center gap-3 rounded-xl border border-emerald-500/20 bg-card p-1.5 shadow-lg backdrop-blur-md">
-              <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+              <Select
+                value={selectedSessionId}
+                onValueChange={setSelectedSessionId}
+              >
                 <SelectTrigger className="h-10 w-[180px] border-emerald-500/20 bg-muted text-foreground focus:ring-emerald-500/50">
                   <Calendar className="mr-2 h-4 w-4 text-emerald-400" />
                   <SelectValue placeholder="Select Session" />
@@ -200,7 +219,7 @@ export default function RevenuePage() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-10 border-emerald-500/20 bg-muted text-foreground hover:bg-emerald-500/10 gap-2"
+                className="h-10 gap-2 border-emerald-500/20 bg-muted text-foreground hover:bg-emerald-500/10"
                 asChild
               >
                 <Link href="/admin/reports?report=revenue-expense-summary">
@@ -215,31 +234,45 @@ export default function RevenuePage() {
           <motion.div variants={itemVariants} className="relative">
             {/* Decorative blob behind cards */}
             <div className="absolute inset-0 -z-10 bg-emerald-500/5 blur-3xl" />
-            <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+            <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
               <GradientStatCard
                 title="Total Income"
-                value={isPLLoading ? "..." : `PKR ${(profitLoss?.totalIncome ?? 0).toLocaleString()}`}
+                value={
+                  isPLLoading
+                    ? "..."
+                    : `PKR ${(profitLoss?.totalIncome ?? 0).toLocaleString()}`
+                }
                 icon={<TrendingUp className="h-5 w-5" />}
                 subtitle="Total collected revenue"
                 theme="emerald"
               />
               <GradientStatCard
                 title="Invoiced Fees"
-                value={isFeeLoading ? "..." : `PKR ${totalExpected.toLocaleString()}`}
+                value={
+                  isFeeLoading ? "..." : `PKR ${totalExpected.toLocaleString()}`
+                }
                 icon={<Receipt className="h-5 w-5" />}
                 subtitle="Total generated billings"
                 theme="blue"
               />
               <GradientStatCard
                 title="Other Revenue"
-                value={isPLLoading || isFeeLoading ? "..." : `PKR ${otherRevenue.toLocaleString()}`}
+                value={
+                  isPLLoading || isFeeLoading
+                    ? "..."
+                    : `PKR ${otherRevenue.toLocaleString()}`
+                }
                 icon={<DollarSign className="h-5 w-5" />}
                 subtitle="Late fees & other funds"
                 theme="amber"
               />
               <GradientStatCard
                 title="Pending Collections"
-                value={isFeeLoading ? "..." : `PKR ${totalOutstanding.toLocaleString()}`}
+                value={
+                  isFeeLoading
+                    ? "..."
+                    : `PKR ${totalOutstanding.toLocaleString()}`
+                }
                 icon={<Wallet className="h-5 w-5" />}
                 subtitle="Unpaid vouchers total"
                 theme="rose"
@@ -261,7 +294,8 @@ export default function RevenuePage() {
                         Expense Transactions
                       </CardTitle>
                       <CardDescription className="text-muted-foreground">
-                        Detailed breakdown of operational expenses and salary disbursements.
+                        Detailed breakdown of operational expenses and salary
+                        disbursements.
                       </CardDescription>
                     </div>
                   </div>

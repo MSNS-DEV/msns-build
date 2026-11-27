@@ -1,49 +1,51 @@
-import type { CapacitorConfig } from '@capacitor/cli';
+import type { CapacitorConfig } from "@capacitor/cli";
 
-const isProduction = process.env.NODE_ENV === 'production';
+// Debug-only WebView features are opt-in. Release builds (cap sync / android:build)
+// never set CAP_ENV, so they ship with WebView debugging and cleartext disabled.
+// For local debugging run: CAP_ENV=development npx cap sync android
+const isDevBuild = process.env.CAP_ENV === "development";
 
 const config: CapacitorConfig = {
-  appId: 'com.msns.lms',
-  appName: 'MSNS LMS',
-  webDir: 'public',
+  appId: "com.msns.lms",
+  appName: "MSNS LMS",
+  webDir: "public",
   server: {
     // Live LMS production server domain
-    url: 'https://lms.msns.edu.pk',
-    cleartext: !isProduction,
-    androidScheme: 'https'
+    url: "https://lms.msns.edu.pk",
+    cleartext: isDevBuild,
+    androidScheme: "https",
   },
   android: {
-    allowMixedContent: true,
     captureInput: true,
-    webContentsDebuggingEnabled: !isProduction
+    webContentsDebuggingEnabled: isDevBuild,
   },
   plugins: {
     SplashScreen: {
       launchShowDuration: 0,
       launchAutoHide: true,
-      backgroundColor: '#020806',
-      showSpinner: false
+      backgroundColor: "#020806",
+      showSpinner: false,
     },
     StatusBar: {
       overlaysWebView: true,
-      backgroundColor: '#00000000',
-      style: 'DARK'
+      backgroundColor: "#00000000",
+      style: "DARK",
     },
     CapacitorSQLite: {
       iosIsEncryption: true,
       iosBiometric: {
         biometricAuth: true,
-        biometricTitle: "MSNS Secure Cache Unlock"
+        biometricTitle: "MSNS Secure Cache Unlock",
       },
       androidIsEncryption: true,
       androidBiometric: {
         biometricAuth: true,
         biometricTitle: "MSNS Secure Cache Unlock",
-        biometricSubTitle: "Please verify biometrics to decrypt offline roster data"
-      }
-    }
-  }
+        biometricSubTitle:
+          "Please verify biometrics to decrypt offline roster data",
+      },
+    },
+  },
 };
 
 export default config;
-

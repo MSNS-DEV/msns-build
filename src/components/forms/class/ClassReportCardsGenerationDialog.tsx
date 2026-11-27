@@ -11,10 +11,22 @@ import {
   DialogTrigger,
 } from "~/components/ui/dialog";
 import { Button } from "~/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { FileText, Loader2, Sparkles, CheckCircle2, AlertTriangle, Users } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  FileText,
+  Loader2,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
-
 
 interface ClassReportCardsGenerationDialogProps {
   classId: string;
@@ -35,10 +47,11 @@ export function ClassReportCardsGenerationDialog({
   } | null>(null);
 
   // Fetch all exams for this class
-  const { data: exams, isLoading: examsLoading } = api.exam.getExamsForClass.useQuery(
-    { classId, sessionId },
-    { enabled: open }
-  );
+  const { data: exams, isLoading: examsLoading } =
+    api.exam.getExamsForClass.useQuery(
+      { classId, sessionId },
+      { enabled: open },
+    );
 
   const generateMutation = api.reportCard.generateClassReportCards.useMutation({
     onSuccess: (data) => {
@@ -80,13 +93,20 @@ export function ClassReportCardsGenerationDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); else setOpen(true); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleClose();
+        else setOpen(true);
+      }}
+    >
       <DialogTrigger asChild>
         <Button
           size="sm"
-          className="border-0 bg-gradient-to-r from-emerald-600 to-teal-600 text-foreground shadow-lg shadow-emerald-900/20 hover:from-emerald-500 hover:to-teal-500 transition-all font-medium"
+          className="border-0 bg-gradient-to-r from-emerald-600 to-teal-600 font-medium text-foreground shadow-lg shadow-emerald-900/20 transition-all hover:from-emerald-500 hover:to-teal-500"
         >
-          <Sparkles className="mr-2 h-4 w-4 text-emerald-100 animate-pulse" /> Auto-Generate Report Cards
+          <Sparkles className="mr-2 h-4 w-4 animate-pulse text-emerald-100" />{" "}
+          Auto-Generate Report Cards
         </Button>
       </DialogTrigger>
       <DialogContent className="border-border bg-card text-foreground sm:max-w-md">
@@ -96,7 +116,8 @@ export function ClassReportCardsGenerationDialog({
             <span>Generate Class Report Cards</span>
           </DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Fetch obtained marks and automatically compile report cards for all students in this class.
+            Fetch obtained marks and automatically compile report cards for all
+            students in this class.
           </DialogDescription>
         </DialogHeader>
 
@@ -132,13 +153,16 @@ export function ClassReportCardsGenerationDialog({
               </div>
 
               {selectedExam && (
-                <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-muted-foreground space-y-2">
+                <div className="space-y-2 rounded-lg border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2 font-medium text-foreground">
                     <Users className="h-4 w-4 text-emerald-400" />
                     <span>Evaluation Prep</span>
                   </div>
                   <p className="text-xs">
-                    This will fetch obtained marks in all subjects for each student and calculate their total scores, passing status, and details. Students missing marks in any subject will be skipped.
+                    This will fetch obtained marks in all subjects for each
+                    student and calculate their total scores, passing status,
+                    and details. Students missing marks in any subject will be
+                    skipped.
                   </p>
                 </div>
               )}
@@ -155,7 +179,7 @@ export function ClassReportCardsGenerationDialog({
                 <Button
                   onClick={handleGenerate}
                   disabled={isGenerating || !selectedExam}
-                  className="bg-emerald-600 text-foreground hover:bg-emerald-500 shadow-md shadow-emerald-900/10"
+                  className="bg-emerald-600 text-foreground shadow-md shadow-emerald-900/10 hover:bg-emerald-500"
                 >
                   {isGenerating ? (
                     <>
@@ -170,38 +194,51 @@ export function ClassReportCardsGenerationDialog({
             </>
           ) : (
             <div className="space-y-4 py-2">
-              <div className="flex flex-col items-center justify-center text-center space-y-2">
+              <div className="flex flex-col items-center justify-center space-y-2 text-center">
                 <div className="rounded-full bg-emerald-500/10 p-3 text-emerald-500">
                   <CheckCircle2 className="h-8 w-8" />
                 </div>
                 <h4 className="text-lg font-bold">Process Completed</h4>
-                <p className="text-sm text-muted-foreground max-w-sm">
+                <p className="max-w-sm text-sm text-muted-foreground">
                   {result.message}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3 pt-2">
                 <div className="rounded-xl border border-border bg-emerald-500/5 p-3 text-center">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Generated</p>
-                  <p className="text-2xl font-bold text-emerald-400">{result.generatedCount}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Generated
+                  </p>
+                  <p className="text-2xl font-bold text-emerald-400">
+                    {result.generatedCount}
+                  </p>
                 </div>
                 <div className="rounded-xl border border-border bg-amber-500/5 p-3 text-center">
-                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Skipped</p>
-                  <p className="text-2xl font-bold text-amber-400">{result.skippedCount}</p>
+                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Skipped
+                  </p>
+                  <p className="text-2xl font-bold text-amber-400">
+                    {result.skippedCount}
+                  </p>
                 </div>
               </div>
 
               {result.skippedCount > 0 && (
                 <div className="flex items-start gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-amber-400">
-                  <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                   <span>
-                    Some students were skipped because their marks for one or more subjects have not been uploaded in the marking centre yet.
+                    Some students were skipped because their marks for one or
+                    more subjects have not been uploaded in the marking centre
+                    yet.
                   </span>
                 </div>
               )}
 
               <div className="flex justify-center pt-4">
-                <Button onClick={handleClose} className="bg-emerald-600 text-foreground hover:bg-emerald-500 px-6">
+                <Button
+                  onClick={handleClose}
+                  className="bg-emerald-600 px-6 text-foreground hover:bg-emerald-500"
+                >
                   Done
                 </Button>
               </div>

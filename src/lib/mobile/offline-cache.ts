@@ -7,9 +7,12 @@ export interface CachedDataEnvelope<T> {
 }
 
 /**
- * Cache Timetable data locally (SQLite on Android, localStorage on Web)
+ * Cache Timetable data locally (encrypted SQLite on Android, localStorage on Web only)
  */
-export const saveCachedTimetable = async (classId: string, data: unknown): Promise<void> => {
+export const saveCachedTimetable = async (
+  classId: string,
+  data: unknown,
+): Promise<void> => {
   const envelope: CachedDataEnvelope<unknown> = {
     data,
     timestamp: new Date().toISOString(),
@@ -20,10 +23,12 @@ export const saveCachedTimetable = async (classId: string, data: unknown): Promi
     try {
       const db = await getDb();
       if (db) {
-        const dbRun = db as unknown as { run(query: string, params: unknown[]): Promise<void> };
+        const dbRun = db as unknown as {
+          run(query: string, params: unknown[]): Promise<void>;
+        };
         await dbRun.run(
           `INSERT OR REPLACE INTO timetables (id, classId, data) VALUES (?, ?, ?)`,
-          [`timetable_${classId}`, classId, jsonStr]
+          [`timetable_${classId}`, classId, jsonStr],
         );
       }
     } catch (err) {
@@ -31,11 +36,14 @@ export const saveCachedTimetable = async (classId: string, data: unknown): Promi
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       localStorage.setItem(`offline_timetable_${classId}`, jsonStr);
     } catch (err) {
-      console.error("[OfflineCache] Failed to save timetable to localStorage:", err);
+      console.error(
+        "[OfflineCache] Failed to save timetable to localStorage:",
+        err,
+      );
     }
   }
 };
@@ -43,28 +51,44 @@ export const saveCachedTimetable = async (classId: string, data: unknown): Promi
 /**
  * Get Cached Timetable data
  */
-export const getCachedTimetable = async <T>(classId: string): Promise<CachedDataEnvelope<T> | null> => {
+export const getCachedTimetable = async <T>(
+  classId: string,
+): Promise<CachedDataEnvelope<T> | null> => {
   if (isNative()) {
     try {
       const db = await getDb();
       if (db) {
-        const dbQuery = db as unknown as { query(query: string, params: unknown[]): Promise<{ values?: Array<{ data: string }> }> };
-        const res = await dbQuery.query(`SELECT data FROM timetables WHERE id = ?`, [`timetable_${classId}`]);
+        const dbQuery = db as unknown as {
+          query(
+            query: string,
+            params: unknown[],
+          ): Promise<{ values?: Array<{ data: string }> }>;
+        };
+        const res = await dbQuery.query(
+          `SELECT data FROM timetables WHERE id = ?`,
+          [`timetable_${classId}`],
+        );
         if (res.values && res.values.length > 0 && res.values[0]?.data) {
           return JSON.parse(res.values[0].data) as CachedDataEnvelope<T>;
         }
       }
     } catch (err) {
-      console.error("[OfflineCache] Failed to read timetable from SQLite:", err);
+      console.error(
+        "[OfflineCache] Failed to read timetable from SQLite:",
+        err,
+      );
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       const item = localStorage.getItem(`offline_timetable_${classId}`);
       if (item) return JSON.parse(item) as CachedDataEnvelope<T>;
     } catch (err) {
-      console.error("[OfflineCache] Failed to read timetable from localStorage:", err);
+      console.error(
+        "[OfflineCache] Failed to read timetable from localStorage:",
+        err,
+      );
     }
   }
 
@@ -74,7 +98,10 @@ export const getCachedTimetable = async <T>(classId: string): Promise<CachedData
 /**
  * Cache Subject Diary data locally
  */
-export const saveCachedDiary = async (classId: string, data: unknown): Promise<void> => {
+export const saveCachedDiary = async (
+  classId: string,
+  data: unknown,
+): Promise<void> => {
   const envelope: CachedDataEnvelope<unknown> = {
     data,
     timestamp: new Date().toISOString(),
@@ -85,10 +112,12 @@ export const saveCachedDiary = async (classId: string, data: unknown): Promise<v
     try {
       const db = await getDb();
       if (db) {
-        const dbRun = db as unknown as { run(query: string, params: unknown[]): Promise<void> };
+        const dbRun = db as unknown as {
+          run(query: string, params: unknown[]): Promise<void>;
+        };
         await dbRun.run(
           `INSERT OR REPLACE INTO diary (id, classId, data) VALUES (?, ?, ?)`,
-          [`diary_${classId}`, classId, jsonStr]
+          [`diary_${classId}`, classId, jsonStr],
         );
       }
     } catch (err) {
@@ -96,11 +125,14 @@ export const saveCachedDiary = async (classId: string, data: unknown): Promise<v
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       localStorage.setItem(`offline_diary_${classId}`, jsonStr);
     } catch (err) {
-      console.error("[OfflineCache] Failed to save diary to localStorage:", err);
+      console.error(
+        "[OfflineCache] Failed to save diary to localStorage:",
+        err,
+      );
     }
   }
 };
@@ -108,13 +140,22 @@ export const saveCachedDiary = async (classId: string, data: unknown): Promise<v
 /**
  * Get Cached Subject Diary data
  */
-export const getCachedDiary = async <T>(classId: string): Promise<CachedDataEnvelope<T> | null> => {
+export const getCachedDiary = async <T>(
+  classId: string,
+): Promise<CachedDataEnvelope<T> | null> => {
   if (isNative()) {
     try {
       const db = await getDb();
       if (db) {
-        const dbQuery = db as unknown as { query(query: string, params: unknown[]): Promise<{ values?: Array<{ data: string }> }> };
-        const res = await dbQuery.query(`SELECT data FROM diary WHERE id = ?`, [`diary_${classId}`]);
+        const dbQuery = db as unknown as {
+          query(
+            query: string,
+            params: unknown[],
+          ): Promise<{ values?: Array<{ data: string }> }>;
+        };
+        const res = await dbQuery.query(`SELECT data FROM diary WHERE id = ?`, [
+          `diary_${classId}`,
+        ]);
         if (res.values && res.values.length > 0 && res.values[0]?.data) {
           return JSON.parse(res.values[0].data) as CachedDataEnvelope<T>;
         }
@@ -124,12 +165,15 @@ export const getCachedDiary = async <T>(classId: string): Promise<CachedDataEnve
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       const item = localStorage.getItem(`offline_diary_${classId}`);
       if (item) return JSON.parse(item) as CachedDataEnvelope<T>;
     } catch (err) {
-      console.error("[OfflineCache] Failed to read diary from localStorage:", err);
+      console.error(
+        "[OfflineCache] Failed to read diary from localStorage:",
+        err,
+      );
     }
   }
 
@@ -139,7 +183,10 @@ export const getCachedDiary = async <T>(classId: string): Promise<CachedDataEnve
 /**
  * Cache Exam Datesheets locally
  */
-export const saveCachedDatesheet = async (examId: string, data: unknown): Promise<void> => {
+export const saveCachedDatesheet = async (
+  examId: string,
+  data: unknown,
+): Promise<void> => {
   const envelope: CachedDataEnvelope<unknown> = {
     data,
     timestamp: new Date().toISOString(),
@@ -150,10 +197,12 @@ export const saveCachedDatesheet = async (examId: string, data: unknown): Promis
     try {
       const db = await getDb();
       if (db) {
-        const dbRun = db as unknown as { run(query: string, params: unknown[]): Promise<void> };
+        const dbRun = db as unknown as {
+          run(query: string, params: unknown[]): Promise<void>;
+        };
         await dbRun.run(
           `INSERT OR REPLACE INTO exams (id, examId, data) VALUES (?, ?, ?)`,
-          [`datesheet_${examId}`, examId, jsonStr]
+          [`datesheet_${examId}`, examId, jsonStr],
         );
       }
     } catch (err) {
@@ -161,11 +210,14 @@ export const saveCachedDatesheet = async (examId: string, data: unknown): Promis
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       localStorage.setItem(`offline_datesheet_${examId}`, jsonStr);
     } catch (err) {
-      console.error("[OfflineCache] Failed to save datesheet to localStorage:", err);
+      console.error(
+        "[OfflineCache] Failed to save datesheet to localStorage:",
+        err,
+      );
     }
   }
 };
@@ -173,28 +225,43 @@ export const saveCachedDatesheet = async (examId: string, data: unknown): Promis
 /**
  * Get Cached Exam Datesheets
  */
-export const getCachedDatesheet = async <T>(examId: string): Promise<CachedDataEnvelope<T> | null> => {
+export const getCachedDatesheet = async <T>(
+  examId: string,
+): Promise<CachedDataEnvelope<T> | null> => {
   if (isNative()) {
     try {
       const db = await getDb();
       if (db) {
-        const dbQuery = db as unknown as { query(query: string, params: unknown[]): Promise<{ values?: Array<{ data: string }> }> };
-        const res = await dbQuery.query(`SELECT data FROM exams WHERE id = ?`, [`datesheet_${examId}`]);
+        const dbQuery = db as unknown as {
+          query(
+            query: string,
+            params: unknown[],
+          ): Promise<{ values?: Array<{ data: string }> }>;
+        };
+        const res = await dbQuery.query(`SELECT data FROM exams WHERE id = ?`, [
+          `datesheet_${examId}`,
+        ]);
         if (res.values && res.values.length > 0 && res.values[0]?.data) {
           return JSON.parse(res.values[0].data) as CachedDataEnvelope<T>;
         }
       }
     } catch (err) {
-      console.error("[OfflineCache] Failed to read datesheet from SQLite:", err);
+      console.error(
+        "[OfflineCache] Failed to read datesheet from SQLite:",
+        err,
+      );
     }
   }
 
-  if (typeof window !== "undefined") {
+  if (!isNative() && typeof window !== "undefined") {
     try {
       const item = localStorage.getItem(`offline_datesheet_${examId}`);
       if (item) return JSON.parse(item) as CachedDataEnvelope<T>;
     } catch (err) {
-      console.error("[OfflineCache] Failed to read datesheet from localStorage:", err);
+      console.error(
+        "[OfflineCache] Failed to read datesheet from localStorage:",
+        err,
+      );
     }
   }
 

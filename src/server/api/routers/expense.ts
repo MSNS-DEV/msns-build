@@ -1,4 +1,8 @@
-import { createTRPCRouter, protectedProcedure, managementProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  managementProcedure,
+  financeProcedure,
+} from "../trpc";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { type Prisma } from "@prisma/client";
@@ -48,7 +52,7 @@ export const expensesRouter = createTRPCRouter({
     }),
 
   // Get all expenses with filtering, searching, and pagination
-  getAllExpenses: protectedProcedure
+  getAllExpenses: financeProcedure
     .input(
       z.object({
         month: z.number().optional(),
@@ -112,7 +116,7 @@ export const expensesRouter = createTRPCRouter({
     }),
 
   // Get expense by ID
-  getExpenseById: protectedProcedure
+  getExpenseById: financeProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
       try {
@@ -199,7 +203,7 @@ export const expensesRouter = createTRPCRouter({
     }),
 
   // Get available years for filtering
-  getExpenseYears: protectedProcedure.query(async ({ ctx }) => {
+  getExpenseYears: financeProcedure.query(async ({ ctx }) => {
     try {
       const years = await ctx.db.expenses.findMany({
         select: { year: true },
@@ -214,7 +218,7 @@ export const expensesRouter = createTRPCRouter({
   }),
 
   // Get expenses by month with totals (Dashboard/Charts)
-  getExpensesByMonth: protectedProcedure
+  getExpensesByMonth: financeProcedure
     .input(
       z.object({
         month: z.number().min(1).max(12),
@@ -260,7 +264,7 @@ export const expensesRouter = createTRPCRouter({
     }),
 
   // Get expense summary for a period (Analytics)
-  getExpensesSummary: protectedProcedure
+  getExpensesSummary: financeProcedure
     .input(
       z.object({
         startMonth: z.number().min(1).max(12),

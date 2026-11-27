@@ -47,8 +47,6 @@ import {
   DialogFooter,
 } from "~/components/ui/dialog";
 import { toast } from "~/hooks/use-toast";
-import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
 import { AnnualSalaryDialog } from "../blocks/salary/AnnualSalaryDialog";
 
 // Defined interface based on the query output
@@ -396,7 +394,10 @@ export function PayrollTable({ month, year }: PayrollTableProps) {
   }, [salaryData, missingEmployees]);
 
   const totalPages = Math.ceil(combinedData.length / pageSize);
-  const paginatedData = combinedData.slice((page - 1) * pageSize, page * pageSize);
+  const paginatedData = combinedData.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
 
   // --- PDF Logic ---
   const handlePrint = () => {
@@ -414,6 +415,11 @@ export function PayrollTable({ month, year }: PayrollTableProps) {
     if (!slipRef.current || !previewRecord) return;
     try {
       setIsDownloading(true);
+      // Loaded on demand so PDF libraries stay out of the page bundle.
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas-pro"),
+      ]);
       const canvas = await html2canvas(slipRef.current, {
         scale: 2,
         backgroundColor: "#ffffff",
@@ -500,7 +506,7 @@ export function PayrollTable({ month, year }: PayrollTableProps) {
                   <Checkbox
                     checked={
                       salaryData?.salaries.length &&
-                        selectedIds.length === salaryData?.salaries.length
+                      selectedIds.length === salaryData?.salaries.length
                         ? true
                         : selectedIds.length > 0
                           ? "indeterminate"
@@ -580,14 +586,17 @@ export function PayrollTable({ month, year }: PayrollTableProps) {
                             variant="outline"
                             className="border-slate-300 bg-slate-100 text-muted-foreground dark:border-slate-700 dark:bg-muted dark:text-muted-foreground"
                           >
-                            <AlertCircle className="mr-1 h-3 w-3" /> Not Generated
+                            <AlertCircle className="mr-1 h-3 w-3" /> Not
+                            Generated
                           </Badge>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleGeneratePayroll(emp.employeeId)}
+                            onClick={() =>
+                              handleGeneratePayroll(emp.employeeId)
+                            }
                             disabled={generatingId === emp.employeeId}
                             className="h-7 gap-2 border-emerald-200 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 hover:text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/5 dark:text-emerald-400 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-300"
                           >
@@ -735,12 +744,42 @@ export function PayrollTable({ month, year }: PayrollTableProps) {
         </div>
         <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-200 bg-slate-50/50 px-4 py-3 dark:border-emerald-500/20 dark:bg-emerald-950/20 sm:flex-row">
           <div className="text-sm text-slate-500 dark:text-muted-foreground">
-            Showing <span className="font-medium text-slate-900 dark:text-foreground">{(page - 1) * pageSize + 1}</span> to <span className="font-medium text-slate-900 dark:text-foreground">{Math.min(page * pageSize, combinedData.length)}</span> of <span className="font-medium text-slate-900 dark:text-foreground">{combinedData.length}</span> results
+            Showing{" "}
+            <span className="font-medium text-slate-900 dark:text-foreground">
+              {(page - 1) * pageSize + 1}
+            </span>{" "}
+            to{" "}
+            <span className="font-medium text-slate-900 dark:text-foreground">
+              {Math.min(page * pageSize, combinedData.length)}
+            </span>{" "}
+            of{" "}
+            <span className="font-medium text-slate-900 dark:text-foreground">
+              {combinedData.length}
+            </span>{" "}
+            results
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1} className="dark:border-emerald-500/30 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400">Previous</Button>
-            <span className="text-xs font-semibold px-2 text-slate-600 dark:text-emerald-400">Page {page} / {totalPages || 1}</span>
-            <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page >= totalPages} className="dark:border-emerald-500/30 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400">Next</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+              className="dark:border-emerald-500/30 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400"
+            >
+              Previous
+            </Button>
+            <span className="px-2 text-xs font-semibold text-slate-600 dark:text-emerald-400">
+              Page {page} / {totalPages || 1}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page >= totalPages}
+              className="dark:border-emerald-500/30 dark:hover:bg-emerald-500/10 dark:hover:text-emerald-400"
+            >
+              Next
+            </Button>
           </div>
         </div>
       </div>
@@ -798,8 +837,8 @@ export function PayrollTable({ month, year }: PayrollTableProps) {
                       <span>
                         {previewRecord.paymentDate
                           ? new Date(
-                            previewRecord.paymentDate,
-                          ).toLocaleDateString()
+                              previewRecord.paymentDate,
+                            ).toLocaleDateString()
                           : "Pending"}
                       </span>
                     </div>
@@ -874,7 +913,10 @@ export function PayrollTable({ month, year }: PayrollTableProps) {
       </Dialog>
 
       {/* Pay Salary Dialog */}
-      <Dialog open={!!payRecord} onOpenChange={(open) => !open && setPayRecord(null)}>
+      <Dialog
+        open={!!payRecord}
+        onOpenChange={(open) => !open && setPayRecord(null)}
+      >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Process Salary Payment</DialogTitle>
@@ -912,19 +954,31 @@ export function PayrollTable({ month, year }: PayrollTableProps) {
                 onChange={(e) => handleDeductionsChange(e.target.value)}
               />
             </div>
-            <div className="grid gap-2 mt-2">
-              <Label className="text-emerald-700 font-semibold dark:text-emerald-400">Net Payable (PKR) - Auto Calculates Bonus/Deduction</Label>
+            <div className="mt-2 grid gap-2">
+              <Label className="font-semibold text-emerald-700 dark:text-emerald-400">
+                Net Payable (PKR) - Auto Calculates Bonus/Deduction
+              </Label>
               <Input
                 type="number"
-                className="font-bold text-emerald-700 border-emerald-500/50 bg-emerald-50/50 dark:text-emerald-400 dark:bg-emerald-950/20"
-                value={payForm.amount + payForm.allowances + payForm.bonus - payForm.deductions}
+                className="border-emerald-500/50 bg-emerald-50/50 font-bold text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400"
+                value={
+                  payForm.amount +
+                  payForm.allowances +
+                  payForm.bonus -
+                  payForm.deductions
+                }
                 onChange={(e) => handleNetPayableChange(e.target.value)}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPayRecord(null)}>Cancel</Button>
-            <Button onClick={handlePaySubmit} className="bg-emerald-600 hover:bg-emerald-700 text-white">
+            <Button variant="outline" onClick={() => setPayRecord(null)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handlePaySubmit}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
               Confirm Payment
             </Button>
           </DialogFooter>

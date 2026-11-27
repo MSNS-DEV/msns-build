@@ -1,9 +1,11 @@
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
+import {
+  ClassAttendanceTab,
+  ClassExamsTab,
+  ClassDiariesTab,
+  ClassSubjectsTab,
+} from "~/components/blocks/class/lazy-tabs";
 import { ClassTimetableTab } from "~/components/blocks/class/ClassTimetableTab";
-import { ClassAttendanceTab } from "~/components/blocks/class/ClassAttendanceTab";
-import { ClassExamsTab } from "~/components/blocks/class/ClassExamsTab";
-import { ClassDiariesTab } from "~/components/blocks/class/ClassDiariesTab";
-import { ClassSubjectsTab } from "~/components/blocks/class/ClassSubjectsTab";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
   BookOpen,
@@ -17,7 +19,9 @@ type PageProps = {
   searchParams: Promise<{ classId: string; sessionId: string }>;
 };
 
-export default async function StudentClassDetailsPage({ searchParams }: PageProps) {
+export default async function StudentClassDetailsPage({
+  searchParams,
+}: PageProps) {
   const searchProps = await searchParams;
 
   const breadcrumbs = [

@@ -291,15 +291,18 @@ export const ClassAllotmentTable = ({
             {Array(4)
               .fill(0)
               .map((_, i) => (
-                <Skeleton key={i} className="h-32 shrink-0 rounded-xl bg-white/5 w-[280px] sm:w-[320px]" />
+                <Skeleton
+                  key={i}
+                  className="h-32 w-[280px] shrink-0 rounded-xl bg-white/5 sm:w-[320px]"
+                />
               ))}
           </div>
         ) : subjects?.length ? (
-          <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+          <div className="custom-scrollbar flex gap-4 overflow-x-auto pb-4">
             {subjects.map((subject) => (
               <div
                 key={subject.csId}
-                className="group relative shrink-0 rounded-xl border border-border bg-card p-5 transition-all hover:-translate-y-1 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-900/10 flex flex-col justify-between w-[280px] sm:w-[320px]"
+                className="group relative flex w-[280px] shrink-0 flex-col justify-between rounded-xl border border-border bg-card p-5 transition-all hover:-translate-y-1 hover:border-blue-500/30 hover:shadow-lg hover:shadow-blue-900/10 sm:w-[320px]"
               >
                 <div>
                   <div className="mb-3 flex items-start justify-between">
@@ -425,12 +428,15 @@ export const ClassAllotmentTable = ({
           </div>
         </div>
 
-        <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar">
+        <div className="custom-scrollbar flex gap-4 overflow-x-auto pb-4">
           {studentsLoading ? (
             Array(4)
               .fill(0)
               .map((_, i) => (
-                <Skeleton key={i} className="h-40 shrink-0 w-[280px] sm:w-[320px] rounded-xl bg-white/5" />
+                <Skeleton
+                  key={i}
+                  className="h-40 w-[280px] shrink-0 rounded-xl bg-white/5 sm:w-[320px]"
+                />
               ))
           ) : table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
@@ -438,7 +444,7 @@ export const ClassAllotmentTable = ({
                 key={row.id}
                 onClick={() => row.toggleSelected()}
                 className={cn(
-                  "group relative shrink-0 w-[280px] sm:w-[320px] cursor-pointer flex flex-col gap-4 select-none rounded-xl border p-4 transition-all",
+                  "group relative flex w-[280px] shrink-0 cursor-pointer select-none flex-col gap-4 rounded-xl border p-4 transition-all sm:w-[320px]",
                   row.getIsSelected()
                     ? "border-emerald-500 bg-emerald-900/20 shadow-lg ring-1 ring-emerald-500/50"
                     : "border-border bg-card hover:border-emerald-500/30 hover:bg-card hover:shadow-md",
@@ -464,7 +470,8 @@ export const ClassAllotmentTable = ({
                         {row.original.Students.studentName}
                       </h3>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {getParentagePrefix(row.original.Students.gender)} {row.original.Students.fatherName}
+                        {getParentagePrefix(row.original.Students.gender)}{" "}
+                        {row.original.Students.fatherName}
                       </p>
                     </div>
                   </div>
@@ -478,7 +485,7 @@ export const ClassAllotmentTable = ({
                         className={cn(
                           "border-border text-xs",
                           classColors[row.original.Grades.grade] ??
-                          classColors.default,
+                            classColors.default,
                         )}
                       >
                         Grade {row.original.Grades.grade}
@@ -519,7 +526,7 @@ export const ClassAllotmentTable = ({
               </div>
             ))
           ) : (
-            <div className="col-span-full flex flex-col items-center justify-center space-y-4 rounded-xl border-2 border-dashed border-border bg-white/5 p-12 w-full">
+            <div className="col-span-full flex w-full flex-col items-center justify-center space-y-4 rounded-xl border-2 border-dashed border-border bg-white/5 p-12">
               <div className="rounded-full border border-border bg-card p-4 text-slate-600">
                 <Search className="h-8 w-8" />
               </div>

@@ -1,7 +1,20 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { assertNoPaidVouchers } from "~/server/utils/financial-guards";
+import { getOwnStudentIds } from "~/server/api/access";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  officeProcedure,
+  teacherProcedure,
+} from "../trpc";
 import { TRPCError } from "@trpc/server";
-import type { StudentClass, Grades, Sessions, Students } from "@prisma/client";
+import {
+  Prisma,
+  type StudentClass,
+  type Grades,
+  type Sessions,
+  type Students,
+} from "@prisma/client";
 
 // Define a relation type based on your Prisma schema. Adjust field names as needed.
 type StudentClassWithRelations = StudentClass & {
@@ -11,7 +24,7 @@ type StudentClassWithRelations = StudentClass & {
 };
 
 export const AllotmentRouter = createTRPCRouter({
-  addToClass: protectedProcedure
+  addToClass: officeProcedure
     .input(
       z.object({
         classId: z.string().cuid(),
@@ -33,7 +46,10 @@ export const AllotmentRouter = createTRPCRouter({
           if (existingAssignment) {
             throw new TRPCError({
               code: "CONFLICT",
-              message: "Student already assigned to a class in this session",
+              message:
+                existingAssignment.classId === input.classId
+                  ? "Student is already in this class for this session"
+                  : "Student is already in another class this session. Use Move to change class so fee history is kept.",
             });
           }
 
@@ -60,8 +76,18 @@ export const AllotmentRouter = createTRPCRouter({
           return newAssignment;
         });
       } catch (error) {
-        console.error("Error adding to class:", error);
         if (error instanceof TRPCError) throw error;
+        // Concurrent "add to class" for the same student: the unique (student, session) key wins.
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2002"
+        ) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Student already assigned to a class in this session",
+          });
+        }
+        console.error("Error adding to class:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Failed to add student to class",
@@ -69,7 +95,37 @@ export const AllotmentRouter = createTRPCRouter({
       }
     }),
 
-  getStudentsInClass: protectedProcedure
+  /**
+   * Moves a student to another class within the same session. The enrolment (and its fee
+   * vouchers, attendance links and payments) is kept; only the class changes.
+   */
+  moveStudentToClass: officeProcedure
+    .input(
+      z.object({
+        studentId: z.string().cuid(),
+        sessionId: z.string().cuid(),
+        toClassId: z.string().cuid(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const enrolment = await ctx.db.studentClass.findFirst({
+        where: { studentId: input.studentId, sessionId: input.sessionId },
+      });
+      if (!enrolment) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Student is not enrolled in a class this session",
+        });
+      }
+      if (enrolment.classId === input.toClassId) return enrolment;
+      return ctx.db.studentClass.update({
+        where: { scId: enrolment.scId },
+        data: { classId: input.toClassId },
+        include: { Grades: true, Students: true, Sessions: true },
+      });
+    }),
+
+  getStudentsInClass: teacherProcedure
     .input(z.object({ classId: z.string().cuid() }))
     .query<StudentClassWithRelations[]>(async ({ ctx, input }) => {
       try {
@@ -123,12 +179,17 @@ export const AllotmentRouter = createTRPCRouter({
           });
         }
 
+        // Students/parents only see their own enrolment row (no classmates' PII).
+        const ownIds = await getOwnStudentIds(ctx);
+        const rosterWhere = {
+          classId: input.classId,
+          sessionId: input.sessionId,
+          ...(ownIds !== null && { studentId: { in: ownIds } }),
+        };
+
         const [data, total] = await Promise.all([
           ctx.db.studentClass.findMany({
-            where: {
-              classId: input.classId,
-              sessionId: input.sessionId,
-            },
+            where: rosterWhere,
             include: {
               Grades: true,
               Students: true, // Corrected relation name
@@ -138,12 +199,7 @@ export const AllotmentRouter = createTRPCRouter({
             skip: (input.page - 1) * input.pageSize,
             take: input.pageSize,
           }),
-          ctx.db.studentClass.count({
-            where: {
-              classId: input.classId,
-              sessionId: input.sessionId,
-            },
-          }),
+          ctx.db.studentClass.count({ where: rosterWhere }),
         ]);
 
         return {
@@ -164,7 +220,7 @@ export const AllotmentRouter = createTRPCRouter({
       }
     }),
 
-  deleteStudentsFromClass: protectedProcedure
+  deleteStudentsFromClass: officeProcedure
     .input(
       z.object({
         studentIds: z.array(z.string().cuid()),
@@ -193,6 +249,11 @@ export const AllotmentRouter = createTRPCRouter({
           }
 
           const studentClassIds = studentClasses.map((sc) => sc.scId);
+          await assertNoPaidVouchers(
+            tx,
+            { studentClassId: { in: studentClassIds } },
+            "remove these students from the class",
+          );
           const uniqueStudentIds = [
             ...new Set(studentClasses.map((sc) => sc.studentId)),
           ];

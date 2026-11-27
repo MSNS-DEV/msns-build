@@ -7,8 +7,8 @@ android {
         applicationId "com.msns.lms"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 24
-        versionName "1.4.5"
+        versionCode 26
+        versionName "1.4.7"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
@@ -18,14 +18,38 @@ android {
     }
     signingConfigs {
         release {
-            storeFile file('msns-release-key.keystore')
-            storePassword 'msns-lms-secure-key-pass'
-            keyAlias 'msns-key-alias'
-            keyPassword 'msns-lms-secure-key-pass'
+            // Signing secrets are never committed. Provide them either in
+            // android/keystore.properties (gitignored) or as environment variables:
+            //   MSNS_KEYSTORE_FILE, MSNS_KEYSTORE_PASSWORD, MSNS_KEY_ALIAS, MSNS_KEY_PASSWORD
+            def ksProps = new Properties()
+            def ksPropsFile = rootProject.file('keystore.properties')
+            if (ksPropsFile.exists()) {
+                ksPropsFile.withInputStream { ksProps.load(it) }
+            }
+            def ksValue = { String prop, String env -> ksProps.getProperty(prop) ?: System.getenv(env) }
+            def ksFile = ksValue('storeFile', 'MSNS_KEYSTORE_FILE') ?: 'msns-release-key.keystore'
+            def ksPassword = ksValue('storePassword', 'MSNS_KEYSTORE_PASSWORD')
+            def ksAlias = ksValue('keyAlias', 'MSNS_KEY_ALIAS') ?: 'msns-key-alias'
+            def ksKeyPassword = ksValue('keyPassword', 'MSNS_KEY_PASSWORD')
+            if (ksPassword && ksKeyPassword) {
+                storeFile file(ksFile)
+                storePassword ksPassword
+                keyAlias ksAlias
+                keyPassword ksKeyPassword
+            }
         }
     }
     buildTypes {
         release {
+            if (!signingConfigs.release.storePassword) {
+                // Fail release builds clearly instead of producing an unsigned/debug-signed bundle.
+                gradle.taskGraph.whenReady { graph ->
+                    if (graph.allTasks.any { it.name.toLowerCase().contains('release') }) {
+                        throw new GradleException("Release signing is not configured. Create android/keystore.properties " +
+                            "(storeFile, storePassword, keyAlias, keyPassword) or set MSNS_KEYSTORE_PASSWORD and MSNS_KEY_PASSWORD.")
+                    }
+                }
+            }
             signingConfig signingConfigs.release
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

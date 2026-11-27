@@ -29,13 +29,13 @@ const Tabs = React.forwardRef<
       if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) {
         const triggers = Array.from(
           containerRef.current.querySelectorAll<HTMLButtonElement>(
-            '[role="tab"]:not([disabled])'
-          )
+            '[role="tab"]:not([disabled])',
+          ),
         );
 
         if (triggers.length > 1) {
           const activeIndex = triggers.findIndex(
-            (t) => t.getAttribute("data-state") === "active"
+            (t) => t.getAttribute("data-state") === "active",
           );
 
           if (activeIndex !== -1) {

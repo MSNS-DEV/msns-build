@@ -25,12 +25,16 @@ export const EventsSection = ({ isStudent, isTeacher }: EventsSectionProps) => {
                 ? "Teaching Events"
                 : "All Events"}
           </h2>
-          <p className="text-muted-foreground">Stay updated with latest activities</p>
+          <p className="text-muted-foreground">
+            Stay updated with latest activities
+          </p>
         </div>
 
         <div className="ml-auto hidden items-center gap-2 lg:flex">
           <Bell className="h-4 w-4 animate-pulse text-blue-600" />
-          <span className="text-sm text-muted-foreground">Auto-refresh enabled</span>
+          <span className="text-sm text-muted-foreground">
+            Auto-refresh enabled
+          </span>
         </div>
       </div>
 

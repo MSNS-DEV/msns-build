@@ -11,16 +11,17 @@ export default function AdminGalleryPage() {
   ];
 
   return (
-    <div className="flex flex-1 flex-col space-y-4 h-full min-h-0 w-full">
+    <div className="flex h-full min-h-0 w-full flex-1 flex-col space-y-4">
       {/* PageHeader in layout */}
 
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end shrink-0">
+      <div className="flex shrink-0 flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-foreground sm:text-3xl">
             School Gallery
           </h1>
           <p className="mt-1 max-w-xl text-sm text-muted-foreground dark:text-muted-foreground">
-            Upload and manage photos for the school&apos;s website gallery. These images appear on{" "}
+            Upload and manage photos for the school&apos;s website gallery.
+            These images appear on{" "}
             <a
               href="https://msns.edu.pk"
               target="_blank"
@@ -33,7 +34,7 @@ export default function AdminGalleryPage() {
         </div>
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex min-h-0 flex-1 flex-col">
         <GalleryUploader canDelete={true} />
       </div>
 

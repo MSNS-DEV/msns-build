@@ -19,6 +19,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -46,6 +47,14 @@ public class SplashActivity extends AppCompatActivity {
         
         setContentView(R.layout.activity_splash);
 
+        // Disable back button during splash transition using modern OnBackPressedCallback
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                // Intentionally empty — block back navigation during splash animation
+            }
+        });
+
         // Bind Views
         splashRoot = findViewById(R.id.splash_root);
         rippleCircle = findViewById(R.id.ripple_circle);
@@ -68,8 +77,8 @@ public class SplashActivity extends AppCompatActivity {
         try {
             if (getWindow() == null) return;
 
-            WindowCompat.setDecorFitsSystemWindows(getWindow(), false);
-
+            // WindowCompat.getInsetsController works on all API levels (minSdk 24);
+            // Window#getInsetsController() is API 30+ only.
             WindowInsetsControllerCompat controller = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
             if (controller != null) {
                 controller.hide(WindowInsetsCompat.Type.systemBars());
@@ -220,7 +229,12 @@ public class SplashActivity extends AppCompatActivity {
                 // Launch MainActivity
                 Intent intent = new Intent(SplashActivity.this, MainActivity.class);
                 startActivity(intent);
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                // Use modern activity transition API (SDK 34+) with fallback
+                if (Build.VERSION.SDK_INT >= 34) {
+                    overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, android.R.anim.fade_in, android.R.anim.fade_out);
+                } else {
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                }
                 finish();
             }
         });
@@ -229,10 +243,5 @@ public class SplashActivity extends AppCompatActivity {
         AnimatorSet masterSet = new AnimatorSet();
         masterSet.playTogether(bgAnim, shieldSet, torchSet, bookSet, ringSet, rippleSet, textSet, exitSet);
         masterSet.start();
-    }
-
-    @Override
-    public void onBackPressed() {
-        // Disable back button during splash transition
     }
 }

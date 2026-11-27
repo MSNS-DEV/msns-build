@@ -127,11 +127,14 @@ const ROLE_NOTIFICATIONS: Record<string, RoleNotificationTemplate[]> = {
   ],
 };
 
-export const initDailyRoleNotifications = async (role = "ADMIN"): Promise<void> => {
+export const initDailyRoleNotifications = async (
+  role = "ADMIN",
+): Promise<void> => {
   if (typeof window === "undefined") return;
 
   const normalizedRole = role.toUpperCase();
-  const templates: RoleNotificationTemplate[] = ROLE_NOTIFICATIONS[normalizedRole] ?? ROLE_NOTIFICATIONS.ADMIN ?? [];
+  const templates: RoleNotificationTemplate[] =
+    ROLE_NOTIFICATIONS[normalizedRole] ?? ROLE_NOTIFICATIONS.ADMIN ?? [];
   const todayStr = new Date().toISOString().split("T")[0];
   const lastKey = `msns_daily_notif_date_${normalizedRole}`;
   const lastDate = localStorage.getItem(lastKey);
@@ -141,11 +144,14 @@ export const initDailyRoleNotifications = async (role = "ADMIN"): Promise<void> 
 
   localStorage.setItem(lastKey, todayStr ?? "");
 
-  console.log(`[DailyNotifications] Scheduling 2-3 daily notifications for role: ${normalizedRole}`);
+  console.log(
+    `[DailyNotifications] Scheduling 2-3 daily notifications for role: ${normalizedRole}`,
+  );
 
   if (isNative()) {
     try {
-      const { LocalNotifications } = await import("@capacitor/local-notifications");
+      const { LocalNotifications } =
+        await import("@capacitor/local-notifications");
       const notifs = templates.map((tpl, index) => {
         const scheduledTime = new Date();
         scheduledTime.setHours(tpl.hour, 0, 0, 0);

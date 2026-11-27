@@ -38,10 +38,13 @@ interface ClassSubjectsTabProps {
   sessionId: string;
 }
 
-export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) {
+export function ClassSubjectsTab({
+  classId,
+  sessionId,
+}: ClassSubjectsTabProps) {
   const { data: session } = useSession();
   const isAdminOrHead = ["ADMIN", "HEAD", "PRINCIPAL", "CLERK"].includes(
-    session?.user?.accountType ?? ""
+    session?.user?.accountType ?? "",
   );
 
   const [open, setOpen] = useState(false);
@@ -60,12 +63,15 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
 
   const utils = api.useUtils();
 
-  const { data: subjects = [], isLoading } = api.class.getAssignedSubjects.useQuery(
-    { classId, sessionId },
-    { enabled: !!classId && !!sessionId }
-  );
+  const { data: subjects = [], isLoading } =
+    api.class.getAssignedSubjects.useQuery(
+      { classId, sessionId },
+      { enabled: !!classId && !!sessionId },
+    );
 
-  const globalSubjects = api.subject.getAllSubjects.useQuery(undefined, { enabled: open });
+  const globalSubjects = api.subject.getAllSubjects.useQuery(undefined, {
+    enabled: open,
+  });
   const globalEmployees = api.employee.getEmployees.useQuery(
     { activeOnly: true, excludeWorkers: true },
     { enabled: open || editOpen },
@@ -73,7 +79,10 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
 
   const assignMutation = api.class.assignSubject.useMutation({
     onSuccess: () => {
-      toast({ title: "Success", description: "Subject assignment updated successfully." });
+      toast({
+        title: "Success",
+        description: "Subject assignment updated successfully.",
+      });
       setOpen(false);
       setEditOpen(false);
       setSelectedSubject("");
@@ -82,7 +91,8 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
       setEditEmployeeId("");
       void utils.class.getAssignedSubjects.invalidate({ classId, sessionId });
     },
-    onError: (e) => toast({ title: "Error", description: e.message, variant: "destructive" }),
+    onError: (e) =>
+      toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const removeMutation = api.class.removeAssignedSubject.useMutation({
@@ -132,7 +142,10 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
         {isAdminOrHead && (
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 gap-2 text-white">
+              <Button
+                size="sm"
+                className="gap-2 bg-emerald-600 text-white hover:bg-emerald-700"
+              >
                 <Plus className="h-4 w-4" /> Add Subject
               </Button>
             </DialogTrigger>
@@ -149,7 +162,10 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
                   {globalSubjects.isLoading ? (
                     <Skeleton className="h-10 w-full" />
                   ) : (
-                    <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+                    <Select
+                      value={selectedSubject}
+                      onValueChange={setSelectedSubject}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a subject" />
                       </SelectTrigger>
@@ -168,7 +184,10 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
                   {globalEmployees.isLoading ? (
                     <Skeleton className="h-10 w-full" />
                   ) : (
-                    <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+                    <Select
+                      value={selectedEmployee}
+                      onValueChange={setSelectedEmployee}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a teacher" />
                       </SelectTrigger>
@@ -197,9 +216,17 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
                 </Button>
                 <Button
                   onClick={handleAssign}
-                  disabled={!selectedSubject || !selectedEmployee || assignMutation.isPending}
+                  disabled={
+                    !selectedSubject ||
+                    !selectedEmployee ||
+                    assignMutation.isPending
+                  }
                 >
-                  {assignMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Assign"}
+                  {assignMutation.isPending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    "Assign"
+                  )}
                 </Button>
               </footer>
             </DialogContent>
@@ -232,7 +259,10 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
               {globalEmployees.isLoading ? (
                 <Skeleton className="h-10 w-full" />
               ) : (
-                <Select value={editEmployeeId} onValueChange={setEditEmployeeId}>
+                <Select
+                  value={editEmployeeId}
+                  onValueChange={setEditEmployeeId}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a teacher" />
                   </SelectTrigger>
@@ -281,10 +311,13 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:hidden">
         {isLoading ? (
           Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="rounded-xl border border-border bg-card p-4 shadow-sm">
-              <Skeleton className="h-5 w-3/4 mb-3" />
-              <Skeleton className="h-4 w-1/2 mb-2" />
-              <Skeleton className="h-8 w-full mt-4" />
+            <div
+              key={i}
+              className="rounded-xl border border-border bg-card p-4 shadow-sm"
+            >
+              <Skeleton className="mb-3 h-5 w-3/4" />
+              <Skeleton className="mb-2 h-4 w-1/2" />
+              <Skeleton className="mt-4 h-8 w-full" />
             </div>
           ))
         ) : subjects && subjects.length > 0 ? (
@@ -295,15 +328,19 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
             >
               <div>
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-foreground text-base">
+                  <h3 className="text-base font-semibold text-foreground">
                     {cs.Subject.subjectName}
                   </h3>
                 </div>
                 <div className="mt-3 flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-emerald-500 shrink-0" />
+                  <Users className="h-4 w-4 shrink-0 text-emerald-500" />
                   <div>
-                    <p className="font-medium text-foreground">{cs.Employees.employeeName}</p>
-                    <p className="text-xs text-muted-foreground">{cs.Employees.designation}</p>
+                    <p className="font-medium text-foreground">
+                      {cs.Employees.employeeName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {cs.Employees.designation}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -314,7 +351,7 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
                     variant="outline"
                     size="sm"
                     onClick={() => handleOpenEdit(cs)}
-                    className="flex-1 gap-1.5 text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/50"
+                    className="flex-1 gap-1.5 text-xs text-blue-600 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:hover:bg-blue-950/50"
                   >
                     <Pencil className="h-3.5 w-3.5" /> Edit Teacher
                   </Button>
@@ -323,7 +360,7 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
                     size="sm"
                     onClick={() => removeMutation.mutate({ csId: cs.csId })}
                     disabled={removeMutation.isPending}
-                    className="gap-1.5 text-xs text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
+                    className="gap-1.5 text-xs text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/50"
                   >
                     <Trash2 className="h-3.5 w-3.5" /> Remove
                   </Button>
@@ -333,32 +370,40 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
           ))
         ) : (
           <div className="col-span-full rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
-            <BookOpen className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+            <BookOpen className="mx-auto mb-2 h-8 w-8 text-slate-300" />
             <p>No subjects assigned to this class yet.</p>
           </div>
         )}
       </div>
 
       {/* Desktop Table View (No Subject ID column) */}
-      <div className="hidden lg:block overflow-hidden rounded-xl border border-border">
+      <div className="hidden overflow-hidden rounded-xl border border-border lg:block">
         <Table>
           <TableHeader className="bg-slate-50 dark:bg-slate-900/50">
             <TableRow>
               <TableHead>Subject Name</TableHead>
               <TableHead>Assigned Teacher</TableHead>
-              {isAdminOrHead && <TableHead className="text-right">Actions</TableHead>}
+              {isAdminOrHead && (
+                <TableHead className="text-right">Actions</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={isAdminOrHead ? 3 : 2} className="text-center py-8">
-                  <Skeleton className="h-8 w-[200px] mx-auto" />
+                <TableCell
+                  colSpan={isAdminOrHead ? 3 : 2}
+                  className="py-8 text-center"
+                >
+                  <Skeleton className="mx-auto h-8 w-[200px]" />
                 </TableCell>
               </TableRow>
             ) : subjects && subjects.length > 0 ? (
               subjects.map((cs) => (
-                <TableRow key={cs.csId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
+                <TableRow
+                  key={cs.csId}
+                  className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50"
+                >
                   <TableCell className="font-medium text-foreground">
                     {cs.Subject.subjectName}
                   </TableCell>
@@ -366,8 +411,12 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-emerald-500" />
                       <div>
-                        <p className="text-sm font-medium">{cs.Employees.employeeName}</p>
-                        <p className="text-xs text-muted-foreground">{cs.Employees.designation}</p>
+                        <p className="text-sm font-medium">
+                          {cs.Employees.employeeName}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {cs.Employees.designation}
+                        </p>
                       </div>
                     </div>
                   </TableCell>
@@ -379,17 +428,19 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
                           size="sm"
                           onClick={() => handleOpenEdit(cs)}
                           title="Edit Teacher"
-                          className="text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/50"
+                          className="text-blue-600 hover:bg-blue-50 hover:text-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/50"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => removeMutation.mutate({ csId: cs.csId })}
+                          onClick={() =>
+                            removeMutation.mutate({ csId: cs.csId })
+                          }
                           disabled={removeMutation.isPending}
                           title="Remove Subject"
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/50"
+                          className="text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950/50"
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -400,8 +451,11 @@ export function ClassSubjectsTab({ classId, sessionId }: ClassSubjectsTabProps) 
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={isAdminOrHead ? 3 : 2} className="text-center py-12 text-muted-foreground">
-                  <BookOpen className="h-8 w-8 mx-auto text-slate-300 mb-2" />
+                <TableCell
+                  colSpan={isAdminOrHead ? 3 : 2}
+                  className="py-12 text-center text-muted-foreground"
+                >
+                  <BookOpen className="mx-auto mb-2 h-8 w-8 text-slate-300" />
                   <p>No subjects assigned to this class yet.</p>
                 </TableCell>
               </TableRow>

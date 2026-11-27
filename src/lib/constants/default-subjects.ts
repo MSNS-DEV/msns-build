@@ -157,10 +157,17 @@ export const DEFAULT_CLASS_SUBJECTS: Record<string, string[]> = {
   ],
 };
 
-export function getDefaultSubjectsForGrade(grade: string, category?: string): string[] {
+export function getDefaultSubjectsForGrade(
+  grade: string,
+  category?: string,
+): string[] {
   const norm = grade.toUpperCase().replace(/\s+/g, " ").trim();
 
-  if (norm.includes("PLAYGROUP") || norm.includes("PLAY GROUP") || norm.includes("PLAY")) {
+  if (
+    norm.includes("PLAYGROUP") ||
+    norm.includes("PLAY GROUP") ||
+    norm.includes("PLAY")
+  ) {
     return DEFAULT_CLASS_SUBJECTS.PLAYGROUP!;
   }
   if (norm.includes("NURSERY")) {
@@ -191,7 +198,12 @@ export function getDefaultSubjectsForGrade(grade: string, category?: string): st
     return DEFAULT_CLASS_SUBJECTS["CLASS SEVEN"]!;
   }
   // DB's "9th Junior" is Pre-9th → uses "PRE-9TH + 9TH SENIOR" subjects
-  if (norm.includes("PRE-9TH") || norm.includes("PRE 9TH") || norm.includes("9TH JUNIOR") || norm.includes("9 JUNIOR")) {
+  if (
+    norm.includes("PRE-9TH") ||
+    norm.includes("PRE 9TH") ||
+    norm.includes("9TH JUNIOR") ||
+    norm.includes("9 JUNIOR")
+  ) {
     return DEFAULT_CLASS_SUBJECTS["PRE-9TH + 9TH SENIOR"]!;
   }
   if (norm.includes("9TH SENIOR") || norm.includes("9 SENIOR")) {
@@ -216,7 +228,7 @@ export async function assignDefaultSubjectsToClass(
   db: any,
   classId: string,
   grade: string,
-  category?: string
+  category?: string,
 ) {
   const subjectsToAssign = getDefaultSubjectsForGrade(grade, category);
 

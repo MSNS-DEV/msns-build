@@ -37,13 +37,12 @@ export default function StudentFeesPage() {
   const studentId = profile?.studentId ?? "";
 
   const { data: feeData, isLoading: isFeeLoading } =
-    api.fee.getStudentFees.useQuery(
-      { studentId },
-      { enabled: !!studentId }
-    );
+    api.fee.getStudentFees.useQuery({ studentId }, { enabled: !!studentId });
 
   const getMonthName = (monthNum: number) => {
-    return new Date(0, monthNum - 1).toLocaleString("default", { month: "long" });
+    return new Date(0, monthNum - 1).toLocaleString("default", {
+      month: "long",
+    });
   };
 
   if (isProfileLoading || isFeeLoading) {
@@ -61,7 +60,9 @@ export default function StudentFeesPage() {
         <Card className="mt-6 border-red-500/20 bg-red-500/5">
           <CardContent className="flex items-center gap-3 p-6 text-red-200">
             <AlertCircle className="h-5 w-5 text-red-500" />
-            <span>Student profile not found. Please contact administration.</span>
+            <span>
+              Student profile not found. Please contact administration.
+            </span>
           </CardContent>
         </Card>
       </div>
@@ -88,7 +89,7 @@ export default function StudentFeesPage() {
 
         {/* Overview Cards */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          <Card className="border-emerald-500/10 bg-emerald-500/5 shadow-xs">
+          <Card className="shadow-xs border-emerald-500/10 bg-emerald-500/5">
             <CardHeader className="pb-2">
               <CardDescription>Total Paid</CardDescription>
               <CardTitle className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
@@ -100,7 +101,7 @@ export default function StudentFeesPage() {
             </CardHeader>
           </Card>
 
-          <Card className="border-amber-500/10 bg-amber-500/5 shadow-xs">
+          <Card className="shadow-xs border-amber-500/10 bg-amber-500/5">
             <CardHeader className="pb-2">
               <CardDescription>Outstanding Balance</CardDescription>
               <CardTitle className="text-2xl font-bold text-amber-600 dark:text-amber-400">
@@ -112,7 +113,7 @@ export default function StudentFeesPage() {
             </CardHeader>
           </Card>
 
-          <Card className="border-blue-500/10 bg-blue-500/5 shadow-xs">
+          <Card className="shadow-xs border-blue-500/10 bg-blue-500/5">
             <CardHeader className="pb-2">
               <CardDescription>Current Status</CardDescription>
               <CardTitle className="flex items-center gap-2 text-2xl font-bold text-blue-600 dark:text-blue-400">
@@ -133,7 +134,7 @@ export default function StudentFeesPage() {
         </div>
 
         {/* Ledger Table */}
-        <Card className="border-emerald-500/20 shadow-xs">
+        <Card className="shadow-xs border-emerald-500/20">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-xl">Payment History</CardTitle>
@@ -170,11 +171,15 @@ export default function StudentFeesPage() {
                         <TableCell className="font-medium">
                           {getMonthName(record.month)} {record.year}
                         </TableCell>
-                        <TableCell>Rs. {record.baseFee.toLocaleString()}</TableCell>
+                        <TableCell>
+                          Rs. {record.baseFee.toLocaleString()}
+                        </TableCell>
                         <TableCell>
                           Rs. {record.discountAmount.toLocaleString()}
                         </TableCell>
-                        <TableCell>Rs. {record.lateFee.toLocaleString()}</TableCell>
+                        <TableCell>
+                          Rs. {record.lateFee.toLocaleString()}
+                        </TableCell>
                         <TableCell className="font-semibold text-slate-900 dark:text-slate-100">
                           Rs. {record.totalDue.toLocaleString()}
                         </TableCell>
@@ -194,8 +199,8 @@ export default function StudentFeesPage() {
                           <Badge
                             className={
                               record.isPaid
-                                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                                : "bg-amber-500/10 text-amber-600 border-amber-500/20"
+                                ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600"
+                                : "border-amber-500/20 bg-amber-500/10 text-amber-600"
                             }
                             variant="outline"
                           >

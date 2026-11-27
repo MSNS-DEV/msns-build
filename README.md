@@ -4,45 +4,31 @@ A modern, web-based Learning Management System designed to streamline academic a
 
 This project is bootstrapped using the T3 Stack.
 
-
 ---
 
 📑 Table of Contents
 
 1. Introduction
 
-
 2. Features
-
 
 3. User Roles
 
-
 4. Technology Stack
-
 
 5. Installation
 
-
 6. Configuration
-
 
 7. Usage
 
-
 8. Deployment
-
 
 9. Troubleshooting
 
-
 10. Contributors
 
-
 11. License
-
-
-
 
 ---
 
@@ -51,7 +37,6 @@ This project is bootstrapped using the T3 Stack.
 MSNS-LMS is a comprehensive Learning Management System tailored for schools and academic institutions. The platform supports core academic activities while also integrating finance management, user administration, and assignment workflows.
 
 It supports secure authentication, cloud storage integrations, and PDF report generation.
-
 
 ---
 
@@ -67,7 +52,6 @@ Full user management: create, view, edit, delete Students and Employees.
 
 Academic configuration (sessions, classes, subjects).
 
-
 Finance Management
 
 Manage fee structures & student fee assignments.
@@ -78,7 +62,6 @@ Generate session-based profit/loss reports.
 
 Clerks can record payments and apply discounts.
 
-
 Assignments
 
 Teachers create assignments for their classes.
@@ -87,14 +70,11 @@ Students upload submissions.
 
 Grading interface for teachers.
 
-
 File & Report Management
 
 Secure file uploads using Google Cloud Storage.
 
 PDF report generation (students, employees, fees, finances).
-
-
 
 ---
 
@@ -108,7 +88,6 @@ Manages academic settings
 
 Oversees financial operations
 
-
 Teacher
 
 Manages assigned classes & subjects
@@ -116,7 +95,6 @@ Manages assigned classes & subjects
 Creates assignments
 
 Views enrolled students & submits grades
-
 
 Clerk
 
@@ -126,7 +104,6 @@ Records payments & expenses
 
 Assists with student information management
 
-
 Student
 
 Views enrolled classes & fee history
@@ -135,27 +112,23 @@ Submits assignments
 
 Views grades & academic progress
 
-
-
 ---
 
 💻 Technology Stack
 
 This project uses a modern, type-safe ecosystem aligned with the T3 Stack:
 
-Layer	Technology
+Layer Technology
 
-Framework	Next.js (App Router)
-Language	TypeScript
-API	tRPC
-Database & ORM	Prisma with PostgreSQL/MySQL
-Auth	NextAuth.js (Credentials Provider)
-Styling	Tailwind CSS
-UI Components	shadcn/ui
-File Storage	Google Cloud Storage (signed URLs)
-PDF Generation	pdf-lib
-
-
+Framework Next.js (App Router)
+Language TypeScript
+API tRPC
+Database & ORM Prisma with PostgreSQL/MySQL
+Auth NextAuth.js (Credentials Provider)
+Styling Tailwind CSS
+UI Components shadcn/ui
+File Storage Google Cloud Storage (signed URLs)
+PDF Generation pdf-lib
 
 ---
 
@@ -169,6 +142,7 @@ cd msns-lms
 Install dependencies
 
 npm install
+
 # or: yarn install | pnpm install
 
 Set up environment variables
@@ -185,7 +159,6 @@ Google Cloud Storage credentials
 
 Any other required secrets
 
-
 Push the database schema
 
 npx prisma db push
@@ -195,7 +168,6 @@ Run the development server
 npm run dev
 
 Visit: http://localhost:3000
-
 
 ---
 
@@ -224,7 +196,6 @@ Other required tRPC/Next.js/Prisma configs
 
 (As specified in your .env.example)
 
-
 ---
 
 📘 Usage
@@ -239,16 +210,13 @@ Clerk Dashboard: manage fees & payments
 
 Student Dashboard: submit assignments, view fees & grades
 
-
 All dashboards are dynamically rendered based on user roles.
-
 
 ---
 
 🚀 Deployment Guide
 
 This project follows the T3 Stack deployment model.
-
 
 ---
 
@@ -271,7 +239,6 @@ npx prisma migrate deploy
 
 Connect your GitHub → Click Deploy → Done.
 
-
 ---
 
 🟦 Deploying to Netlify
@@ -283,13 +250,12 @@ npm install @netlify/next
 Add netlify.toml
 
 [build]
-  command = "npm run build"
-  publish = ".next"
+command = "npm run build"
+publish = ".next"
 
 Deploy
 
 Push code → Netlify builds automatically.
-
 
 ---
 
@@ -301,7 +267,7 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
+COPY package\*.json ./
 RUN npm install
 
 COPY . .
@@ -317,7 +283,6 @@ docker build -t msns-lms .
 docker run -p 3000:3000 --env-file .env msns-lms
 
 Uses external hosted SQL database.
-
 
 ---
 
@@ -337,7 +302,6 @@ Your database service allows external connections
 
 Prisma migrations were applied
 
-
 File upload failures
 
 Ensure:
@@ -348,7 +312,6 @@ Service account has correct permissions
 
 Private key is correctly escaped in .env
 
-
 Auth issues
 
 Verify:
@@ -356,7 +319,5 @@ Verify:
 Matching NEXTAUTH_URL
 
 Valid NEXTAUTH_SECRET
-
-
 
 ---

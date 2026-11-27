@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
-import { Camera as CameraIcon, Upload, CheckCircle2, BookOpen } from "lucide-react";
+import {
+  Camera as CameraIcon,
+  Upload,
+  CheckCircle2,
+  BookOpen,
+} from "lucide-react";
 import { Button } from "~/components/ui/button";
 
 export default function CreateDiaryEntryPage() {
@@ -34,7 +39,9 @@ export default function CreateDiaryEntryPage() {
         teacherId: "teacher-demo-id",
         date: new Date(),
         content,
-        attachments: photoBase64 ? [`data:image/jpeg;base64,${photoBase64}`] : [],
+        attachments: photoBase64
+          ? [`data:image/jpeg;base64,${photoBase64}`]
+          : [],
       });
       alert("Class Diary published successfully!");
       setContent("");
@@ -48,50 +55,63 @@ export default function CreateDiaryEntryPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto p-4 sm:p-6">
+    <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-          <BookOpen className="h-6 w-6 text-emerald-400" /> Create Class Subject Diary
+        <h1 className="flex items-center gap-2 text-2xl font-bold text-white">
+          <BookOpen className="h-6 w-6 text-emerald-400" /> Create Class Subject
+          Diary
         </h1>
-        <p className="text-sm text-slate-400">Post homework tasks & attach blackboard / worksheet photos</p>
+        <p className="text-sm text-slate-400">
+          Post homework tasks & attach blackboard / worksheet photos
+        </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-md">
+      <form
+        onSubmit={handleSubmit}
+        className="space-y-4 rounded-2xl border border-slate-800 bg-slate-900/60 p-6 backdrop-blur-md"
+      >
         <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase">Class Subject ID</label>
+          <label className="text-xs font-semibold uppercase text-slate-400">
+            Class Subject ID
+          </label>
           <input
             type="text"
             value={classSubjectId}
             onChange={(e) => setClassSubjectId(e.target.value)}
             placeholder="Enter Class Subject ID"
-            className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+            className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
             required
           />
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase">Homework & Diary Content</label>
+          <label className="text-xs font-semibold uppercase text-slate-400">
+            Homework & Diary Content
+          </label>
           <textarea
             rows={4}
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Type today's lesson homework, assignment deadlines, or diary remarks..."
-            className="w-full mt-1 bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500"
+            className="mt-1 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 py-2 text-sm text-white focus:border-emerald-500 focus:outline-none"
             required
           />
         </div>
 
         {/* Camera capture widget (FR-MOB-19) */}
         <div>
-          <label className="text-xs font-semibold text-slate-400 uppercase block mb-2">Blackboard / Worksheet Capture</label>
+          <label className="mb-2 block text-xs font-semibold uppercase text-slate-400">
+            Blackboard / Worksheet Capture
+          </label>
           <div className="flex items-center gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={handleCapture}
-              className="border-slate-800 bg-slate-950 text-slate-300 hover:bg-slate-800 hover:text-white text-xs font-medium"
+              className="border-slate-800 bg-slate-950 text-xs font-medium text-slate-300 hover:bg-slate-800 hover:text-white"
             >
-              <CameraIcon className="h-4 w-4 mr-1.5 text-emerald-400" /> Snap Photo with Camera
+              <CameraIcon className="mr-1.5 h-4 w-4 text-emerald-400" /> Snap
+              Photo with Camera
             </Button>
 
             {photoBase64 && (
@@ -105,9 +125,9 @@ export default function CreateDiaryEntryPage() {
         <Button
           type="submit"
           disabled={submitting}
-          className="w-full bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-bold py-3 text-sm mt-4 shadow-lg shadow-emerald-600/20"
+          className="mt-4 w-full bg-emerald-600 py-3 text-sm font-bold text-slate-950 shadow-lg shadow-emerald-600/20 hover:bg-emerald-500"
         >
-          <Upload className="h-4 w-4 mr-2" /> Publish Diary Entry
+          <Upload className="mr-2 h-4 w-4" /> Publish Diary Entry
         </Button>
       </form>
     </div>

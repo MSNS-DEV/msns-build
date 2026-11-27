@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-import fs from 'fs';
-import path from 'path';
+import { PrismaClient } from "@prisma/client";
+import fs from "fs";
+import path from "path";
 
 const prisma = new PrismaClient();
 
@@ -31,7 +31,7 @@ function getLevenshteinDistance(a: string, b: string): number {
       tmp[i][j] = Math.min(
         tmp[i - 1][j] + 1,
         tmp[i][j - 1] + 1,
-        tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
       );
     }
   }
@@ -45,8 +45,13 @@ function getSimilarity(a: string, b: string): number {
 }
 
 async function main() {
-  const jsonPath = path.join(process.cwd(), 'prisma', 'fee-collections-2025.json');
-  const rawData = fs.readFileSync(jsonPath, 'utf8');
+  const jsonPath = path.join(
+    process.cwd(),
+    "prisma",
+    "private",
+    "fee-collections-2025.json",
+  );
+  const rawData = fs.readFileSync(jsonPath, "utf8");
   const data = JSON.parse(rawData);
 
   const allStudents = await prisma.students.findMany();
@@ -55,16 +60,21 @@ async function main() {
 
   for (const monthData of data.months) {
     for (const student of monthData.students) {
-      const jsonName = student.name || '';
-      
+      const jsonName = student.name || "";
+
       const cleanJson = getBaseName(jsonName);
-      let targetStudent = allStudents.find(s => getBaseName(s.studentName) === cleanJson);
+      let targetStudent = allStudents.find(
+        (s) => getBaseName(s.studentName) === cleanJson,
+      );
 
       if (!targetStudent) {
         let bestSim = 0;
         let bestStudent = null;
         for (const s of allStudents) {
-          const sim = getSimilarity(cleanName(jsonName), cleanName(s.studentName));
+          const sim = getSimilarity(
+            cleanName(jsonName),
+            cleanName(s.studentName),
+          );
           if (sim > bestSim) {
             bestSim = sim;
             bestStudent = s;
@@ -88,4 +98,6 @@ async function main() {
   }
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());

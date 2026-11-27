@@ -82,9 +82,7 @@ interface TimetableEntry {
   Sessions: { sessionId: string; sessionName: string };
 }
 
-const isValidDayOfWeek = (
-  day: string,
-): day is DayOfWeek => {
+const isValidDayOfWeek = (day: string): day is DayOfWeek => {
   return [
     "Monday",
     "Tuesday",
@@ -200,17 +198,21 @@ export function ClasswiseView({
     onSuccess: () => void refetchTimetable(),
   });
 
-  const assignTeacherBulkMutation = api.timetable.assignTeacherBulk.useMutation({
-    onSuccess: () => void refetchTimetable(),
-  });
+  const assignTeacherBulkMutation = api.timetable.assignTeacherBulk.useMutation(
+    {
+      onSuccess: () => void refetchTimetable(),
+    },
+  );
 
   const removeTeacherMutation = api.timetable.removeTeacher.useMutation({
     onSuccess: () => void refetchTimetable(),
   });
 
-  const removeTeacherBulkMutation = api.timetable.removeTeacherBulk.useMutation({
-    onSuccess: () => void refetchTimetable(),
-  });
+  const removeTeacherBulkMutation = api.timetable.removeTeacherBulk.useMutation(
+    {
+      onSuccess: () => void refetchTimetable(),
+    },
+  );
 
   const copyDayMutation = api.timetable.copyDayToDays.useMutation({
     onSuccess: (data) => {
@@ -310,16 +312,14 @@ export function ClasswiseView({
   };
 
   // Drop handler for Daily Routine (Applies to all working days)
-  const handleDailySlotDrop = async (
-    lecture: number,
-    e: React.DragEvent,
-  ) => {
+  const handleDailySlotDrop = async (lecture: number, e: React.DragEvent) => {
     e.preventDefault();
 
     if (!selectedSubject?.subjectId) {
       toast({
         title: "Subject Required",
-        description: "Please select a subject from the list above before dragging a teacher.",
+        description:
+          "Please select a subject from the list above before dragging a teacher.",
       });
       return;
     }
@@ -358,7 +358,8 @@ export function ClasswiseView({
       console.error("Assign error:", err);
       toast({
         title: "Assignment Error",
-        description: err instanceof Error ? err.message : "Failed to assign teacher",
+        description:
+          err instanceof Error ? err.message : "Failed to assign teacher",
       });
     }
 
@@ -381,7 +382,12 @@ export function ClasswiseView({
       return;
     }
 
-    if (!draggedTeacher || !selectedClass || !sessions?.[0] || !isValidDayOfWeek(day))
+    if (
+      !draggedTeacher ||
+      !selectedClass ||
+      !sessions?.[0] ||
+      !isValidDayOfWeek(day)
+    )
       return;
 
     const timeSlot = getTimeSlot(lecture);
@@ -479,7 +485,8 @@ export function ClasswiseView({
     if (!monEntries || Object.keys(monEntries).length === 0) {
       toast({
         title: "No Monday Schedule",
-        description: "Please configure at least one period on Monday before syncing across days.",
+        description:
+          "Please configure at least one period on Monday before syncing across days.",
       });
       return;
     }
@@ -552,7 +559,7 @@ export function ClasswiseView({
     <div className="space-y-5">
       {/* 1. Class & Subject Selection Card */}
       <Card className="border border-slate-200 bg-white/70 shadow-sm backdrop-blur dark:border-border dark:bg-card">
-        <CardHeader className="bg-slate-50/70 p-3 sm:p-4 dark:bg-muted/20">
+        <CardHeader className="bg-slate-50/70 p-3 dark:bg-muted/20 sm:p-4">
           <CardTitle className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-foreground sm:text-base">
             <Clock className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
             1. Select Class & Active Subject
@@ -560,7 +567,7 @@ export function ClasswiseView({
         </CardHeader>
         <CardContent className="space-y-4 p-3 sm:p-4">
           <div>
-            <label className="mb-1.5 block text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+            <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Classes ({classes.length})
             </label>
             <ScrollArea className="w-full whitespace-nowrap rounded-xl border border-slate-200/80 bg-slate-50/50 p-1 dark:border-border dark:bg-card">
@@ -577,9 +584,9 @@ export function ClasswiseView({
                         setSelectedSubject(null);
                       }}
                       className={cn(
-                        "flex-shrink-0 text-xs font-medium rounded-lg transition-all",
+                        "flex-shrink-0 rounded-lg text-xs font-medium transition-all",
                         isSelected
-                          ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+                          ? "bg-emerald-600 text-white shadow-sm hover:bg-emerald-700"
                           : "hover:bg-slate-100 dark:hover:bg-muted/50",
                       )}
                     >
@@ -594,10 +601,10 @@ export function ClasswiseView({
 
           {selectedClass && (
             <div>
-              <label className="mb-1.5 flex items-center justify-between text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+              <label className="mb-1.5 flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 <span>Subject for drag-and-drop:</span>
                 {selectedSubject ? (
-                  <span className="text-emerald-600 dark:text-emerald-400 font-bold lowercase">
+                  <span className="font-bold lowercase text-emerald-600 dark:text-emerald-400">
                     active: {selectedSubject.subjectName}
                   </span>
                 ) : (
@@ -621,9 +628,9 @@ export function ClasswiseView({
                         variant={isSelected ? "default" : "outline"}
                         onClick={() => setSelectedSubject(subject)}
                         className={cn(
-                          "flex-shrink-0 text-xs rounded-lg transition-all",
+                          "flex-shrink-0 rounded-lg text-xs transition-all",
                           isSelected
-                            ? "bg-slate-900 text-white hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 shadow-sm"
+                            ? "bg-slate-900 text-white shadow-sm hover:bg-slate-800 dark:bg-emerald-600 dark:hover:bg-emerald-700"
                             : "hover:bg-slate-100 dark:hover:bg-muted/50",
                         )}
                       >
@@ -642,7 +649,7 @@ export function ClasswiseView({
 
       {/* 2. Teachers Draggable List */}
       <Card className="border border-slate-200 bg-white/70 shadow-sm backdrop-blur dark:border-border dark:bg-card">
-        <CardHeader className="bg-slate-50/70 p-3 sm:p-4 dark:bg-muted/20">
+        <CardHeader className="bg-slate-50/70 p-3 dark:bg-muted/20 sm:p-4">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-sm font-semibold text-slate-800 dark:text-foreground sm:text-base">
               <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -651,7 +658,7 @@ export function ClasswiseView({
                 {teachers.length}
               </Badge>
             </CardTitle>
-            <span className="text-[11px] text-muted-foreground hidden sm:inline">
+            <span className="hidden text-[11px] text-muted-foreground sm:inline">
               Drag a teacher badge onto any lecture period below
             </span>
           </div>
@@ -687,7 +694,8 @@ export function ClasswiseView({
                     </div>
                   </TooltipTrigger>
                   <TooltipContent>
-                    Drag to assign {teacher.employeeName} ({teacher.designation})
+                    Drag to assign {teacher.employeeName} ({teacher.designation}
+                    )
                   </TooltipContent>
                 </Tooltip>
               ))}
@@ -704,14 +712,14 @@ export function ClasswiseView({
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-500" />
                 <CardTitle className="text-base font-bold text-slate-900 dark:text-foreground sm:text-lg">
                   {selectedClass
                     ? `${selectedClass.grade} - ${selectedClass.section} Timetable`
                     : "Select a Class"}
                 </CardTitle>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="mt-0.5 text-xs text-muted-foreground">
                 {layoutMode === "daily"
                   ? "⚡ Master Daily Routine Mode: Setting a lecture applies to all 6 working days (Mon–Sat)."
                   : "📅 Weekly Grid Mode: Full 6-day matrix view with per-day customization."}
@@ -727,7 +735,7 @@ export function ClasswiseView({
                   variant={layoutMode === "daily" ? "default" : "ghost"}
                   onClick={() => setLayoutMode("daily")}
                   className={cn(
-                    "h-7 text-xs font-semibold gap-1.5 rounded-lg px-2.5",
+                    "h-7 gap-1.5 rounded-lg px-2.5 text-xs font-semibold",
                     layoutMode === "daily"
                       ? "bg-white text-emerald-700 shadow-sm dark:bg-emerald-600 dark:text-white"
                       : "text-muted-foreground",
@@ -741,7 +749,7 @@ export function ClasswiseView({
                   variant={layoutMode === "weekly" ? "default" : "ghost"}
                   onClick={() => setLayoutMode("weekly")}
                   className={cn(
-                    "h-7 text-xs font-semibold gap-1.5 rounded-lg px-2.5",
+                    "h-7 gap-1.5 rounded-lg px-2.5 text-xs font-semibold",
                     layoutMode === "weekly"
                       ? "bg-white text-emerald-700 shadow-sm dark:bg-emerald-600 dark:text-white"
                       : "text-muted-foreground",
@@ -757,7 +765,7 @@ export function ClasswiseView({
                 size="sm"
                 onClick={handleQuickApplyMonToAll}
                 disabled={isAnyMutating}
-                className="h-8 gap-1.5 bg-emerald-600 text-xs font-medium text-white hover:bg-emerald-700 shadow-sm rounded-xl"
+                className="h-8 gap-1.5 rounded-xl bg-emerald-600 text-xs font-medium text-white shadow-sm hover:bg-emerald-700"
               >
                 <CalendarSync className="h-3.5 w-3.5" />
                 Apply Mon to All Days
@@ -769,7 +777,7 @@ export function ClasswiseView({
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-8 gap-1 text-xs rounded-xl"
+                    className="h-8 gap-1 rounded-xl text-xs"
                   >
                     <Sparkles className="h-3.5 w-3.5 text-amber-500" />
                     Tools & Sync
@@ -779,14 +787,14 @@ export function ClasswiseView({
                 <DropdownMenuContent align="end" className="w-56 rounded-xl">
                   <DropdownMenuItem
                     onClick={() => setCopyDayDialogOpen(true)}
-                    className="gap-2 text-xs cursor-pointer"
+                    className="cursor-pointer gap-2 text-xs"
                   >
                     <Copy className="h-4 w-4 text-blue-500" />
                     Copy Day Schedule to...
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setCloneDialogOpen(true)}
-                    className="gap-2 text-xs cursor-pointer"
+                    className="cursor-pointer gap-2 text-xs"
                   >
                     <Layers className="h-4 w-4 text-purple-500" />
                     Clone from Another Class...
@@ -797,7 +805,7 @@ export function ClasswiseView({
                       setClearTarget("all");
                       setClearDialogOpen(true);
                     }}
-                    className="gap-2 text-xs text-destructive cursor-pointer"
+                    className="cursor-pointer gap-2 text-xs text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
                     Clear Entire Class Timetable
@@ -819,16 +827,20 @@ export function ClasswiseView({
                 <div className="flex items-center gap-2 font-medium">
                   <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                   <span>
-                    <strong>Standard Daily Routine Active:</strong> Changes made here immediately update Monday through Saturday.
+                    <strong>Standard Daily Routine Active:</strong> Changes made
+                    here immediately update Monday through Saturday.
                   </span>
                 </div>
-                <Badge variant="outline" className="border-emerald-400 text-emerald-700 dark:text-emerald-300 bg-white/80 dark:bg-emerald-900/30 text-[10px]">
+                <Badge
+                  variant="outline"
+                  className="border-emerald-400 bg-white/80 text-[10px] text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300"
+                >
                   Mon – Sat (6 Days Sync)
                 </Badge>
               </div>
 
               {/* Lecture Timeline List */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {masterDailySchedule.map(({ lecture, entry }) => {
                   const timeSlot = getTimeSlot(lecture);
                   const isAssigned = !!entry;
@@ -839,15 +851,17 @@ export function ClasswiseView({
                       onDragOver={handleSlotDragOver}
                       onDrop={(e) => handleDailySlotDrop(lecture, e)}
                       className={cn(
-                        "group relative rounded-2xl border p-4 transition-all duration-200 flex flex-col justify-between",
+                        "group relative flex flex-col justify-between rounded-2xl border p-4 transition-all duration-200",
                         isAssigned
                           ? "border-slate-200 bg-slate-50/50 hover:bg-slate-100/70 hover:shadow-md dark:border-border dark:bg-card"
                           : "border-dashed border-slate-300 bg-white hover:border-emerald-500 hover:bg-emerald-50/20 dark:border-border/60 dark:bg-card/50",
-                        draggedTeacher && !isAssigned && "border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-400",
+                        draggedTeacher &&
+                          !isAssigned &&
+                          "border-emerald-500 bg-emerald-50/40 ring-2 ring-emerald-400",
                       )}
                     >
                       {/* Period Header */}
-                      <div className="flex items-center justify-between mb-2">
+                      <div className="mb-2 flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold text-white shadow-sm">
                             L{lecture}
@@ -871,7 +885,11 @@ export function ClasswiseView({
                               variant="ghost"
                               className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
                               onClick={() =>
-                                handleOpenAssignmentDialog("Monday", lecture, true)
+                                handleOpenAssignmentDialog(
+                                  "Monday",
+                                  lecture,
+                                  true,
+                                )
                               }
                             >
                               <Plus className="h-3 w-3" />
@@ -892,21 +910,21 @@ export function ClasswiseView({
 
                       {/* Content Body */}
                       {isAssigned ? (
-                        <div className="space-y-2 mt-1">
+                        <div className="mt-1 space-y-2">
                           <div className="rounded-xl border border-slate-200/80 bg-white p-2.5 shadow-sm dark:border-border dark:bg-card">
                             <div className="flex items-center justify-between">
                               <Badge
                                 variant="outline"
-                                className="bg-emerald-50 border-emerald-200 text-emerald-800 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-300 text-xs font-semibold"
+                                className="border-emerald-200 bg-emerald-50 text-xs font-semibold text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-300"
                               >
                                 {entry.Subject.subjectName}
                               </Badge>
-                              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                              <span className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400">
                                 Mon – Sat
                               </span>
                             </div>
                             <div className="mt-2 flex items-center gap-2">
-                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-slate-700 dark:bg-muted dark:text-foreground text-[10px] font-bold">
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-100 text-[10px] font-bold text-slate-700 dark:bg-muted dark:text-foreground">
                                 {entry.Employees.employeeName.charAt(0)}
                               </div>
                               <div className="min-w-0 flex-1">
@@ -931,9 +949,13 @@ export function ClasswiseView({
                             variant="outline"
                             size="sm"
                             onClick={() =>
-                              handleOpenAssignmentDialog("Monday", lecture, true)
+                              handleOpenAssignmentDialog(
+                                "Monday",
+                                lecture,
+                                true,
+                              )
                             }
-                            className="mt-2 h-7 gap-1 rounded-lg text-xs font-medium border-dashed"
+                            className="mt-2 h-7 gap-1 rounded-lg border-dashed text-xs font-medium"
                           >
                             <Plus className="h-3 w-3" />
                             Assign Period
@@ -976,7 +998,7 @@ export function ClasswiseView({
                   return (
                     <React.Fragment key={lecture}>
                       {/* Lecture Time Column */}
-                      <div className="rounded-xl bg-slate-100 p-2 text-center shadow-sm dark:bg-muted/40 flex flex-col justify-center">
+                      <div className="flex flex-col justify-center rounded-xl bg-slate-100 p-2 text-center shadow-sm dark:bg-muted/40">
                         <div className="text-xs font-bold text-slate-900 dark:text-foreground">
                           L{lecture}
                         </div>
@@ -1023,9 +1045,11 @@ export function ClasswiseView({
                                       <Button
                                         size="sm"
                                         variant="ghost"
-                                        className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 text-destructive hover:bg-destructive/20"
+                                        className="h-4 w-4 p-0 text-destructive opacity-0 hover:bg-destructive/20 group-hover:opacity-100"
                                         onClick={() =>
-                                          handleRemoveSingleSlot(slot.timetableId)
+                                          handleRemoveSingleSlot(
+                                            slot.timetableId,
+                                          )
                                         }
                                       >
                                         <X className="h-3 w-3" />
@@ -1033,7 +1057,7 @@ export function ClasswiseView({
                                     </div>
                                     <Badge
                                       variant="secondary"
-                                      className="truncate max-w-full text-[10px] font-normal"
+                                      className="max-w-full truncate text-[10px] font-normal"
                                     >
                                       {slot.Subject.subjectName}
                                     </Badge>
@@ -1107,7 +1131,8 @@ export function ClasswiseView({
               Copy Day Schedule
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Replicate a single day&apos;s routine to other days in {selectedClass?.grade} - {selectedClass?.section}.
+              Replicate a single day&apos;s routine to other days in{" "}
+              {selectedClass?.grade} - {selectedClass?.section}.
             </DialogDescription>
           </DialogHeader>
 
@@ -1144,7 +1169,7 @@ export function ClasswiseView({
                     <label
                       key={day}
                       className={cn(
-                        "flex items-center gap-2 rounded-xl border p-2.5 text-xs font-medium cursor-pointer transition-all",
+                        "flex cursor-pointer items-center gap-2 rounded-xl border p-2.5 text-xs font-medium transition-all",
                         isChecked
                           ? "border-emerald-500 bg-emerald-50 text-emerald-900 dark:border-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-200"
                           : "border-slate-200 bg-white hover:bg-slate-50 dark:border-border dark:bg-card",
@@ -1211,10 +1236,7 @@ export function ClasswiseView({
               <label className="text-xs font-semibold text-muted-foreground">
                 Source Class
               </label>
-              <Select
-                value={sourceClassId}
-                onValueChange={setSourceClassId}
-              >
+              <Select value={sourceClassId} onValueChange={setSourceClassId}>
                 <SelectTrigger className="mt-1 rounded-xl">
                   <SelectValue placeholder="Select class to clone from" />
                 </SelectTrigger>
@@ -1295,4 +1317,3 @@ export function ClasswiseView({
     </div>
   );
 }
-

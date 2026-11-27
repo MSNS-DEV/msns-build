@@ -6,10 +6,32 @@ import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "~/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "~/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { BarChart3, CheckCircle2, XCircle, TrendingDown, TrendingUp, DollarSign, Wallet, Landmark } from "lucide-react";
+import {
+  BarChart3,
+  CheckCircle2,
+  XCircle,
+  TrendingDown,
+  TrendingUp,
+  DollarSign,
+  Wallet,
+  Landmark,
+} from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { GradientStatCard } from "~/components/shared/GradientStatCard";
@@ -31,33 +53,50 @@ export default function LedgerPage() {
     }
   }, [latestSession, selectedSessionId]);
 
-  const { data: ledger, isLoading: isLedgerLoading } = api.erp.ledger.getGeneralLedger.useQuery({
-    fromDate: fromDate ? new Date(fromDate) : undefined,
-    toDate: toDate ? new Date(toDate) : undefined,
-    page: ledgerPage,
-    pageSize: 30,
-  });
-  const { data: trialBalance, isLoading: isTBLoading } = api.erp.ledger.getTrialBalance.useQuery({
-    fromDate: fromDate ? new Date(fromDate) : undefined,
-    toDate: toDate ? new Date(toDate) : undefined,
-  });
-  const { data: pnl, isLoading: isPnLLoading } = api.erp.ledger.getProfitLoss.useQuery(
-    { sessionId: selectedSessionId },
-    { enabled: !!selectedSessionId },
-  );
+  const { data: ledger, isLoading: isLedgerLoading } =
+    api.erp.ledger.getGeneralLedger.useQuery({
+      fromDate: fromDate ? new Date(fromDate) : undefined,
+      toDate: toDate ? new Date(toDate) : undefined,
+      page: ledgerPage,
+      pageSize: 30,
+    });
+  const { data: trialBalance, isLoading: isTBLoading } =
+    api.erp.ledger.getTrialBalance.useQuery({
+      fromDate: fromDate ? new Date(fromDate) : undefined,
+      toDate: toDate ? new Date(toDate) : undefined,
+    });
+  const { data: pnl, isLoading: isPnLLoading } =
+    api.erp.ledger.getProfitLoss.useQuery(
+      { sessionId: selectedSessionId },
+      { enabled: !!selectedSessionId },
+    );
 
   const ACCOUNT_TYPE_COLORS: Record<string, string> = {
-    Income: "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400",
-    Expenditure: "border-red-300 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400",
-    Asset: "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400",
-    Liability: "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400",
+    Income:
+      "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400",
+    Expenditure:
+      "border-red-300 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400",
+    Asset:
+      "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400",
+    Liability:
+      "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-400",
   };
 
   // Stats computation
   const stats = useMemo(() => {
-    const income = pnl?.totalIncome ?? trialBalance?.accounts.filter(a => a.accountType === "Income").reduce((sum, a) => sum + a.totalCredit, 0) ?? 0;
-    const expense = pnl?.totalExpenditure ?? trialBalance?.accounts.filter(a => a.accountType === "Expenditure").reduce((sum, a) => sum + a.totalDebit, 0) ?? 0;
-    const balance = pnl ? pnl.netSurplusDeficit : (income - expense);
+    const income =
+      pnl?.totalIncome ??
+      trialBalance?.accounts
+        .filter((a) => a.accountType === "Income")
+        .reduce((sum, a) => sum + a.totalCredit, 0) ??
+      0;
+    const expense =
+      pnl?.totalExpenditure ??
+      trialBalance?.accounts
+        .filter((a) => a.accountType === "Expenditure")
+        .reduce((sum, a) => sum + a.totalDebit, 0) ??
+      0;
+    const balance = pnl ? pnl.netSurplusDeficit : income - expense;
     const tbBalanced = trialBalance?.isBalanced ?? false;
     return { income, expense, balance, tbBalanced };
   }, [trialBalance, pnl]);
@@ -76,7 +115,7 @@ export default function LedgerPage() {
         { key: "source", label: "Source" },
         { key: "by", label: "By" },
       ],
-      rows: ledger.entries.map(e => ({
+      rows: ledger.entries.map((e) => ({
         date: new Date(e.transactionDate).toLocaleDateString(),
         code: e.accountCode,
         type: e.accountType,
@@ -102,41 +141,61 @@ export default function LedgerPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-foreground">
-              Financial <span className="text-teal-600 dark:text-teal-400">Ledger</span>
+              Financial{" "}
+              <span className="text-teal-600 dark:text-teal-400">Ledger</span>
             </h1>
-            <p className="text-sm text-muted-foreground">General ledger, trial balance, and profit &amp; loss reports</p>
+            <p className="text-sm text-muted-foreground">
+              General ledger, trial balance, and profit &amp; loss reports
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <PageExportButton exportData={exportData} csvFilename="financial-ledger" />
+          <PageExportButton
+            exportData={exportData}
+            csvFilename="financial-ledger"
+          />
         </div>
       </div>
 
       <Separator className="bg-teal-500/20" />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+      <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
         <GradientStatCard
           title="Revenue (Income)"
-          value={isLedgerLoading ? "..." : `PKR ${stats.income.toLocaleString()}`}
+          value={
+            isLedgerLoading ? "..." : `PKR ${stats.income.toLocaleString()}`
+          }
           icon={<DollarSign className="h-5 w-5" />}
           theme="emerald"
         />
         <GradientStatCard
           title="Expenditures"
-          value={isLedgerLoading ? "..." : `PKR ${stats.expense.toLocaleString()}`}
+          value={
+            isLedgerLoading ? "..." : `PKR ${stats.expense.toLocaleString()}`
+          }
           icon={<Wallet className="h-5 w-5" />}
           theme="rose"
         />
         <GradientStatCard
           title="Net Surplus/Deficit"
-          value={isLedgerLoading ? "..." : `PKR ${stats.balance.toLocaleString()}`}
-          icon={stats.balance >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+          value={
+            isLedgerLoading ? "..." : `PKR ${stats.balance.toLocaleString()}`
+          }
+          icon={
+            stats.balance >= 0 ? (
+              <TrendingUp className="h-5 w-5" />
+            ) : (
+              <TrendingDown className="h-5 w-5" />
+            )
+          }
           theme={stats.balance >= 0 ? "indigo" : "orange"}
         />
         <GradientStatCard
           title="Trial Balance Status"
-          value={isTBLoading ? "..." : stats.tbBalanced ? "Balanced" : "Unbalanced"}
+          value={
+            isTBLoading ? "..." : stats.tbBalanced ? "Balanced" : "Unbalanced"
+          }
           icon={<Landmark className="h-5 w-5" />}
           theme={stats.tbBalanced ? "emerald" : "orange"}
         />
@@ -146,22 +205,59 @@ export default function LedgerPage() {
       <Card className="border-slate-200 bg-white/50 shadow-sm dark:border-border dark:bg-card">
         <CardContent className="p-4">
           <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1.5 flex-1 min-w-[150px]">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">From Date</Label>
-              <Input type="date" value={fromDate} onChange={e => setFromDate(e.target.value)} className="flex h-9 rounded-md border border-slate-200 bg-white px-3 py-1 text-sm dark:border-border dark:bg-card dark:text-foreground w-full" />
+            <div className="min-w-[150px] flex-1 space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                From Date
+              </Label>
+              <Input
+                type="date"
+                value={fromDate}
+                onChange={(e) => setFromDate(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm dark:border-border dark:bg-card dark:text-foreground"
+              />
             </div>
-            <div className="space-y-1.5 flex-1 min-w-[150px]">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">To Date</Label>
-              <Input type="date" value={toDate} onChange={e => setToDate(e.target.value)} className="flex h-9 rounded-md border border-slate-200 bg-white px-3 py-1 text-sm dark:border-border dark:bg-card dark:text-foreground w-full" />
+            <div className="min-w-[150px] flex-1 space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                To Date
+              </Label>
+              <Input
+                type="date"
+                value={toDate}
+                onChange={(e) => setToDate(e.target.value)}
+                className="flex h-9 w-full rounded-md border border-slate-200 bg-white px-3 py-1 text-sm dark:border-border dark:bg-card dark:text-foreground"
+              />
             </div>
-            <div className="space-y-1.5 flex-1 min-w-[150px]">
-              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Session (P&L)</Label>
-              <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
-                <SelectTrigger className="h-9 w-full text-sm bg-white dark:bg-card"><SelectValue placeholder="Select session" /></SelectTrigger>
-                <SelectContent>{sessions?.map(s => <SelectItem key={s.sessionId} value={s.sessionId}>{s.sessionName}</SelectItem>)}</SelectContent>
+            <div className="min-w-[150px] flex-1 space-y-1.5">
+              <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                Session (P&L)
+              </Label>
+              <Select
+                value={selectedSessionId}
+                onValueChange={setSelectedSessionId}
+              >
+                <SelectTrigger className="h-9 w-full bg-white text-sm dark:bg-card">
+                  <SelectValue placeholder="Select session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions?.map((s) => (
+                    <SelectItem key={s.sessionId} value={s.sessionId}>
+                      {s.sessionName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
               </Select>
             </div>
-            <Button variant="outline" size="sm" onClick={() => { setFromDate(""); setToDate(""); }} className="mb-0">Clear Filters</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setFromDate("");
+                setToDate("");
+              }}
+              className="mb-0"
+            >
+              Clear Filters
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -178,8 +274,15 @@ export default function LedgerPage() {
           <Card className="border-slate-200 bg-white/50 shadow-sm dark:border-border dark:bg-card">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-border dark:bg-black/20">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold">General Ledger</CardTitle>
-                <Badge variant="outline" className="border-teal-500/20 bg-teal-500/5 text-teal-600 dark:text-teal-400 text-xs">{ledger?.total ?? 0} entries</Badge>
+                <CardTitle className="text-sm font-bold">
+                  General Ledger
+                </CardTitle>
+                <Badge
+                  variant="outline"
+                  className="border-teal-500/20 bg-teal-500/5 text-xs text-teal-600 dark:text-teal-400"
+                >
+                  {ledger?.total ?? 0} entries
+                </Badge>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -187,39 +290,101 @@ export default function LedgerPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b border-slate-100 bg-slate-50/80 dark:border-border dark:bg-black/10">
-                      {["Date", "Account Code", "Type", "D/C", "Amount", "Description", "Source", "By"].map(h => (
-                        <TableHead key={h} className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{h}</TableHead>
+                      {[
+                        "Date",
+                        "Account Code",
+                        "Type",
+                        "D/C",
+                        "Amount",
+                        "Description",
+                        "Source",
+                        "By",
+                      ].map((h) => (
+                        <TableHead
+                          key={h}
+                          className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                        >
+                          {h}
+                        </TableHead>
                       ))}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {ledger?.entries.map((e, idx) => (
-                      <TableRow key={idx} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-border dark:hover:bg-white/5">
-                        <TableCell className="font-mono text-xs">{new Date(e.transactionDate).toLocaleDateString()}</TableCell>
-                        <TableCell className="font-mono text-xs font-semibold text-slate-800 dark:text-foreground">{e.accountCode}</TableCell>
-                        <TableCell><Badge variant="outline" className={`text-xs ${ACCOUNT_TYPE_COLORS[e.accountType] ?? ""}`}>{e.accountType}</Badge></TableCell>
+                      <TableRow
+                        key={idx}
+                        className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-border dark:hover:bg-white/5"
+                      >
+                        <TableCell className="font-mono text-xs">
+                          {new Date(e.transactionDate).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="font-mono text-xs font-semibold text-slate-800 dark:text-foreground">
+                          {e.accountCode}
+                        </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={`text-xs font-bold ${e.entryType === "DEBIT" ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" : "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"}`}>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs ${ACCOUNT_TYPE_COLORS[e.accountType] ?? ""}`}
+                          >
+                            {e.accountType}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs font-bold ${e.entryType === "DEBIT" ? "border-blue-300 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-400" : "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400"}`}
+                          >
                             {e.entryType === "DEBIT" ? "DR" : "CR"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-mono text-sm font-bold text-slate-800 dark:text-foreground">PKR {e.amount.toLocaleString()}</TableCell>
-                        <TableCell className="max-w-xs truncate text-xs text-muted-foreground">{e.description}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{e.sourceType}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">{e.CreatedBy.employeeName}</TableCell>
+                        <TableCell className="font-mono text-sm font-bold text-slate-800 dark:text-foreground">
+                          PKR {e.amount.toLocaleString()}
+                        </TableCell>
+                        <TableCell className="max-w-xs truncate text-xs text-muted-foreground">
+                          {e.description}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {e.sourceType}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {e.CreatedBy.employeeName}
+                        </TableCell>
                       </TableRow>
                     ))}
                     {!ledger?.entries.length && (
-                      <TableRow><TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">No ledger entries found.</TableCell></TableRow>
+                      <TableRow>
+                        <TableCell
+                          colSpan={8}
+                          className="py-10 text-center text-sm text-muted-foreground"
+                        >
+                          No ledger entries found.
+                        </TableCell>
+                      </TableRow>
                     )}
                   </TableBody>
                 </Table>
               </div>
               {ledger && ledger.total > 30 && (
                 <div className="flex items-center justify-between border-t border-slate-100 px-5 py-3 dark:border-border">
-                  <Button size="sm" variant="outline" disabled={ledgerPage <= 1} onClick={() => setLedgerPage(p => p - 1)}>Previous</Button>
-                  <span className="text-xs text-muted-foreground">Page {ledger.page} · {ledger.total} entries</span>
-                  <Button size="sm" variant="outline" disabled={ledgerPage * 30 >= ledger.total} onClick={() => setLedgerPage(p => p + 1)}>Next</Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={ledgerPage <= 1}
+                    onClick={() => setLedgerPage((p) => p - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-xs text-muted-foreground">
+                    Page {ledger.page} · {ledger.total} entries
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={ledgerPage * 30 >= ledger.total}
+                    onClick={() => setLedgerPage((p) => p + 1)}
+                  >
+                    Next
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -231,10 +396,24 @@ export default function LedgerPage() {
           <Card className="border-slate-200 bg-white/50 shadow-sm dark:border-border dark:bg-card">
             <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-border dark:bg-black/20">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-sm font-bold">Trial Balance</CardTitle>
+                <CardTitle className="text-sm font-bold">
+                  Trial Balance
+                </CardTitle>
                 {trialBalance && (
-                  <Badge variant="outline" className={`text-xs ${trialBalance.isBalanced ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400" : "border-red-300 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"}`}>
-                    {trialBalance.isBalanced ? <><CheckCircle2 className="mr-1 inline h-3 w-3" /> Balanced</> : <><XCircle className="mr-1 inline h-3 w-3" /> Unbalanced</>}
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${trialBalance.isBalanced ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-400" : "border-red-300 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-400"}`}
+                  >
+                    {trialBalance.isBalanced ? (
+                      <>
+                        <CheckCircle2 className="mr-1 inline h-3 w-3" />{" "}
+                        Balanced
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="mr-1 inline h-3 w-3" /> Unbalanced
+                      </>
+                    )}
                   </Badge>
                 )}
               </div>
@@ -243,29 +422,71 @@ export default function LedgerPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-b border-slate-100 bg-slate-50/80 dark:border-border dark:bg-black/10">
-                    {["Account Code", "Account Type", "Total Debit (PKR)", "Total Credit (PKR)"].map(h => (
-                      <TableHead key={h} className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{h}</TableHead>
+                    {[
+                      "Account Code",
+                      "Account Type",
+                      "Total Debit (PKR)",
+                      "Total Credit (PKR)",
+                    ].map((h) => (
+                      <TableHead
+                        key={h}
+                        className="text-xs font-bold uppercase tracking-wider text-muted-foreground"
+                      >
+                        {h}
+                      </TableHead>
                     ))}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {trialBalance?.accounts.map(a => (
-                    <TableRow key={a.accountCode} className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-border dark:hover:bg-white/5">
-                      <TableCell className="font-mono text-sm font-semibold text-slate-900 dark:text-foreground">{a.accountCode}</TableCell>
-                      <TableCell><Badge variant="outline" className={`text-xs ${ACCOUNT_TYPE_COLORS[a.accountType] ?? ""}`}>{a.accountType}</Badge></TableCell>
-                      <TableCell className="font-mono text-sm text-blue-700 dark:text-blue-400">{a.totalDebit.toLocaleString()}</TableCell>
-                      <TableCell className="font-mono text-sm text-emerald-700 dark:text-emerald-400">{a.totalCredit.toLocaleString()}</TableCell>
+                  {trialBalance?.accounts.map((a) => (
+                    <TableRow
+                      key={a.accountCode}
+                      className="border-b border-slate-100 hover:bg-slate-50/50 dark:border-border dark:hover:bg-white/5"
+                    >
+                      <TableCell className="font-mono text-sm font-semibold text-slate-900 dark:text-foreground">
+                        {a.accountCode}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${ACCOUNT_TYPE_COLORS[a.accountType] ?? ""}`}
+                        >
+                          {a.accountType}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm text-blue-700 dark:text-blue-400">
+                        {a.totalDebit.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm text-emerald-700 dark:text-emerald-400">
+                        {a.totalCredit.toLocaleString()}
+                      </TableCell>
                     </TableRow>
                   ))}
                   {trialBalance && (
-                    <TableRow className="border-t-2 border-slate-300 bg-slate-50 dark:border-border dark:bg-black/20 font-bold">
-                      <TableCell colSpan={2} className="text-sm font-bold text-slate-900 dark:text-foreground">TOTALS</TableCell>
-                      <TableCell className="font-mono text-sm font-bold text-blue-700 dark:text-blue-400">{trialBalance.totalDebits.toLocaleString()}</TableCell>
-                      <TableCell className="font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400">{trialBalance.totalCredits.toLocaleString()}</TableCell>
+                    <TableRow className="border-t-2 border-slate-300 bg-slate-50 font-bold dark:border-border dark:bg-black/20">
+                      <TableCell
+                        colSpan={2}
+                        className="text-sm font-bold text-slate-900 dark:text-foreground"
+                      >
+                        TOTALS
+                      </TableCell>
+                      <TableCell className="font-mono text-sm font-bold text-blue-700 dark:text-blue-400">
+                        {trialBalance.totalDebits.toLocaleString()}
+                      </TableCell>
+                      <TableCell className="font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                        {trialBalance.totalCredits.toLocaleString()}
+                      </TableCell>
                     </TableRow>
                   )}
                   {!trialBalance?.accounts.length && (
-                    <TableRow><TableCell colSpan={4} className="py-10 text-center text-sm text-muted-foreground">No ledger entries for the selected period.</TableCell></TableRow>
+                    <TableRow>
+                      <TableCell
+                        colSpan={4}
+                        className="py-10 text-center text-sm text-muted-foreground"
+                      >
+                        No ledger entries for the selected period.
+                      </TableCell>
+                    </TableRow>
                   )}
                 </TableBody>
               </Table>
@@ -277,30 +498,52 @@ export default function LedgerPage() {
         <TabsContent value="pnl" className="mt-4">
           {!selectedSessionId ? (
             <div className="flex items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50/50 py-14 dark:border-border dark:bg-card/50">
-              <p className="text-sm text-muted-foreground">Select a session above to view the Profit &amp; Loss statement.</p>
+              <p className="text-sm text-muted-foreground">
+                Select a session above to view the Profit &amp; Loss statement.
+              </p>
             </div>
           ) : isPnLLoading ? (
-            <div className="py-14 text-center text-sm text-muted-foreground">Loading Profit &amp; Loss...</div>
+            <div className="py-14 text-center text-sm text-muted-foreground">
+              Loading Profit &amp; Loss...
+            </div>
           ) : !pnl ? (
-            <div className="py-14 text-center text-sm text-muted-foreground">Profit &amp; Loss statement not found.</div>
+            <div className="py-14 text-center text-sm text-muted-foreground">
+              Profit &amp; Loss statement not found.
+            </div>
           ) : (
             <div className="grid gap-5 md:grid-cols-2">
               <Card className="border-slate-200 bg-white/50 shadow-sm dark:border-border dark:bg-card">
                 <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-border dark:bg-black/20">
-                  <CardTitle className="text-sm font-bold">Profit &amp; Loss Statement</CardTitle>
+                  <CardTitle className="text-sm font-bold">
+                    Profit &amp; Loss Statement
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 space-y-4">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Total Income (Fee Collections)</span>
-                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">PKR {pnl.totalIncome.toLocaleString()}</span>
+                <CardContent className="space-y-4 p-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">
+                      Total Income (Fee Collections)
+                    </span>
+                    <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                      PKR {pnl.totalIncome.toLocaleString()}
+                    </span>
                   </div>
-                  <div className="flex justify-between items-center text-sm border-b pb-2">
-                    <span className="text-muted-foreground">Total Expenditure</span>
-                    <span className="font-mono font-bold text-red-500">PKR {pnl.totalExpenditure.toLocaleString()}</span>
+                  <div className="flex items-center justify-between border-b pb-2 text-sm">
+                    <span className="text-muted-foreground">
+                      Total Expenditure
+                    </span>
+                    <span className="font-mono font-bold text-red-500">
+                      PKR {pnl.totalExpenditure.toLocaleString()}
+                    </span>
                   </div>
-                  <div className="flex justify-between items-center text-base font-bold pt-2">
+                  <div className="flex items-center justify-between pt-2 text-base font-bold">
                     <span>Net Surplus / Deficit</span>
-                    <span className={pnl.isDeficit ? "text-red-500 font-mono" : "text-emerald-600 dark:text-emerald-400 font-mono"}>
+                    <span
+                      className={
+                        pnl.isDeficit
+                          ? "font-mono text-red-500"
+                          : "font-mono text-emerald-600 dark:text-emerald-400"
+                      }
+                    >
                       PKR {pnl.netSurplusDeficit.toLocaleString()}
                     </span>
                   </div>
@@ -309,28 +552,40 @@ export default function LedgerPage() {
 
               <Card className="border-slate-200 bg-white/50 shadow-sm dark:border-border dark:bg-card">
                 <CardHeader className="border-b border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-border dark:bg-black/20">
-                  <CardTitle className="text-sm font-bold">Expenditure Breakdown</CardTitle>
+                  <CardTitle className="text-sm font-bold">
+                    Expenditure Breakdown
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="p-4 space-y-3">
-                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                <CardContent className="space-y-3 p-4">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Salaries paid</span>
-                    <span className="font-mono">PKR {pnl.breakdown.salaries.toLocaleString()}</span>
+                    <span className="font-mono">
+                      PKR {pnl.breakdown.salaries.toLocaleString()}
+                    </span>
                   </div>
-                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Direct Expenses approved</span>
-                    <span className="font-mono">PKR {pnl.breakdown.directExpenses.toLocaleString()}</span>
+                    <span className="font-mono">
+                      PKR {pnl.breakdown.directExpenses.toLocaleString()}
+                    </span>
                   </div>
-                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Petty cash disbursements</span>
-                    <span className="font-mono">PKR {pnl.breakdown.pettyCash.toLocaleString()}</span>
+                    <span className="font-mono">
+                      PKR {pnl.breakdown.pettyCash.toLocaleString()}
+                    </span>
                   </div>
-                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Purchase orders settled</span>
-                    <span className="font-mono">PKR {pnl.breakdown.purchaseOrders.toLocaleString()}</span>
+                    <span className="font-mono">
+                      PKR {pnl.breakdown.purchaseOrders.toLocaleString()}
+                    </span>
                   </div>
-                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>Other miscellaneous expenses</span>
-                    <span className="font-mono">PKR {pnl.breakdown.otherExpenses.toLocaleString()}</span>
+                    <span className="font-mono">
+                      PKR {pnl.breakdown.otherExpenses.toLocaleString()}
+                    </span>
                   </div>
                 </CardContent>
               </Card>

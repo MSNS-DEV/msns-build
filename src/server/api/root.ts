@@ -27,9 +27,13 @@ import { bulkSalaryRouter } from "./routers/bulkSalary";
 import { mobileRouter } from "./routers/mobile";
 import { parentRouter } from "./routers/parent";
 import { notificationRouter } from "./routers/notification";
+import { securityRouter } from "./routers/security";
+import { accountsRouter } from "./routers/accounts";
 
 export const appRouter = createTRPCRouter({
   notification: notificationRouter,
+  security: securityRouter,
+  accounts: accountsRouter,
   user: UserRouter,
   profile: ProfileRouter,
   allotment: AllotmentRouter,

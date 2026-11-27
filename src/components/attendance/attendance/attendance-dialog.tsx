@@ -76,7 +76,10 @@ export const AttendanceModal = () => {
           isHardwareAvailable = true;
         }
       } catch (err) {
-        console.warn("Hardware scanner offline or unreadable, using biometric verification fallback:", err);
+        console.warn(
+          "Hardware scanner offline or unreadable, using biometric verification fallback:",
+          err,
+        );
       }
 
       setStatus("Verifying fingerprint template...");

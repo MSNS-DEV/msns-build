@@ -1,7 +1,14 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, managementProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  managementProcedure,
+  officeProcedure,
+  teacherProcedure,
+} from "../trpc";
 import { z } from "zod";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
+import type { Prisma, PrismaClient } from "@prisma/client";
+import { assertNoPaidVouchers } from "~/server/utils/financial-guards";
 
 const promoteStudentSchema = z.object({
   studentId: z.string().cuid(),
@@ -19,6 +26,31 @@ const batchPromoteSchema = z.object({
   toClassId: z.string().cuid(),
   examIdForFinalCheck: z.string().cuid(),
 });
+
+type Db = PrismaClient | Prisma.TransactionClient;
+
+/**
+ * Enrols a promoted student in the target session's class. The previous session's
+ * enrolment is kept (it owns that year's fee vouchers, attendance and results; deleting
+ * it erased history and failed outright once vouchers existed). Within one session the
+ * enrolment's class is changed in place. Idempotent on the unique (student, session) key.
+ */
+async function enrolPromotedStudent(
+  db: Db,
+  a: { studentId: string; toClassId: string; toSessionId: string },
+) {
+  await db.studentClass.upsert({
+    where: {
+      studentId_sessionId: { studentId: a.studentId, sessionId: a.toSessionId },
+    },
+    update: { classId: a.toClassId },
+    create: {
+      studentId: a.studentId,
+      classId: a.toClassId,
+      sessionId: a.toSessionId,
+    },
+  });
+}
 
 export const promotionRouter = createTRPCRouter({
   promoteStudent: managementProcedure
@@ -80,21 +112,10 @@ export const promotionRouter = createTRPCRouter({
           });
         }
 
-        // Remove student from current class
-        await ctx.db.studentClass.deleteMany({
-          where: {
-            studentId: input.studentId,
-            classId: input.fromClassId,
-          },
-        });
-
-        // Add student to new class
-        await ctx.db.studentClass.create({
-          data: {
-            studentId: input.studentId,
-            classId: input.toClassId,
-            sessionId: input.toSessionId,
-          },
+        await enrolPromotedStudent(ctx.db, {
+          studentId: input.studentId,
+          toClassId: input.toClassId,
+          toSessionId: input.toSessionId,
         });
 
         // Create promotion history
@@ -183,21 +204,10 @@ export const promotionRouter = createTRPCRouter({
 
         // Promote passed students
         for (const student of studentsToPromote) {
-          // Remove from current class
-          await ctx.db.studentClass.deleteMany({
-            where: {
-              studentId: student.studentId,
-              classId: input.fromClassId,
-            },
-          });
-
-          // Add to new class
-          await ctx.db.studentClass.create({
-            data: {
-              studentId: student.studentId,
-              classId: input.toClassId,
-              sessionId: input.toSessionId,
-            },
+          await enrolPromotedStudent(ctx.db, {
+            studentId: student.studentId,
+            toClassId: input.toClassId,
+            toSessionId: input.toSessionId,
           });
 
           // Create promotion history
@@ -232,7 +242,7 @@ export const promotionRouter = createTRPCRouter({
       }
     }),
 
-  getPromotionHistory: protectedProcedure
+  getPromotionHistory: teacherProcedure
     .input(
       z.object({
         studentId: z.string().cuid().optional(),
@@ -285,7 +295,7 @@ export const promotionRouter = createTRPCRouter({
       }
     }),
 
-  getStudentPromotionStatus: protectedProcedure
+  getStudentPromotionStatus: teacherProcedure
     .input(z.object({ studentId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       try {
@@ -333,7 +343,7 @@ export const promotionRouter = createTRPCRouter({
       }
     }),
 
-  canPromoteClass: protectedProcedure
+  canPromoteClass: teacherProcedure
     .input(
       z.object({
         fromClassId: z.string().cuid(),
@@ -422,8 +432,10 @@ export const promotionRouter = createTRPCRouter({
       return ctx.db.promotionEligibilityRule.create({ data: input });
     }),
 
-  getEligibilityRules: protectedProcedure.query(({ ctx }) =>
-    ctx.db.promotionEligibilityRule.findMany({ orderBy: { examTypeEnum: "asc" } }),
+  getEligibilityRules: teacherProcedure.query(({ ctx }) =>
+    ctx.db.promotionEligibilityRule.findMany({
+      orderBy: { examTypeEnum: "asc" },
+    }),
   ),
 
   // FR-PRM-05/06/08: Compute and store eligibility results for all students in an exam
@@ -438,9 +450,15 @@ export const promotionRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const exam = await ctx.db.exam.findUnique({
         where: { examId: input.examId },
-        select: { examId: true, examTypeEnum: true, totalMarks: true, passingMarks: true },
+        select: {
+          examId: true,
+          examTypeEnum: true,
+          totalMarks: true,
+          passingMarks: true,
+        },
       });
-      if (!exam) throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
+      if (!exam)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Exam not found" });
 
       // Get the eligibility rule for this exam type
       const rule = await ctx.db.promotionEligibilityRule.findFirst({
@@ -467,10 +485,18 @@ export const promotionRouter = createTRPCRouter({
           select: { subjectId: true, obtainedMarks: true, totalMarks: true },
         });
 
-        const totalObtained = studentMarks.reduce((s, m) => s + m.obtainedMarks, 0);
-        const totalPossible = studentMarks.reduce((s, m) => s + m.totalMarks, 0);
+        const totalObtained = studentMarks.reduce(
+          (s, m) => s + m.obtainedMarks,
+          0,
+        );
+        const totalPossible = studentMarks.reduce(
+          (s, m) => s + m.totalMarks,
+          0,
+        );
         const aggregatePercent =
-          totalPossible > 0 ? Math.round((totalObtained / totalPossible) * 100 * 100) / 100 : 0;
+          totalPossible > 0
+            ? Math.round((totalObtained / totalPossible) * 100 * 100) / 100
+            : 0;
 
         const passedSubjects = studentMarks.filter(
           (m) => m.obtainedMarks >= exam.passingMarks,
@@ -483,7 +509,8 @@ export const promotionRouter = createTRPCRouter({
         }));
 
         // Determine eligibility status using the rule
-        let eligibilityStatus: "Eligible" | "Conditional" | "Ineligible" = "Eligible";
+        let eligibilityStatus: "Eligible" | "Conditional" | "Ineligible" =
+          "Eligible";
 
         if (rule) {
           const meetsAggregate = aggregatePercent >= rule.minAggregatePercent;
@@ -537,14 +564,18 @@ export const promotionRouter = createTRPCRouter({
       return {
         success: true,
         processed: results.length,
-        eligible: results.filter((r) => r.eligibilityStatus === "Eligible").length,
-        conditional: results.filter((r) => r.eligibilityStatus === "Conditional").length,
-        ineligible: results.filter((r) => r.eligibilityStatus === "Ineligible").length,
+        eligible: results.filter((r) => r.eligibilityStatus === "Eligible")
+          .length,
+        conditional: results.filter(
+          (r) => r.eligibilityStatus === "Conditional",
+        ).length,
+        ineligible: results.filter((r) => r.eligibilityStatus === "Ineligible")
+          .length,
       };
     }),
 
   // FR-PRM-08: Get promotion eligibility report for a class/exam
-  getEligibilityReport: protectedProcedure
+  getEligibilityReport: teacherProcedure
     .input(
       z.object({
         examId: z.string().cuid(),
@@ -600,7 +631,11 @@ export const promotionRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const initiatorEmployee = await getSessionEmployee(ctx);
-      if (!initiatorEmployee) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!initiatorEmployee)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       // Get eligibility results for override validation
       const eligibilityMap = new Map(
@@ -645,7 +680,10 @@ export const promotionRouter = createTRPCRouter({
             data: {
               batchId: batch.batchId,
               studentId: s.studentId,
-              eligibilityStatus: eligibility as "Eligible" | "Conditional" | "Ineligible",
+              eligibilityStatus: eligibility as
+                | "Eligible"
+                | "Conditional"
+                | "Ineligible",
               isOverridden: isOverride,
               overrideJustification: s.justification,
               outcome,
@@ -653,18 +691,10 @@ export const promotionRouter = createTRPCRouter({
           });
 
           if (s.action === "Promote") {
-            // Remove from current class (update enrollment status)
-            await tx.studentClass.deleteMany({
-              where: { studentId: s.studentId, classId: input.fromClassId },
-            });
-
-            // Add to new class
-            await tx.studentClass.create({
-              data: {
-                studentId: s.studentId,
-                classId: input.toClassId,
-                sessionId: input.toSessionId,
-              },
+            await enrolPromotedStudent(tx, {
+              studentId: s.studentId,
+              toClassId: input.toClassId,
+              toSessionId: input.toSessionId,
             });
 
             // Create promotion history
@@ -691,7 +721,11 @@ export const promotionRouter = createTRPCRouter({
 
         await tx.bulkPromotionBatch.update({
           where: { batchId: batch.batchId },
-          data: { totalPromoted: promoted, totalWithheld: withheld, totalOverrides: overrides },
+          data: {
+            totalPromoted: promoted,
+            totalWithheld: withheld,
+            totalOverrides: overrides,
+          },
         });
 
         return { batchId: batch.batchId, promoted, withheld, overrides };
@@ -708,7 +742,7 @@ export const promotionRouter = createTRPCRouter({
     }),
 
   // FR-PRM-15: Get promotion audit trail per class or student
-  getPromotionAuditTrail: protectedProcedure
+  getPromotionAuditTrail: officeProcedure
     .input(
       z.object({
         studentId: z.string().cuid().optional(),
@@ -729,7 +763,9 @@ export const promotionRouter = createTRPCRouter({
           ToClass: { select: { grade: true, section: true } },
           Items: {
             where: input.studentId ? { studentId: input.studentId } : undefined,
-            include: { Student: { select: { studentName: true, admissionNumber: true } } },
+            include: {
+              Student: { select: { studentName: true, admissionNumber: true } },
+            },
           },
         },
         orderBy: { executedAt: "desc" },
@@ -750,18 +786,26 @@ export const promotionRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const reversedBy = ctx.session?.user?.id;
-      if (!reversedBy) throw new TRPCError({ code: "UNAUTHORIZED", message: "Not authenticated" });
+      if (!reversedBy)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Not authenticated",
+        });
 
       const promotionRecord = await ctx.db.promotionHistory.findUnique({
         where: { promotionHistoryId: input.promotionHistoryId },
       });
       if (!promotionRecord) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Promotion record not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Promotion record not found",
+        });
       }
 
       // Check 30-day window
       const daysSincePromotion = Math.floor(
-        (Date.now() - promotionRecord.promotedAt.getTime()) / (1000 * 60 * 60 * 24),
+        (Date.now() - promotionRecord.promotedAt.getTime()) /
+          (1000 * 60 * 60 * 24),
       );
       if (daysSincePromotion > 30) {
         throw new TRPCError({
@@ -771,22 +815,47 @@ export const promotionRouter = createTRPCRouter({
       }
 
       const initiatorEmployee = await getSessionEmployee(ctx);
-      if (!initiatorEmployee) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!initiatorEmployee)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       await ctx.db.$transaction(async (tx) => {
-        // Remove from current (promoted-to) class
-        await tx.studentClass.deleteMany({
-          where: { studentId: input.studentId, classId: promotionRecord.toClassId },
-        });
-
-        // Restore in original class
-        await tx.studentClass.create({
-          data: {
+        if (promotionRecord.fromSessionId === promotionRecord.toSessionId) {
+          // Same-session promotion changed the class in place: change it back.
+          await enrolPromotedStudent(tx, {
             studentId: input.studentId,
-            classId: promotionRecord.fromClassId,
-            sessionId: promotionRecord.fromSessionId,
-          },
-        });
+            toClassId: promotionRecord.fromClassId,
+            toSessionId: promotionRecord.fromSessionId,
+          });
+        } else {
+          // Drop the promoted-to enrolment (refused if it already has payments) and make
+          // sure the original enrolment exists.
+          const promoted = await tx.studentClass.findMany({
+            where: {
+              studentId: input.studentId,
+              classId: promotionRecord.toClassId,
+              sessionId: promotionRecord.toSessionId,
+            },
+            select: { scId: true },
+          });
+          const scIds = promoted.map((p) => p.scId);
+          await assertNoPaidVouchers(
+            tx,
+            { studentClassId: { in: scIds } },
+            "reverse this promotion",
+          );
+          await tx.feeStudentClass.deleteMany({
+            where: { studentClassId: { in: scIds } },
+          });
+          await tx.studentClass.deleteMany({ where: { scId: { in: scIds } } });
+          await enrolPromotedStudent(tx, {
+            studentId: input.studentId,
+            toClassId: promotionRecord.fromClassId,
+            toSessionId: promotionRecord.fromSessionId,
+          });
+        }
 
         // Create reversal record in promotion history
         await tx.promotionHistory.create({

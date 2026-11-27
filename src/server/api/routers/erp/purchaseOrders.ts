@@ -1,7 +1,12 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, managementProcedure } from "../../trpc";
+import {
+  createTRPCRouter,
+  financeProcedure,
+  leadershipProcedure,
+} from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
+import { assertNotSelfApproval } from "~/server/api/access";
 
 const poLineItemSchema = z.object({
   description: z.string().min(1),
@@ -32,12 +37,15 @@ const grnLineItemSchema = z.object({
 
 export const purchaseOrdersRouter = createTRPCRouter({
   // FR-ERP-06: Create Purchase Order Request
-  create: managementProcedure
+  create: financeProcedure
     .input(createPOSchema)
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
       if (!employeeRecord) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee record not found" });
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee record not found",
+        });
       }
 
       // Generate sequential PO number
@@ -80,13 +88,22 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-07: Submit for approval (Draft → PendingApprovalL1)
-  submitForApproval: managementProcedure
+  submitForApproval: financeProcedure
     .input(z.object({ poId: z.string().cuid() }))
     .mutation(async ({ ctx, input }) => {
-      const po = await ctx.db.purchaseOrder.findUnique({ where: { poId: input.poId } });
-      if (!po) throw new TRPCError({ code: "NOT_FOUND", message: "Purchase order not found" });
+      const po = await ctx.db.purchaseOrder.findUnique({
+        where: { poId: input.poId },
+      });
+      if (!po)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Purchase order not found",
+        });
       if (po.status !== "Draft") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Only Draft POs can be submitted" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Only Draft POs can be submitted",
+        });
       }
       const updated = await ctx.db.purchaseOrder.update({
         where: { poId: input.poId },
@@ -97,18 +114,19 @@ export const purchaseOrdersRouter = createTRPCRouter({
         try {
           const approvers = await ctx.db.user.findMany({
             where: {
-              accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD", "CLERK"] }
+              accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD"] },
             },
-            select: { id: true }
+            select: { id: true },
           });
           const approverIds = approvers.map((u) => u.id);
           if (approverIds.length > 0) {
-            const { sendPushNotification } = await import("~/server/mobile/fcm");
+            const { sendPushNotification } =
+              await import("~/server/mobile/fcm");
             await sendPushNotification(
               approverIds,
               [],
               "ERP Approval Required",
-              `Purchase Order ${po.poNumber} requires review and L1 approval.`
+              `Purchase Order ${po.poNumber} requires review and L1 approval.`,
             );
           }
         } catch (err) {
@@ -120,20 +138,34 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-07: L1 Approval
-  approveL1: managementProcedure
-    .input(z.object({ poId: z.string().cuid(), comments: z.string().optional() }))
+  approveL1: leadershipProcedure
+    .input(
+      z.object({ poId: z.string().cuid(), comments: z.string().optional() }),
+    )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
-      const po = await ctx.db.purchaseOrder.findUnique({ where: { poId: input.poId } });
-      if (!po) throw new TRPCError({ code: "NOT_FOUND", message: "PO not found" });
+      const po = await ctx.db.purchaseOrder.findUnique({
+        where: { poId: input.poId },
+      });
+      if (!po)
+        throw new TRPCError({ code: "NOT_FOUND", message: "PO not found" });
       if (po.status !== "PendingApprovalL1") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "PO is not pending L1 approval" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "PO is not pending L1 approval",
+        });
       }
+      assertNotSelfApproval(employeeRecord.employeeId, po.createdBy);
 
       // Determine if L2 is needed (above PKR 10,000 threshold)
-      const nextStatus = po.estimatedTotal > 10000 ? "PendingApprovalL2" : "Approved";
+      const nextStatus =
+        po.estimatedTotal > 10000 ? "PendingApprovalL2" : "Approved";
 
       const [updatedPO] = await ctx.db.$transaction([
         ctx.db.purchaseOrder.update({
@@ -161,22 +193,26 @@ export const purchaseOrdersRouter = createTRPCRouter({
           try {
             const approvers = await ctx.db.user.findMany({
               where: {
-                accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD", "CLERK"] }
+                accountType: { in: ["ADMIN", "PRINCIPAL", "HEAD"] },
               },
-              select: { id: true }
+              select: { id: true },
             });
             const approverIds = approvers.map((u) => u.id);
             if (approverIds.length > 0) {
-              const { sendPushNotification } = await import("~/server/mobile/fcm");
+              const { sendPushNotification } =
+                await import("~/server/mobile/fcm");
               await sendPushNotification(
                 approverIds,
                 [],
                 "ERP L2 Approval Required",
-                `Purchase Order ${po.poNumber} exceeds PKR 10,000 and requires L2 approval.`
+                `Purchase Order ${po.poNumber} exceeds PKR 10,000 and requires L2 approval.`,
               );
             }
           } catch (err) {
-            console.error("Failed to send PO L2 approval push notification:", err);
+            console.error(
+              "Failed to send PO L2 approval push notification:",
+              err,
+            );
           }
         })();
       }
@@ -185,17 +221,35 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-07: L2 Approval
-  approveL2: managementProcedure
-    .input(z.object({ poId: z.string().cuid(), comments: z.string().optional() }))
+  approveL2: leadershipProcedure
+    .input(
+      z.object({ poId: z.string().cuid(), comments: z.string().optional() }),
+    )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
-      const po = await ctx.db.purchaseOrder.findUnique({ where: { poId: input.poId } });
-      if (!po) throw new TRPCError({ code: "NOT_FOUND", message: "PO not found" });
+      const po = await ctx.db.purchaseOrder.findUnique({
+        where: { poId: input.poId },
+      });
+      if (!po)
+        throw new TRPCError({ code: "NOT_FOUND", message: "PO not found" });
       if (po.status !== "PendingApprovalL2") {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "PO is not pending L2 approval" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "PO is not pending L2 approval",
+        });
       }
+      // L2 must be a different person from both the requester and the L1 approver.
+      assertNotSelfApproval(
+        employeeRecord.employeeId,
+        po.createdBy,
+        po.approvalL1By,
+      );
 
       const [updatedPO] = await ctx.db.$transaction([
         ctx.db.purchaseOrder.update({
@@ -222,14 +276,21 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-07: Reject PO
-  reject: managementProcedure
+  reject: leadershipProcedure
     .input(z.object({ poId: z.string().cuid(), reason: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
-      const po = await ctx.db.purchaseOrder.findUnique({ where: { poId: input.poId } });
-      if (!po) throw new TRPCError({ code: "NOT_FOUND", message: "PO not found" });
+      const po = await ctx.db.purchaseOrder.findUnique({
+        where: { poId: input.poId },
+      });
+      if (!po)
+        throw new TRPCError({ code: "NOT_FOUND", message: "PO not found" });
 
       await ctx.db.$transaction([
         ctx.db.purchaseOrder.update({
@@ -252,7 +313,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-09: Update PO status (Approved → Ordered, Ordered → Received, etc.)
-  updateStatus: managementProcedure
+  updateStatus: financeProcedure
     .input(
       z.object({
         poId: z.string().cuid(),
@@ -267,7 +328,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // FR-ERP-10: Record Goods Receipt Note
-  recordGRN: managementProcedure
+  recordGRN: financeProcedure
     .input(
       z.object({
         poId: z.string().cuid(),
@@ -277,13 +338,18 @@ export const purchaseOrdersRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       const po = await ctx.db.purchaseOrder.findUnique({
         where: { poId: input.poId },
         include: { LineItems: { include: { InventoryItem: true } } },
       });
-      if (!po) throw new TRPCError({ code: "NOT_FOUND", message: "PO not found" });
+      if (!po)
+        throw new TRPCError({ code: "NOT_FOUND", message: "PO not found" });
 
       const grn = await ctx.db.$transaction(async (tx) => {
         const grnRecord = await tx.goodsReceiptNote.create({
@@ -305,7 +371,9 @@ export const purchaseOrdersRouter = createTRPCRouter({
 
         // FR-ERP-19: Update inventory quantities for tagged items
         for (const li of input.lineItems) {
-          const poLine = po.LineItems.find((p) => p.lineItemId === li.poLineItemId);
+          const poLine = po.LineItems.find(
+            (p) => p.lineItemId === li.poLineItemId,
+          );
           if (poLine?.inventoryItemId) {
             await tx.inventoryItem.update({
               where: { inventoryItemId: poLine.inventoryItemId },
@@ -334,7 +402,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // Get all POs with filters
-  getAll: protectedProcedure
+  getAll: financeProcedure
     .input(
       z.object({
         status: z
@@ -380,7 +448,7 @@ export const purchaseOrdersRouter = createTRPCRouter({
     }),
 
   // Get PO by ID with full details
-  getById: protectedProcedure
+  getById: financeProcedure
     .input(z.object({ poId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const po = await ctx.db.purchaseOrder.findUnique({
@@ -390,11 +458,19 @@ export const purchaseOrdersRouter = createTRPCRouter({
           CreatedBy: { select: { employeeName: true, designation: true } },
           ApprovalL1: { select: { employeeName: true } },
           ApprovalL2: { select: { employeeName: true } },
-          LineItems: { include: { InventoryItem: { select: { itemName: true } } } },
-          GRN: { include: { LineItems: true, ReceivedBy: { select: { employeeName: true } } } },
+          LineItems: {
+            include: { InventoryItem: { select: { itemName: true } } },
+          },
+          GRN: {
+            include: {
+              LineItems: true,
+              ReceivedBy: { select: { employeeName: true } },
+            },
+          },
         },
       });
-      if (!po) throw new TRPCError({ code: "NOT_FOUND", message: "PO not found" });
+      if (!po)
+        throw new TRPCError({ code: "NOT_FOUND", message: "PO not found" });
       return po;
     }),
 });

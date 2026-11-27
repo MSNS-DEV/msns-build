@@ -3,8 +3,10 @@ interface CapacitorGlobal {
 }
 
 export const isNative = (): boolean => {
-  if (typeof window === 'undefined') return false;
-  const cap = (window as unknown as Record<string, unknown>).Capacitor as CapacitorGlobal | undefined;
+  if (typeof window === "undefined") return false;
+  const cap = (window as unknown as Record<string, unknown>).Capacitor as
+    | CapacitorGlobal
+    | undefined;
   return !!cap?.isNativePlatform();
 };
 
@@ -17,54 +19,65 @@ let dbInstance: SQLiteDB | null = null;
 let sqliteConnection: unknown = null;
 
 export const getSecureItem = async (key: string): Promise<string | null> => {
-  if (!isNative()) return typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+  if (!isNative())
+    return typeof window !== "undefined" ? localStorage.getItem(key) : null;
   try {
-    const { Preferences } = await import('@capacitor/preferences');
+    const { Preferences } = await import("@capacitor/preferences");
     const { value } = await Preferences.get({ key });
     return value;
   } catch (err) {
-    console.error('Preferences get error:', err);
+    console.error("Preferences get error:", err);
     return null;
   }
 };
 
-export const setSecureItem = async (key: string, value: string): Promise<void> => {
+export const setSecureItem = async (
+  key: string,
+  value: string,
+): Promise<void> => {
   if (!isNative()) {
-    if (typeof window !== 'undefined') localStorage.setItem(key, value);
+    if (typeof window !== "undefined") localStorage.setItem(key, value);
     return;
   }
   try {
-    const { Preferences } = await import('@capacitor/preferences');
+    const { Preferences } = await import("@capacitor/preferences");
     await Preferences.set({ key, value });
   } catch (err) {
-    console.error('Preferences set error:', err);
+    console.error("Preferences set error:", err);
   }
 };
 
 export const removeSecureItem = async (key: string): Promise<void> => {
   if (!isNative()) {
-    if (typeof window !== 'undefined') localStorage.removeItem(key);
+    if (typeof window !== "undefined") localStorage.removeItem(key);
     return;
   }
   try {
-    const { Preferences } = await import('@capacitor/preferences');
+    const { Preferences } = await import("@capacitor/preferences");
     await Preferences.remove({ key });
   } catch (err) {
-    console.error('Preferences remove error:', err);
+    console.error("Preferences remove error:", err);
   }
 };
 
 export const clearPreferences = async (): Promise<void> => {
   if (!isNative()) {
-    if (typeof window !== 'undefined') localStorage.clear();
+    if (typeof window !== "undefined") localStorage.clear();
     return;
   }
   try {
-    const { Preferences } = await import('@capacitor/preferences');
+    const { Preferences } = await import("@capacitor/preferences");
     await Preferences.clear();
   } catch (err) {
-    console.error('Preferences clear error:', err);
+    console.error("Preferences clear error:", err);
   }
+};
+
+/** 256-bit random passphrase from the platform CSPRNG. */
+const generatePassphrase = (): string => {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 };
 
 export const initDb = async (): Promise<SQLiteDB | null> => {
@@ -72,18 +85,26 @@ export const initDb = async (): Promise<SQLiteDB | null> => {
   if (dbInstance) return dbInstance;
 
   try {
-    const { SQLiteConnection, CapacitorSQLite } = await import('@capacitor-community/sqlite');
+    const { SQLiteConnection, CapacitorSQLite } =
+      await import("@capacitor-community/sqlite");
     sqliteConnection ??= new SQLiteConnection(CapacitorSQLite);
-    const dbName = 'msns_offline_cache';
+    const dbName = "msns_offline_cache";
     const encrypted = true;
-    const mode = 'secret';
+    const mode = "secret";
     const version = 1;
 
-    let secretKey = await getSecureItem('db_secret_key');
-    if (!secretKey) {
-      secretKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      await setSecureItem('db_secret_key', secretKey);
+    // The plugin keeps the passphrase in its own encrypted storage; we only need to
+    // provide one the first time. Never store it in plain Preferences/localStorage.
+    const secretConn = sqliteConnection as {
+      isSecretStored(): Promise<{ result?: boolean }>;
+      setEncryptionSecret(passphrase: string): Promise<void>;
+    };
+    const { result: secretStored } = await secretConn.isSecretStored();
+    if (!secretStored) {
+      await secretConn.setEncryptionSecret(generatePassphrase());
     }
+    // Remove the plaintext key written by earlier app versions.
+    await removeSecureItem("db_secret_key");
 
     const connectionObj = sqliteConnection as {
       createConnection(
@@ -91,8 +112,12 @@ export const initDb = async (): Promise<SQLiteDB | null> => {
         encrypted: boolean,
         mode: string,
         version: number,
-        readonly: boolean
-      ): Promise<{ open(): Promise<void>; execute(query: string): Promise<void>; close(): Promise<void> }>;
+        readonly: boolean,
+      ): Promise<{
+        open(): Promise<void>;
+        execute(query: string): Promise<void>;
+        close(): Promise<void>;
+      }>;
     };
 
     const conn = await connectionObj.createConnection(
@@ -100,7 +125,7 @@ export const initDb = async (): Promise<SQLiteDB | null> => {
       encrypted,
       mode,
       version,
-      false
+      false,
     );
 
     await conn.open();
@@ -108,7 +133,7 @@ export const initDb = async (): Promise<SQLiteDB | null> => {
     await createOfflineTables(conn);
     return dbInstance;
   } catch (error) {
-    console.error('Failed to initialize local SQLite database:', error);
+    console.error("Failed to initialize local SQLite database:", error);
     throw error;
   }
 };
@@ -121,15 +146,15 @@ export const getDb = async () => {
 export const clearDb = async () => {
   if (!isNative()) return;
   try {
-    const { CapacitorSQLite } = await import('@capacitor-community/sqlite');
+    const { CapacitorSQLite } = await import("@capacitor-community/sqlite");
     if (dbInstance) {
       await dbInstance.close();
       dbInstance = null;
     }
-    const dbName = 'msns_offline_cache';
+    const dbName = "msns_offline_cache";
     await CapacitorSQLite.deleteDatabase({ database: dbName });
   } catch (error) {
-    console.error('Failed to clear local SQLite database:', error);
+    console.error("Failed to clear local SQLite database:", error);
   }
 };
 
@@ -163,10 +188,19 @@ const createOfflineTables = async (db: SQLiteDB) => {
       action TEXT,
       payload TEXT,
       createdAt TEXT,
-      status TEXT
+      status TEXT,
+      attempts INTEGER DEFAULT 0
     );
   `;
   await db.execute(query);
+  // Databases created by earlier versions lack the attempts column.
+  try {
+    await db.execute(
+      `ALTER TABLE sync_queue ADD COLUMN attempts INTEGER DEFAULT 0;`,
+    );
+  } catch {
+    // column already exists
+  }
 };
 
 export interface NetworkStatus {
@@ -175,41 +209,58 @@ export interface NetworkStatus {
 }
 
 export const getNetworkStatus = async (): Promise<NetworkStatus> => {
-  if (!isNative()) return { connected: typeof navigator !== 'undefined' ? navigator.onLine : true, connectionType: 'wifi' };
+  if (!isNative())
+    return {
+      connected: typeof navigator !== "undefined" ? navigator.onLine : true,
+      connectionType: "wifi",
+    };
   try {
-    const { Network } = await import('@capacitor/network');
+    const { Network } = await import("@capacitor/network");
     const status = await Network.getStatus();
-    return { connected: status.connected, connectionType: status.connectionType };
+    return {
+      connected: status.connected,
+      connectionType: status.connectionType,
+    };
   } catch (err) {
-    console.error('Network getStatus error:', err);
-    return { connected: true, connectionType: 'wifi' };
+    console.error("Network getStatus error:", err);
+    return { connected: true, connectionType: "wifi" };
   }
 };
 
-export const onNetworkStatusChange = async (callback: (status: NetworkStatus) => void) => {
+export const onNetworkStatusChange = async (
+  callback: (status: NetworkStatus) => void,
+) => {
   if (!isNative()) {
-    if (typeof window !== 'undefined') {
-      const onlineHandler = () => callback({ connected: true, connectionType: 'wifi' });
-      const offlineHandler = () => callback({ connected: false, connectionType: 'none' });
-      window.addEventListener('online', onlineHandler);
-      window.addEventListener('offline', offlineHandler);
+    if (typeof window !== "undefined") {
+      const onlineHandler = () =>
+        callback({ connected: true, connectionType: "wifi" });
+      const offlineHandler = () =>
+        callback({ connected: false, connectionType: "none" });
+      window.addEventListener("online", onlineHandler);
+      window.addEventListener("offline", offlineHandler);
       return () => {
-        window.removeEventListener('online', onlineHandler);
-        window.removeEventListener('offline', offlineHandler);
+        window.removeEventListener("online", onlineHandler);
+        window.removeEventListener("offline", offlineHandler);
       };
     }
     return () => undefined;
   }
   try {
-    const { Network } = await import('@capacitor/network');
-    const handler = await Network.addListener('networkStatusChange', (status) => {
-      callback({ connected: status.connected, connectionType: status.connectionType });
-    });
+    const { Network } = await import("@capacitor/network");
+    const handler = await Network.addListener(
+      "networkStatusChange",
+      (status) => {
+        callback({
+          connected: status.connected,
+          connectionType: status.connectionType,
+        });
+      },
+    );
     return () => {
       void handler.remove();
     };
   } catch (err) {
-    console.error('Network addListener error:', err);
+    console.error("Network addListener error:", err);
     return () => undefined;
   }
 };
@@ -220,74 +271,107 @@ export interface PushPayload {
   data?: Record<string, string>;
 }
 
+export interface PushRegistrationHandle {
+  remove(): Promise<void>;
+}
+
+/**
+ * Registers for push notifications and attaches listeners.
+ * Listeners are attached BEFORE register() so the first token event is not missed.
+ * Returns a handle whose remove() detaches every listener added here.
+ */
 export const registerPushNotifications = async (
   onToken: (token: string) => void,
-  onNotification: (notification: PushPayload) => void
-) => {
-  if (!isNative()) return;
+  onNotification: (notification: PushPayload) => void,
+): Promise<PushRegistrationHandle | null> => {
+  if (!isNative()) return null;
   try {
-    const { PushNotifications } = await import('@capacitor/push-notifications');
+    const { PushNotifications } = await import("@capacitor/push-notifications");
     let permStatus = await PushNotifications.checkPermissions();
-    if (permStatus.receive === 'prompt') {
+    if (permStatus.receive === "prompt") {
       permStatus = await PushNotifications.requestPermissions();
     }
-    if (permStatus.receive !== 'granted') {
-      console.warn('Push notification permissions denied');
-      return;
+    if (permStatus.receive !== "granted") {
+      console.warn("Push notification permissions denied");
+      return null;
     }
+
+    const listeners = await Promise.all([
+      PushNotifications.addListener("registration", (token) => {
+        onToken(token.value);
+      }),
+      PushNotifications.addListener("registrationError", (err) => {
+        console.error("Push notification registration error:", err.error);
+      }),
+      PushNotifications.addListener(
+        "pushNotificationReceived",
+        (notification) => {
+          onNotification({
+            title: notification.title,
+            body: notification.body,
+            data: notification.data as Record<string, string> | undefined,
+          });
+        },
+      ),
+    ]);
 
     await PushNotifications.register();
 
-    void PushNotifications.addListener('registration', (token) => {
-      onToken(token.value);
-    });
-
-    void PushNotifications.addListener('registrationError', (err) => {
-      console.error('Push notification registration error:', err);
-    });
-
-    void PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      onNotification({
-        title: notification.title,
-        body: notification.body,
-        data: notification.data as Record<string, string> | undefined
-      });
-    });
+    return {
+      remove: async () => {
+        await Promise.all(listeners.map((l) => l.remove()));
+      },
+    };
   } catch (error) {
-    console.error('Push notifications init failed:', error);
+    console.error("Push notifications init failed:", error);
+    return null;
+  }
+};
+
+/** Stops push delivery to this device (call on logout). */
+export const unregisterPushNotifications = async (): Promise<void> => {
+  if (!isNative()) return;
+  try {
+    const { PushNotifications } = await import("@capacitor/push-notifications");
+    await PushNotifications.removeAllListeners();
+    await PushNotifications.unregister();
+  } catch (error) {
+    console.error("Push notifications unregister failed:", error);
   }
 };
 
 export const capturePhoto = async (): Promise<string | null> => {
   if (!isNative()) {
-    alert('Camera capture is only supported on mobile devices.');
+    alert("Camera capture is only supported on mobile devices.");
     return null;
   }
   try {
-    const { Camera, CameraResultType, CameraSource } = await import('@capacitor/camera');
+    const { Camera, CameraResultType, CameraSource } =
+      await import("@capacitor/camera");
     const photo = await Camera.getPhoto({
       quality: 70,
       allowEditing: false,
       resultType: CameraResultType.Base64,
-      source: CameraSource.Camera
+      source: CameraSource.Camera,
     });
     return photo.base64String ?? null;
   } catch (error) {
-    console.error('Camera capture failed:', error);
+    console.error("Camera capture failed:", error);
     return null;
   }
 };
 
 export const scanBarcode = async (): Promise<string | null> => {
   if (!isNative()) {
-    alert('Barcode scanning is only supported on mobile devices.');
+    alert("Barcode scanning is only supported on mobile devices.");
     return null;
   }
   try {
-    const { BarcodeScanner } = await import('@capacitor-mlkit/barcode-scanning');
+    const { BarcodeScanner } =
+      await import("@capacitor-mlkit/barcode-scanning");
     const perm = await BarcodeScanner.requestPermissions();
-    if (perm.camera !== 'granted') {
-      console.warn('Camera permission for barcode scanning denied');
+    if (perm.camera !== "granted") {
+      console.warn("Camera permission for barcode scanning denied");
       return null;
     }
     const { barcodes } = await BarcodeScanner.scan({});
@@ -296,7 +380,7 @@ export const scanBarcode = async (): Promise<string | null> => {
     }
     return null;
   } catch (error) {
-    console.error('Barcode scanning failed:', error);
+    console.error("Barcode scanning failed:", error);
     return null;
   }
 };
@@ -305,7 +389,18 @@ export const clearAllMobileState = async (): Promise<void> => {
   try {
     await clearDb();
     await clearPreferences();
+    // Web-layer caches (offline cache mirrors, sync queue fallbacks) live in the
+    // WebView's localStorage on native too; wipe them so the next user on a
+    // shared device cannot read the previous user's data.
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+      } catch {
+        // storage may be unavailable; nothing else to do
+      }
+    }
   } catch (error) {
-    console.error('Failed to clear mobile state:', error);
+    console.error("Failed to clear mobile state:", error);
   }
 };

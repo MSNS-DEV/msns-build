@@ -1,5 +1,14 @@
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure, managementProcedure } from "../trpc";
+import {
+  assertNoPaidSalaries,
+  assertNoPaidVouchers,
+} from "~/server/utils/financial-guards";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  managementProcedure,
+  officeProcedure,
+} from "../trpc";
 import { z } from "zod";
 
 interface SessionProps {
@@ -188,13 +197,25 @@ export const SessionRouter = createTRPCRouter({
         });
 
         // Prevent deleting active session
-        const activeSession = sessions.find(s => s.isActive);
+        const activeSession = sessions.find((s) => s.isActive);
         if (activeSession) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Cannot delete active session",
           });
         }
+
+        // Never erase collected fees or paid payroll with a session.
+        await assertNoPaidVouchers(
+          ctx.db,
+          { StudentClass: { sessionId: { in: input.sessionIds } } },
+          "delete this session",
+        );
+        await assertNoPaidSalaries(
+          ctx.db,
+          { sessionId: { in: input.sessionIds } },
+          "delete this session",
+        );
 
         let deletedCount = 0;
 
@@ -204,11 +225,17 @@ export const SessionRouter = createTRPCRouter({
             await tx.timetable.deleteMany({ where: { sessionId } });
 
             // Delete ClassSubject
-            const classSubjects = await tx.classSubject.findMany({ where: { sessionId } });
-            const csIds = classSubjects.map(cs => cs.csId);
+            const classSubjects = await tx.classSubject.findMany({
+              where: { sessionId },
+            });
+            const csIds = classSubjects.map((cs) => cs.csId);
             if (csIds.length > 0) {
-              await tx.marks.deleteMany({ where: { classSubjectId: { in: csIds } } });
-              await tx.subjectDiary.deleteMany({ where: { classSubjectId: { in: csIds } } });
+              await tx.marks.deleteMany({
+                where: { classSubjectId: { in: csIds } },
+              });
+              await tx.subjectDiary.deleteMany({
+                where: { classSubjectId: { in: csIds } },
+              });
               await tx.classSubject.deleteMany({ where: { sessionId } });
             }
 
@@ -220,28 +247,40 @@ export const SessionRouter = createTRPCRouter({
               where: { sessionId },
               select: { scId: true },
             });
-            const scIds = studentClasses.map(sc => sc.scId);
+            const scIds = studentClasses.map((sc) => sc.scId);
             if (scIds.length > 0) {
-              await tx.feeStudentClass.deleteMany({ where: { studentClassId: { in: scIds } } });
+              await tx.feeStudentClass.deleteMany({
+                where: { studentClassId: { in: scIds } },
+              });
             }
             await tx.studentClass.deleteMany({ where: { sessionId } });
 
             // Delete Exams and their relations
             const exams = await tx.exam.findMany({ where: { sessionId } });
-            const examIds = exams.map(e => e.examId);
+            const examIds = exams.map((e) => e.examId);
             if (examIds.length > 0) {
               await tx.marks.deleteMany({ where: { examId: { in: examIds } } });
-              await tx.examDatesheet.deleteMany({ where: { examId: { in: examIds } } });
-              await tx.examinationMarkingSession.deleteMany({ where: { examId: { in: examIds } } });
-              await tx.promotionEligibilityResult.deleteMany({ where: { examId: { in: examIds } } });
+              await tx.examDatesheet.deleteMany({
+                where: { examId: { in: examIds } },
+              });
+              await tx.examinationMarkingSession.deleteMany({
+                where: { examId: { in: examIds } },
+              });
+              await tx.promotionEligibilityResult.deleteMany({
+                where: { examId: { in: examIds } },
+              });
               await tx.exam.deleteMany({ where: { sessionId } });
             }
 
             // Delete ReportCard
-            const reportCards = await tx.reportCard.findMany({ where: { sessionId } });
-            const rcIds = reportCards.map(rc => rc.reportCardId);
+            const reportCards = await tx.reportCard.findMany({
+              where: { sessionId },
+            });
+            const rcIds = reportCards.map((rc) => rc.reportCardId);
             if (rcIds.length > 0) {
-              await tx.reportCardDetail.deleteMany({ where: { reportCardId: { in: rcIds } } });
+              await tx.reportCardDetail.deleteMany({
+                where: { reportCardId: { in: rcIds } },
+              });
               await tx.reportCard.deleteMany({ where: { sessionId } });
             }
 
@@ -254,25 +293,39 @@ export const SessionRouter = createTRPCRouter({
 
             // Delete PromotionHistory & BulkPromotionBatch
             await tx.promotionHistory.deleteMany({
-              where: { OR: [{ fromSessionId: sessionId }, { toSessionId: sessionId }] }
+              where: {
+                OR: [{ fromSessionId: sessionId }, { toSessionId: sessionId }],
+              },
             });
             const bulkBatches = await tx.bulkPromotionBatch.findMany({
-              where: { OR: [{ fromSessionId: sessionId }, { toSessionId: sessionId }] }
+              where: {
+                OR: [{ fromSessionId: sessionId }, { toSessionId: sessionId }],
+              },
             });
-            const batchIds = bulkBatches.map(b => b.batchId);
+            const batchIds = bulkBatches.map((b) => b.batchId);
             if (batchIds.length > 0) {
-              await tx.bulkPromotionBatchItem.deleteMany({ where: { batchId: { in: batchIds } } });
-              await tx.bulkPromotionBatch.deleteMany({ where: { batchId: { in: batchIds } } });
+              await tx.bulkPromotionBatchItem.deleteMany({
+                where: { batchId: { in: batchIds } },
+              });
+              await tx.bulkPromotionBatch.deleteMany({
+                where: { batchId: { in: batchIds } },
+              });
             }
 
             // Delete BulkSalaryCreationBatch
-            const bulkSalaryBatches = await tx.bulkSalaryCreationBatch.findMany({
-              where: { toSessionId: sessionId }
-            });
-            const bulkSalaryBatchIds = bulkSalaryBatches.map(b => b.batchId);
+            const bulkSalaryBatches = await tx.bulkSalaryCreationBatch.findMany(
+              {
+                where: { toSessionId: sessionId },
+              },
+            );
+            const bulkSalaryBatchIds = bulkSalaryBatches.map((b) => b.batchId);
             if (bulkSalaryBatchIds.length > 0) {
-              await tx.bulkSalaryCreationItem.deleteMany({ where: { batchId: { in: bulkSalaryBatchIds } } });
-              await tx.bulkSalaryCreationBatch.deleteMany({ where: { batchId: { in: bulkSalaryBatchIds } } });
+              await tx.bulkSalaryCreationItem.deleteMany({
+                where: { batchId: { in: bulkSalaryBatchIds } },
+              });
+              await tx.bulkSalaryCreationBatch.deleteMany({
+                where: { batchId: { in: bulkSalaryBatchIds } },
+              });
             }
 
             // Delete BudgetPlans and allocations
@@ -280,10 +333,14 @@ export const SessionRouter = createTRPCRouter({
               where: { sessionId },
               select: { budgetPlanId: true },
             });
-            const planIds = budgetPlans.map(bp => bp.budgetPlanId);
+            const planIds = budgetPlans.map((bp) => bp.budgetPlanId);
             if (planIds.length > 0) {
-              await tx.budgetAllocation.deleteMany({ where: { budgetPlanId: { in: planIds } } });
-              await tx.budgetReallocation.deleteMany({ where: { budgetPlanId: { in: planIds } } });
+              await tx.budgetAllocation.deleteMany({
+                where: { budgetPlanId: { in: planIds } },
+              });
+              await tx.budgetReallocation.deleteMany({
+                where: { budgetPlanId: { in: planIds } },
+              });
               await tx.budgetPlan.deleteMany({ where: { sessionId } });
             }
 
@@ -292,8 +349,12 @@ export const SessionRouter = createTRPCRouter({
               where: { sessionId },
             });
             if (pettyCash) {
-              await tx.pettyCashDisbursement.deleteMany({ where: { registerId: pettyCash.registerId } });
-              await tx.pettyCashReconciliation.deleteMany({ where: { registerId: pettyCash.registerId } });
+              await tx.pettyCashDisbursement.deleteMany({
+                where: { registerId: pettyCash.registerId },
+              });
+              await tx.pettyCashReconciliation.deleteMany({
+                where: { registerId: pettyCash.registerId },
+              });
               await tx.pettyCashRegister.delete({ where: { sessionId } });
             }
           }
@@ -408,7 +469,7 @@ export const SessionRouter = createTRPCRouter({
     }),
 
   // Validate all relational logics for all modules within a session
-  validateSessionRelations: protectedProcedure
+  validateSessionRelations: officeProcedure
     .input(z.object({ sessionId: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
       try {
@@ -529,7 +590,8 @@ export const SessionRouter = createTRPCRouter({
         });
 
         const orphanFees = feeAssignments.filter(
-          (f) => !f.StudentClass?.Students || !f.StudentClass?.Grades || !f.fees,
+          (f) =>
+            !f.StudentClass?.Students || !f.StudentClass?.Grades || !f.fees,
         );
         if (orphanFees.length > 0) {
           issues.push({
@@ -574,7 +636,8 @@ export const SessionRouter = createTRPCRouter({
             feeAssignments: feeAssignments.length,
             examsCount: exams.length,
             totalErrors: issues.filter((i) => i.severity === "error").length,
-            totalWarnings: issues.filter((i) => i.severity === "warning").length,
+            totalWarnings: issues.filter((i) => i.severity === "warning")
+              .length,
           },
           issues,
         };

@@ -20,7 +20,7 @@ export default function StudentExamReportPage() {
     <section className="relative w-full">
       <div className="relative z-10 flex min-h-screen w-full flex-col">
         {/* PageHeader in layout */}
-        <div className="container mx-auto flex-1 px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+        <div className="container mx-auto flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <Button
               variant="outline"
@@ -56,10 +56,14 @@ export default function StudentExamReportPage() {
                 Report Card Details
               </h3>
               <p className="mt-1 text-sm text-muted-foreground">
-                Please view and verify official report cards with your class teacher or through the parent portal.
+                Please view and verify official report cards with your class
+                teacher or through the parent portal.
               </p>
               <div className="mt-6 flex justify-center gap-3">
-                <Button asChild className="bg-emerald-600 hover:bg-emerald-500 text-white">
+                <Button
+                  asChild
+                  className="bg-emerald-600 text-white hover:bg-emerald-500"
+                >
                   <Link href={`/parent/reports/${examId}`}>
                     Open in Report Viewer
                   </Link>

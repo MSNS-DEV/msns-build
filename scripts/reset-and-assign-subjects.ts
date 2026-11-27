@@ -159,10 +159,17 @@ const DEFAULT_CLASS_SUBJECTS: Record<string, string[]> = {
   ],
 };
 
-function getDefaultSubjectsForGrade(grade: string, category?: string): string[] {
+function getDefaultSubjectsForGrade(
+  grade: string,
+  category?: string,
+): string[] {
   const norm = grade.toUpperCase().replace(/\s+/g, " ").trim();
 
-  if (norm.includes("PLAYGROUP") || norm.includes("PLAY GROUP") || norm.includes("PLAY")) {
+  if (
+    norm.includes("PLAYGROUP") ||
+    norm.includes("PLAY GROUP") ||
+    norm.includes("PLAY")
+  ) {
     return DEFAULT_CLASS_SUBJECTS["PLAYGROUP"]!;
   }
   if (norm.includes("NURSERY")) {
@@ -193,7 +200,12 @@ function getDefaultSubjectsForGrade(grade: string, category?: string): string[] 
     return DEFAULT_CLASS_SUBJECTS["CLASS SEVEN"]!;
   }
   // DB's "9th Junior" is Pre-9th → uses "PRE-9TH + 9TH SENIOR" subjects
-  if (norm.includes("PRE-9TH") || norm.includes("PRE 9TH") || norm.includes("9TH JUNIOR") || norm.includes("9 JUNIOR")) {
+  if (
+    norm.includes("PRE-9TH") ||
+    norm.includes("PRE 9TH") ||
+    norm.includes("9TH JUNIOR") ||
+    norm.includes("9 JUNIOR")
+  ) {
     return DEFAULT_CLASS_SUBJECTS["PRE-9TH + 9TH SENIOR"]!;
   }
   if (norm.includes("9TH SENIOR") || norm.includes("9 SENIOR")) {
@@ -215,7 +227,9 @@ function getDefaultSubjectsForGrade(grade: string, category?: string): string[] 
 
 async function main() {
   const client = new pg.Client({
-    connectionString: process.env.DATABASE_URL || "postgresql://u0_a535@localhost:5432/msns-auth",
+    connectionString:
+      process.env.DATABASE_URL ||
+      "postgresql://u0_a535@localhost:5432/msns-auth",
   });
   await client.connect();
 
@@ -227,22 +241,34 @@ async function main() {
   await client.query('DELETE FROM "ReportCardDetail"');
   await client.query('DELETE FROM "ClassSubject"');
   await client.query('DELETE FROM "Subject"');
-  console.log("Successfully deleted all existing subjects and class subject assignments.");
+  console.log(
+    "Successfully deleted all existing subjects and class subject assignments.",
+  );
 
-  const gradesRes = await client.query('SELECT "classId", "grade", "category", "section" FROM "Grades"');
+  const gradesRes = await client.query(
+    'SELECT "classId", "grade", "category", "section" FROM "Grades"',
+  );
   const grades = gradesRes.rows;
 
-  const sessionRes = await client.query('SELECT "sessionId" FROM "Sessions" WHERE "isActive" = true LIMIT 1');
+  const sessionRes = await client.query(
+    'SELECT "sessionId" FROM "Sessions" WHERE "isActive" = true LIMIT 1',
+  );
   let sessionId = sessionRes.rows[0]?.sessionId;
   if (!sessionId) {
-    const fallbackSess = await client.query('SELECT "sessionId" FROM "Sessions" LIMIT 1');
+    const fallbackSess = await client.query(
+      'SELECT "sessionId" FROM "Sessions" LIMIT 1',
+    );
     sessionId = fallbackSess.rows[0]?.sessionId;
   }
 
-  const empRes = await client.query('SELECT "employeeId" FROM "Employees" WHERE "status" = \'Active\' LIMIT 1');
+  const empRes = await client.query(
+    'SELECT "employeeId" FROM "Employees" WHERE "status" = \'Active\' LIMIT 1',
+  );
   let employeeId = empRes.rows[0]?.employeeId;
   if (!employeeId) {
-    const fallbackEmp = await client.query('SELECT "employeeId" FROM "Employees" LIMIT 1');
+    const fallbackEmp = await client.query(
+      'SELECT "employeeId" FROM "Employees" LIMIT 1',
+    );
     employeeId = fallbackEmp.rows[0]?.employeeId;
   }
 
@@ -253,11 +279,16 @@ async function main() {
 
   for (const cls of grades) {
     const defaultSubs = getDefaultSubjectsForGrade(cls.grade, cls.category);
-    console.log(`\nAssigning ${defaultSubs.length} subjects to ${cls.grade} (${cls.section}):`);
-    defaultSubs.forEach(s => console.log(`  - ${s}`));
+    console.log(
+      `\nAssigning ${defaultSubs.length} subjects to ${cls.grade} (${cls.section}):`,
+    );
+    defaultSubs.forEach((s) => console.log(`  - ${s}`));
 
     for (const subName of defaultSubs) {
-      let subRes = await client.query('SELECT "subjectId" FROM "Subject" WHERE LOWER("subjectName") = LOWER($1)', [subName]);
+      let subRes = await client.query(
+        'SELECT "subjectId" FROM "Subject" WHERE LOWER("subjectName") = LOWER($1)',
+        [subName],
+      );
       let subjectId: string;
 
       if (subRes.rows.length > 0) {
@@ -266,14 +297,14 @@ async function main() {
         subjectId = `sub-gen-${Date.now()}-${subjectIdCounter++}`;
         await client.query(
           'INSERT INTO "Subject" ("subjectId", "subjectName", "createdAt", "updatedAt") VALUES ($1, $2, NOW(), NOW())',
-          [subjectId, subName]
+          [subjectId, subName],
         );
       }
 
       const csId = `cs-gen-${Date.now()}-${csIdCounter++}`;
       await client.query(
         'INSERT INTO "ClassSubject" ("csId", "classId", "subjectId", "employeeId", "sessionId") VALUES ($1, $2, $3, $4, $5)',
-        [csId, cls.classId, subjectId, employeeId, sessionId]
+        [csId, cls.classId, subjectId, employeeId, sessionId],
       );
     }
   }
@@ -281,7 +312,9 @@ async function main() {
   // Final summary
   const totalSubs = await client.query('SELECT COUNT(*) FROM "Subject"');
   const totalCs = await client.query('SELECT COUNT(*) FROM "ClassSubject"');
-  console.log(`\n✅ Done! ${totalSubs.rows[0].count} subjects, ${totalCs.rows[0].count} class-subject assignments.`);
+  console.log(
+    `\n✅ Done! ${totalSubs.rows[0].count} subjects, ${totalCs.rows[0].count} class-subject assignments.`,
+  );
   await client.end();
 }
 

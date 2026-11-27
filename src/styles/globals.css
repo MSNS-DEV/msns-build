@@ -64,20 +64,20 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-background via-background to-muted/30 dark:from-background dark:via-background dark:to-emerald-950/20 bg-fixed;
+    @apply bg-background bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-background via-background to-muted/30 bg-fixed text-foreground dark:from-background dark:via-background dark:to-emerald-950/20;
   }
 }
 
 @layer components {
   /* Enhanced Card styling that will apply globally to any components combining bg-card and border */
   .card-enhanced {
-    @apply bg-card/95 backdrop-blur-xl border border-border/60 shadow-sm transition-all duration-300 ease-out;
+    @apply border border-border/60 bg-card/95 shadow-sm backdrop-blur-xl transition-all duration-300 ease-out;
   }
-  
+
   .card-enhanced:hover {
-    @apply -translate-y-1 shadow-lg dark:shadow-[0_8px_30px_rgb(16,185,129,0.1)] border-emerald-500/20 bg-card;
+    @apply -translate-y-1 border-emerald-500/20 bg-card shadow-lg dark:shadow-[0_8px_30px_rgb(16,185,129,0.1)];
   }
-  
+
   .table-row-enhanced {
     @apply transition-colors hover:bg-black/[0.02] dark:hover:bg-white/[0.02];
   }

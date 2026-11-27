@@ -1,9 +1,15 @@
-import { createTRPCRouter, protectedProcedure, managementProcedure } from "../trpc";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  managementProcedure,
+  officeProcedure,
+} from "../trpc";
+import { pkYmd } from "~/server/utils/pk-time";
+import { assertNoPaidVouchers } from "~/server/utils/financial-guards";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { ClassCategory, type Grades } from "@prisma/client";
 import { generatePdf } from "~/lib/pdf-reports";
-import dayjs from "dayjs";
 import { assignDefaultSubjectsToClass } from "~/lib/constants/default-subjects";
 
 export type ClassProps = Grades & {
@@ -51,10 +57,12 @@ export const ClassRouter = createTRPCRouter({
           _count: { studentId: true },
         });
 
-        const countMap = new Map(counts.map((c) => [c.classId, c._count.studentId]));
+        const countMap = new Map(
+          counts.map((c) => [c.classId, c._count.studentId]),
+        );
 
         // Get today's attendance summary for each class
-        const todayStr = dayjs().format("YYYY-MM-DD");
+        const todayStr = pkYmd();
         const attendance = await ctx.db.studentAttendance.findMany({
           where: {
             sessionId: input.sessionId,
@@ -66,9 +74,16 @@ export const ClassRouter = createTRPCRouter({
           },
         });
 
-        const attendanceSummary = new Map<string, { present: number; absent: number; leave: number }>();
+        const attendanceSummary = new Map<
+          string,
+          { present: number; absent: number; leave: number }
+        >();
         attendance.forEach((a) => {
-          const stats = attendanceSummary.get(a.classId) ?? { present: 0, absent: 0, leave: 0 };
+          const stats = attendanceSummary.get(a.classId) ?? {
+            present: 0,
+            absent: 0,
+            leave: 0,
+          };
           if (a.status === "P") stats.present++;
           else if (a.status === "A") stats.absent++;
           else if (a.status === "L") stats.leave++;
@@ -76,7 +91,11 @@ export const ClassRouter = createTRPCRouter({
         });
 
         return classes.map((c) => {
-          const stats = attendanceSummary.get(c.classId) ?? { present: 0, absent: 0, leave: 0 };
+          const stats = attendanceSummary.get(c.classId) ?? {
+            present: 0,
+            absent: 0,
+            leave: 0,
+          };
           return {
             ...c,
             studentCount: countMap.get(c.classId) ?? 0,
@@ -145,38 +164,38 @@ export const ClassRouter = createTRPCRouter({
       }
     }),
 
-  getGroupedClasses: protectedProcedure.query<Record<ClassCategory, ClassProps[]>>(
-    async ({ ctx }) => {
-      try {
-        const classes = await ctx.db.grades.findMany({
-          orderBy: { grade: "asc" },
-          select: {
-            classId: true,
-            grade: true,
-            section: true,
-            category: true,
-            fee: true,
-          },
-        });
+  getGroupedClasses: protectedProcedure.query<
+    Record<ClassCategory, ClassProps[]>
+  >(async ({ ctx }) => {
+    try {
+      const classes = await ctx.db.grades.findMany({
+        orderBy: { grade: "asc" },
+        select: {
+          classId: true,
+          grade: true,
+          section: true,
+          category: true,
+          fee: true,
+        },
+      });
 
-        return classes.reduce(
-          (acc, classData) => {
-            const category = classData.category;
-            if (!acc[category]) acc[category] = [];
-            acc[category].push(classData);
-            return acc;
-          },
-          {} as Record<ClassCategory, ClassProps[]>,
-        );
-      } catch (error) {
-        console.error("Error in getGroupedClasses:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to retrieve grouped classes",
-        });
-      }
-    },
-  ),
+      return classes.reduce(
+        (acc, classData) => {
+          const category = classData.category;
+          if (!acc[category]) acc[category] = [];
+          acc[category].push(classData);
+          return acc;
+        },
+        {} as Record<ClassCategory, ClassProps[]>,
+      );
+    } catch (error) {
+      console.error("Error in getGroupedClasses:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "Failed to retrieve grouped classes",
+      });
+    }
+  }),
 
   createClass: managementProcedure
     .input(classSchema)
@@ -197,7 +216,7 @@ export const ClassRouter = createTRPCRouter({
           ctx.db,
           newClass.classId,
           newClass.grade,
-          newClass.category
+          newClass.category,
         );
 
         return newClass;
@@ -218,19 +237,31 @@ export const ClassRouter = createTRPCRouter({
           where: { classId: { in: input.classIds } },
         });
 
+        await assertNoPaidVouchers(
+          ctx.db,
+          { StudentClass: { classId: { in: input.classIds } } },
+          "delete this class",
+        );
+
         let deletedCount = 0;
 
         await ctx.db.$transaction(async (tx) => {
           for (const classId of input.classIds) {
             // Delete related Timetable entries
             await tx.timetable.deleteMany({ where: { classId } });
-            
+
             // Delete related ClassSubjects (Marks and ExamResults will fail if not deleted first)
-            const classSubjects = await tx.classSubject.findMany({ where: { classId } });
-            const csIds = classSubjects.map(cs => cs.csId);
+            const classSubjects = await tx.classSubject.findMany({
+              where: { classId },
+            });
+            const csIds = classSubjects.map((cs) => cs.csId);
             if (csIds.length > 0) {
-              await tx.marks.deleteMany({ where: { classSubjectId: { in: csIds } } });
-              await tx.subjectDiary.deleteMany({ where: { classSubjectId: { in: csIds } } });
+              await tx.marks.deleteMany({
+                where: { classSubjectId: { in: csIds } },
+              });
+              await tx.subjectDiary.deleteMany({
+                where: { classSubjectId: { in: csIds } },
+              });
               await tx.classSubject.deleteMany({ where: { classId } });
             }
 
@@ -242,9 +273,11 @@ export const ClassRouter = createTRPCRouter({
               where: { classId },
               select: { scId: true },
             });
-            const scIds = studentClasses.map(sc => sc.scId);
+            const scIds = studentClasses.map((sc) => sc.scId);
             if (scIds.length > 0) {
-              await tx.feeStudentClass.deleteMany({ where: { studentClassId: { in: scIds } } });
+              await tx.feeStudentClass.deleteMany({
+                where: { studentClassId: { in: scIds } },
+              });
             }
 
             // Delete StudentClass relations
@@ -255,36 +288,50 @@ export const ClassRouter = createTRPCRouter({
               where: { classId },
               select: { examId: true },
             });
-            const examIds = exams.map(e => e.examId);
+            const examIds = exams.map((e) => e.examId);
             if (examIds.length > 0) {
               await tx.marks.deleteMany({ where: { examId: { in: examIds } } });
-              await tx.examinationMarkingSession.deleteMany({ where: { examId: { in: examIds } } });
-              await tx.promotionEligibilityResult.deleteMany({ where: { examId: { in: examIds } } });
-              await tx.examDatesheet.deleteMany({ where: { examId: { in: examIds } } });
+              await tx.examinationMarkingSession.deleteMany({
+                where: { examId: { in: examIds } },
+              });
+              await tx.promotionEligibilityResult.deleteMany({
+                where: { examId: { in: examIds } },
+              });
+              await tx.examDatesheet.deleteMany({
+                where: { examId: { in: examIds } },
+              });
               await tx.exam.deleteMany({ where: { examId: { in: examIds } } });
             }
 
             // Delete ReportCard
-            const reportCards = await tx.reportCard.findMany({ where: { classId } });
-            const rcIds = reportCards.map(rc => rc.reportCardId);
+            const reportCards = await tx.reportCard.findMany({
+              where: { classId },
+            });
+            const rcIds = reportCards.map((rc) => rc.reportCardId);
             if (rcIds.length > 0) {
-              await tx.reportCardDetail.deleteMany({ where: { reportCardId: { in: rcIds } } });
+              await tx.reportCardDetail.deleteMany({
+                where: { reportCardId: { in: rcIds } },
+              });
               await tx.reportCard.deleteMany({ where: { classId } });
             }
 
             // Delete PromotionHistory (as from or to)
             await tx.promotionHistory.deleteMany({
-              where: { OR: [{ fromClassId: classId }, { toClassId: classId }] }
+              where: { OR: [{ fromClassId: classId }, { toClassId: classId }] },
             });
-            
+
             // Delete BulkPromotionBatch (as from or to)
             const bulkBatches = await tx.bulkPromotionBatch.findMany({
-              where: { OR: [{ fromClassId: classId }, { toClassId: classId }] }
+              where: { OR: [{ fromClassId: classId }, { toClassId: classId }] },
             });
-            const batchIds = bulkBatches.map(b => b.batchId);
+            const batchIds = bulkBatches.map((b) => b.batchId);
             if (batchIds.length > 0) {
-              await tx.bulkPromotionBatchItem.deleteMany({ where: { batchId: { in: batchIds } } });
-              await tx.bulkPromotionBatch.deleteMany({ where: { batchId: { in: batchIds } } });
+              await tx.bulkPromotionBatchItem.deleteMany({
+                where: { batchId: { in: batchIds } },
+              });
+              await tx.bulkPromotionBatch.deleteMany({
+                where: { batchId: { in: batchIds } },
+              });
             }
           }
 
@@ -306,6 +353,7 @@ export const ClassRouter = createTRPCRouter({
 
         return { count: deletedCount };
       } catch (error) {
+        if (error instanceof TRPCError) throw error;
         console.error("Error in deleteClassesByIds:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -314,7 +362,7 @@ export const ClassRouter = createTRPCRouter({
       }
     }),
 
-  generateClassReport: protectedProcedure.query<{ pdf: string; filename: string }>(
+  generateClassReport: officeProcedure.query<{ pdf: string; filename: string }>(
     async ({ ctx }) => {
       try {
         const classesWithStats = await ctx.db.grades.findMany({
@@ -390,12 +438,12 @@ export const ClassRouter = createTRPCRouter({
                 employeeId: true,
                 employeeName: true,
                 designation: true,
-              }
-            }
+              },
+            },
           },
           orderBy: {
-            Subject: { subjectName: "asc" }
-          }
+            Subject: { subjectName: "asc" },
+          },
         });
       } catch (error) {
         console.error("Error fetching class subjects:", error);
@@ -407,12 +455,14 @@ export const ClassRouter = createTRPCRouter({
     }),
 
   assignSubject: managementProcedure
-    .input(z.object({
-      classId: z.string(),
-      sessionId: z.string(),
-      subjectId: z.string(),
-      employeeId: z.string(),
-    }))
+    .input(
+      z.object({
+        classId: z.string(),
+        sessionId: z.string(),
+        subjectId: z.string(),
+        employeeId: z.string(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       try {
         const existing = await ctx.db.classSubject.findFirst({
@@ -420,14 +470,14 @@ export const ClassRouter = createTRPCRouter({
             classId: input.classId,
             sessionId: input.sessionId,
             subjectId: input.subjectId,
-          }
+          },
         });
 
         if (existing) {
           // If already assigned to another teacher, update it, or throw error depending on rules. Let's update.
           return await ctx.db.classSubject.update({
             where: { csId: existing.csId },
-            data: { employeeId: input.employeeId }
+            data: { employeeId: input.employeeId },
           });
         }
 
@@ -437,7 +487,7 @@ export const ClassRouter = createTRPCRouter({
             sessionId: input.sessionId,
             subjectId: input.subjectId,
             employeeId: input.employeeId,
-          }
+          },
         });
       } catch (error) {
         console.error("Error assigning subject:", error);

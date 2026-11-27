@@ -22,31 +22,36 @@ const SOCIAL_LINKS = [
     name: "Facebook",
     href: "https://www.facebook.com/msnazhighschool",
     icon: Facebook,
-    color: "hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30",
+    color:
+      "hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-blue-950/30",
   },
   {
     name: "Instagram",
     href: "https://www.instagram.com/msnazhighschool",
     icon: Instagram,
-    color: "hover:text-pink-600 hover:border-pink-300 hover:bg-pink-50 dark:hover:bg-pink-950/30",
+    color:
+      "hover:text-pink-600 hover:border-pink-300 hover:bg-pink-50 dark:hover:bg-pink-950/30",
   },
   {
     name: "Twitter / X",
     href: "https://twitter.com/msnazhighschool",
     icon: Twitter,
-    color: "hover:text-sky-500 hover:border-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/30",
+    color:
+      "hover:text-sky-500 hover:border-sky-300 hover:bg-sky-50 dark:hover:bg-sky-950/30",
   },
   {
     name: "WhatsApp",
     href: "https://wa.me/923016233609",
     icon: MessageCircle,
-    color: "hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30",
+    color:
+      "hover:text-emerald-600 hover:border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/30",
   },
   {
     name: "YouTube",
     href: "https://www.youtube.com/@msnazhighschool",
     icon: Youtube,
-    color: "hover:text-red-600 hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-950/30",
+    color:
+      "hover:text-red-600 hover:border-red-300 hover:bg-red-50 dark:hover:bg-red-950/30",
   },
 ];
 
@@ -94,8 +99,12 @@ const TiltCard = ({
 };
 
 export default function HomeClient() {
-  const mouseX = useMotionValue(typeof window !== "undefined" ? window.innerWidth / 2 : 0);
-  const mouseY = useMotionValue(typeof window !== "undefined" ? window.innerHeight / 2 : 0);
+  const mouseX = useMotionValue(
+    typeof window !== "undefined" ? window.innerWidth / 2 : 0,
+  );
+  const mouseY = useMotionValue(
+    typeof window !== "undefined" ? window.innerHeight / 2 : 0,
+  );
 
   // Custom cursor smooth springs
   const cursorX = useSpring(mouseX, { damping: 25, stiffness: 120 });
@@ -119,16 +128,21 @@ export default function HomeClient() {
 
   return (
     // 🌗 Container with h-dvh for full screen feel without scroll on load
-    <div className="relative min-h-dvh w-full overflow-hidden bg-white text-slate-900 transition-colors duration-500 dark:bg-[#02131b] dark:text-foreground cursor-none">
-      
+    <div className="relative min-h-dvh w-full cursor-none overflow-hidden bg-white text-slate-900 transition-colors duration-500 dark:bg-[#02131b] dark:text-foreground">
       {/* 🔴 Custom Cursor Tracker */}
       <motion.div
         className="pointer-events-none fixed left-0 top-0 z-[100] hidden h-10 w-10 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 backdrop-blur-[2px] sm:flex"
-        style={{ x: useTransform(cursorX, (x) => x - 20), y: useTransform(cursorY, (y) => y - 20) }}
+        style={{
+          x: useTransform(cursorX, (x) => x - 20),
+          y: useTransform(cursorY, (y) => y - 20),
+        }}
       />
       <motion.div
         className="pointer-events-none fixed left-0 top-0 z-[100] hidden h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_2px_rgba(16,185,129,0.5)] sm:block"
-        style={{ x: useTransform(mouseX, (x) => x - 4), y: useTransform(mouseY, (y) => y - 4) }}
+        style={{
+          x: useTransform(mouseX, (x) => x - 4),
+          y: useTransform(mouseY, (y) => y - 4),
+        }}
       />
 
       {/* 🌐 3D Background System */}
@@ -139,7 +153,12 @@ export default function HomeClient() {
         {/* 3D Animated Grid Pattern */}
         <motion.div
           className="absolute inset-[-20%] h-[140%] w-[140%] bg-[linear-gradient(to_right,rgba(16,185,129,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(16,185,129,0.06)_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_70%_70%_at_50%_50%,#000_60%,transparent_100%)] dark:bg-[linear-gradient(to_right,rgba(45,255,196,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(45,255,196,0.04)_1px,transparent_1px)]"
-          style={{ rotateX: bgRotateX, rotateY: bgRotateY, z: bgZ, transformStyle: "preserve-3d" }}
+          style={{
+            rotateX: bgRotateX,
+            rotateY: bgRotateY,
+            z: bgZ,
+            transformStyle: "preserve-3d",
+          }}
         />
       </div>
 
@@ -261,13 +280,13 @@ export default function HomeClient() {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, duration: 0.8 }}
-        className="fixed bottom-4 left-3 right-3 sm:bottom-6 sm:left-4 sm:right-4 z-40 mx-auto max-w-5xl"
+        className="fixed bottom-4 left-3 right-3 z-40 mx-auto max-w-5xl sm:bottom-6 sm:left-4 sm:right-4"
       >
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-white/80 p-3 sm:p-4 shadow-xl backdrop-blur-xl dark:border-border dark:bg-black/60">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-white/80 p-3 shadow-xl backdrop-blur-xl dark:border-border dark:bg-black/60 sm:p-4">
           {/* Admissions Status */}
           <div className="flex items-center gap-2.5 px-1 sm:px-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.8)]" />
-            <p className="text-xs sm:text-sm font-medium text-slate-700 dark:text-foreground">
+            <p className="text-xs font-medium text-slate-700 dark:text-foreground sm:text-sm">
               Admissions open for {new Date().getFullYear()} session
             </p>
           </div>
@@ -284,7 +303,7 @@ export default function HomeClient() {
                   rel="noopener noreferrer"
                   aria-label={item.name}
                   title={item.name}
-                  className={`group relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 text-slate-600 shadow-xs backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-border dark:bg-white/5 dark:text-slate-300 ${item.color}`}
+                  className={`shadow-xs group relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200/80 bg-white/80 text-slate-600 backdrop-blur-md transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md dark:border-border dark:bg-white/5 dark:text-slate-300 ${item.color}`}
                 >
                   <Icon className="h-4 w-4 transition-transform group-hover:scale-110" />
                 </Link>

@@ -1,8 +1,8 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, officeProcedure } from "../trpc";
 
 export const fingerRouter = createTRPCRouter({
-  addFinger: protectedProcedure
+  addFinger: officeProcedure
     .input(
       z.object({
         employeeId: z.string(),
@@ -12,7 +12,6 @@ export const fingerRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        console.log(input);
         const data = await ctx.db.bioMetric.upsert({
           where: { employeeId: input.employeeId },
           create: {
@@ -32,7 +31,7 @@ export const fingerRouter = createTRPCRouter({
         throw new Error("Failed to save fingerprint data");
       }
     }),
-  getFinger: protectedProcedure
+  getFinger: officeProcedure
     .input(
       z.object({
         employeeId: z.string(),

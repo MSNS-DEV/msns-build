@@ -2,19 +2,32 @@
 
 import { useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
-import { GraduationCap, Users, BookOpen, Loader2, ArrowRight } from "lucide-react";
+import {
+  GraduationCap,
+  Users,
+  BookOpen,
+  Loader2,
+  ArrowRight,
+} from "lucide-react";
 import Link from "next/link";
 import { ClassDiaryForm } from "~/components/forms/class/ClassDiaryForm";
 
 export const TeacherSection = () => {
   const { data: session } = useSession();
-  
-  const { data: profile, isLoading } = api.employee.getProfileByUserId.useQuery(undefined, {
-    enabled: !!session?.user,
-  });
+
+  const { data: profile, isLoading } = api.employee.getProfileByUserId.useQuery(
+    undefined,
+    {
+      enabled: !!session?.user,
+    },
+  );
 
   if (isLoading) {
-    return <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return (
+      <div className="flex justify-center p-12">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   const classSubjects = profile?.ClassSubject ?? [];
@@ -30,7 +43,9 @@ export const TeacherSection = () => {
 
         <div className="space-y-1">
           <h2 className="text-2xl font-bold text-foreground">Your Classes</h2>
-          <p className="text-muted-foreground">Manage your teaching schedule and diaries</p>
+          <p className="text-muted-foreground">
+            Manage your teaching schedule and diaries
+          </p>
         </div>
       </div>
 
@@ -49,9 +64,12 @@ export const TeacherSection = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
           {classSubjects.map((cs) => (
-            <div key={cs.csId} className="group relative rounded-2xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-lg">
+            <div
+              key={cs.csId}
+              className="group relative rounded-2xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-lg"
+            >
               <div className="mb-4 flex items-center justify-between">
                 <div className="rounded-lg bg-blue-500/10 p-2 text-blue-500">
                   <BookOpen className="h-5 w-5" />
@@ -62,7 +80,9 @@ export const TeacherSection = () => {
                   </span>
                 </div>
               </div>
-              <h3 className="text-lg font-bold text-foreground">{cs.Subject?.subjectName}</h3>
+              <h3 className="text-lg font-bold text-foreground">
+                {cs.Subject?.subjectName}
+              </h3>
               <div className="mb-6 mt-4 flex items-center justify-between text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <Users className="h-4 w-4" />
@@ -70,13 +90,17 @@ export const TeacherSection = () => {
                 </div>
               </div>
               <div className="flex items-center justify-between border-t border-border pt-4">
-                 <ClassDiaryForm 
-                   classSubjectId={cs.csId} 
-                   teacherId={profile?.employeeId ?? ""} 
-                 />
-                 <Link href={`/teacher/sessions/class?sessionId=${cs.sessionId}&classId=${cs.classId}`} className="flex items-center text-sm font-medium text-blue-500 hover:text-blue-600 transition-colors">
-                   View Class <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                 </Link>
+                <ClassDiaryForm
+                  classSubjectId={cs.csId}
+                  teacherId={profile?.employeeId ?? ""}
+                />
+                <Link
+                  href={`/teacher/sessions/class?sessionId=${cs.sessionId}&classId=${cs.classId}`}
+                  className="flex items-center text-sm font-medium text-blue-500 transition-colors hover:text-blue-600"
+                >
+                  View Class{" "}
+                  <ArrowRight className="ml-1 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </Link>
               </div>
             </div>
           ))}

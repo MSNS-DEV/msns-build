@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, financeProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
 export const stockRouter = createTRPCRouter({
   // FR-ERP-18: Inventory item management
-  createItem: protectedProcedure
+  createItem: financeProcedure
     .input(
       z.object({
         itemName: z.string().min(1).max(200),
@@ -19,7 +19,7 @@ export const stockRouter = createTRPCRouter({
     )
     .mutation(({ ctx, input }) => ctx.db.inventoryItem.create({ data: input })),
 
-  updateItem: protectedProcedure
+  updateItem: financeProcedure
     .input(
       z.object({
         inventoryItemId: z.string().cuid(),
@@ -36,7 +36,7 @@ export const stockRouter = createTRPCRouter({
     }),
 
   // FR-ERP-20: Record stock-out
-  recordStockOut: protectedProcedure
+  recordStockOut: financeProcedure
     .input(
       z.object({
         inventoryItemId: z.string().cuid(),
@@ -49,7 +49,11 @@ export const stockRouter = createTRPCRouter({
       const item = await ctx.db.inventoryItem.findUnique({
         where: { inventoryItemId: input.inventoryItemId },
       });
-      if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Inventory item not found" });
+      if (!item)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Inventory item not found",
+        });
 
       // DR-07: Never allow negative quantity
       if (item.quantityOnHand < input.quantity) {
@@ -79,7 +83,7 @@ export const stockRouter = createTRPCRouter({
     }),
 
   // FR-ERP-22: Stock reconciliation
-  recordReconciliation: protectedProcedure
+  recordReconciliation: financeProcedure
     .input(
       z.object({
         inventoryItemId: z.string().cuid(),
@@ -89,12 +93,17 @@ export const stockRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       const item = await ctx.db.inventoryItem.findUnique({
         where: { inventoryItemId: input.inventoryItemId },
       });
-      if (!item) throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
+      if (!item)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Item not found" });
 
       const variance = input.physicalCount - item.quantityOnHand;
 
@@ -127,7 +136,7 @@ export const stockRouter = createTRPCRouter({
     }),
 
   // FR-ERP-21: Get all items with low-stock alerts
-  getAll: protectedProcedure
+  getAll: financeProcedure
     .input(
       z.object({
         category: z.string().optional(),
@@ -154,7 +163,7 @@ export const stockRouter = createTRPCRouter({
     }),
 
   // FR-ERP-23: Inventory valuation report
-  getValuationReport: protectedProcedure.query(async ({ ctx }) => {
+  getValuationReport: financeProcedure.query(async ({ ctx }) => {
     const items = await ctx.db.inventoryItem.findMany({
       where: { isActive: true },
       orderBy: { category: "asc" },
@@ -169,16 +178,22 @@ export const stockRouter = createTRPCRouter({
       {} as Record<string, number>,
     );
 
-    const totalValue = items.reduce((sum, item) => sum + item.quantityOnHand * item.costPerUnit, 0);
+    const totalValue = items.reduce(
+      (sum, item) => sum + item.quantityOnHand * item.costPerUnit,
+      0,
+    );
 
     return {
-      items: items.map((i) => ({ ...i, stockValue: i.quantityOnHand * i.costPerUnit })),
+      items: items.map((i) => ({
+        ...i,
+        stockValue: i.quantityOnHand * i.costPerUnit,
+      })),
       byCategory,
       totalValue,
     };
   }),
 
-  getTransactionHistory: protectedProcedure
+  getTransactionHistory: financeProcedure
     .input(
       z.object({
         inventoryItemId: z.string().cuid(),

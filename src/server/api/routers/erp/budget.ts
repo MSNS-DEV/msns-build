@@ -1,11 +1,15 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import {
+  createTRPCRouter,
+  financeProcedure,
+  leadershipProcedure,
+} from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
 export const budgetRouter = createTRPCRouter({
   // FR-ERP-01: Create Cost Centre
-  createCostCentre: protectedProcedure
+  createCostCentre: financeProcedure
     .input(
       z.object({
         name: z.string().min(1).max(100),
@@ -18,7 +22,7 @@ export const budgetRouter = createTRPCRouter({
       return ctx.db.costCentre.create({ data: { ...input, code } });
     }),
 
-  updateCostCentre: protectedProcedure
+  updateCostCentre: financeProcedure
     .input(
       z.object({
         costCentreId: z.string().cuid(),
@@ -32,7 +36,7 @@ export const budgetRouter = createTRPCRouter({
       return ctx.db.costCentre.update({ where: { costCentreId }, data });
     }),
 
-  getAllCostCentres: protectedProcedure.query(({ ctx }) =>
+  getAllCostCentres: financeProcedure.query(({ ctx }) =>
     ctx.db.costCentre.findMany({
       include: { Manager: { select: { employeeName: true } } },
       orderBy: { code: "asc" },
@@ -40,7 +44,7 @@ export const budgetRouter = createTRPCRouter({
   ),
 
   // FR-ERP-02: Create Budget Plan for a session
-  createBudgetPlan: protectedProcedure
+  createBudgetPlan: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),
@@ -55,7 +59,10 @@ export const budgetRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const totalAmount = input.allocations.reduce((s, a) => s + a.allocatedAmount, 0);
+      const totalAmount = input.allocations.reduce(
+        (s, a) => s + a.allocatedAmount,
+        0,
+      );
 
       return ctx.db.budgetPlan.create({
         data: {
@@ -71,7 +78,7 @@ export const budgetRouter = createTRPCRouter({
     }),
 
   // FR-ERP-03: Get budget utilisation per cost centre
-  getBudgetUtilisation: protectedProcedure
+  getBudgetUtilisation: financeProcedure
     .input(z.object({ budgetPlanId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const plan = await ctx.db.budgetPlan.findUnique({
@@ -84,7 +91,11 @@ export const budgetRouter = createTRPCRouter({
         },
       });
 
-      if (!plan) throw new TRPCError({ code: "NOT_FOUND", message: "Budget plan not found" });
+      if (!plan)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Budget plan not found",
+        });
 
       // Fetch approved direct expenses and committed POs per cost centre
       const utilisation = await Promise.all(
@@ -108,7 +119,9 @@ export const budgetRouter = createTRPCRouter({
           const remaining = alloc.allocatedAmount - approvedSpend - committed;
           const percentUsed =
             alloc.allocatedAmount > 0
-              ? Math.round(((approvedSpend + committed) / alloc.allocatedAmount) * 100)
+              ? Math.round(
+                  ((approvedSpend + committed) / alloc.allocatedAmount) * 100,
+                )
               : 0;
 
           return {
@@ -132,7 +145,7 @@ export const budgetRouter = createTRPCRouter({
     }),
 
   // FR-ERP-05: Budget reallocation
-  reallocateBudget: protectedProcedure
+  reallocateBudget: leadershipProcedure
     .input(
       z.object({
         budgetPlanId: z.string().cuid(),
@@ -144,18 +157,32 @@ export const budgetRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       const [fromAlloc, toAlloc] = await Promise.all([
-        ctx.db.budgetAllocation.findUnique({ where: { allocationId: input.fromAllocationId } }),
-        ctx.db.budgetAllocation.findUnique({ where: { allocationId: input.toAllocationId } }),
+        ctx.db.budgetAllocation.findUnique({
+          where: { allocationId: input.fromAllocationId },
+        }),
+        ctx.db.budgetAllocation.findUnique({
+          where: { allocationId: input.toAllocationId },
+        }),
       ]);
 
       if (!fromAlloc || !toAlloc) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Allocation not found" });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Allocation not found",
+        });
       }
       if (fromAlloc.allocatedAmount < input.amount) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Insufficient budget to reallocate" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Insufficient budget to reallocate",
+        });
       }
 
       await ctx.db.$transaction([
@@ -182,13 +209,15 @@ export const budgetRouter = createTRPCRouter({
       return { success: true };
     }),
 
-  getBudgetPlansForSession: protectedProcedure
+  getBudgetPlansForSession: financeProcedure
     .input(z.object({ sessionId: z.string().cuid() }))
     .query(({ ctx, input }) =>
       ctx.db.budgetPlan.findMany({
         where: { sessionId: input.sessionId },
         include: {
-          Allocations: { include: { CostCentre: { select: { name: true, code: true } } } },
+          Allocations: {
+            include: { CostCentre: { select: { name: true, code: true } } },
+          },
         },
         orderBy: { createdAt: "desc" },
       }),

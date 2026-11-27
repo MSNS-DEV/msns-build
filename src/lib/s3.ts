@@ -1,8 +1,18 @@
-import { S3Client, ListObjectsV2Command, DeleteObjectCommand, PutObjectCommand, GetObjectCommand, CopyObjectCommand, DeleteObjectsCommand } from "@aws-sdk/client-s3";
-
+import {
+  S3Client,
+  ListObjectsV2Command,
+  DeleteObjectCommand,
+  PutObjectCommand,
+  GetObjectCommand,
+  CopyObjectCommand,
+  DeleteObjectsCommand,
+} from "@aws-sdk/client-s3";
 
 const getEndpoint = () => {
-  const rawEndpoint = process.env.S3_ENDPOINT ?? process.env.AWS_ENDPOINT_URL ?? "https://c678cf5c0fc5ef3806edacc18e6a762d.r2.cloudflarestorage.com";
+  const rawEndpoint =
+    process.env.S3_ENDPOINT ??
+    process.env.AWS_ENDPOINT_URL ??
+    "https://c678cf5c0fc5ef3806edacc18e6a762d.r2.cloudflarestorage.com";
   try {
     const url = new URL(rawEndpoint);
     if (url.pathname && url.pathname !== "/") {
@@ -18,14 +28,20 @@ export const getS3Client = () => {
     region: process.env.S3_REGION ?? process.env.AWS_DEFAULT_REGION ?? "auto",
     endpoint,
     credentials: {
-      accessKeyId: (process.env.S3_ACCESS_KEY_ID ?? process.env.AWS_ACCESS_KEY_ID)!,
-      secretAccessKey: (process.env.S3_SECRET_ACCESS_KEY ?? process.env.AWS_SECRET_ACCESS_KEY)!,
+      accessKeyId: (process.env.S3_ACCESS_KEY_ID ??
+        process.env.AWS_ACCESS_KEY_ID)!,
+      secretAccessKey: (process.env.S3_SECRET_ACCESS_KEY ??
+        process.env.AWS_SECRET_ACCESS_KEY)!,
     },
     forcePathStyle: true,
   });
 };
 
-export const getBucket = () => process.env.S3_BUCKET_NAME ?? process.env.AWS_S3_BUCKET_NAME ?? process.env.BUCKET ?? "msns";
+export const getBucket = () =>
+  process.env.S3_BUCKET_NAME ??
+  process.env.AWS_S3_BUCKET_NAME ??
+  process.env.BUCKET ??
+  "msns";
 
 export interface GalleryImage {
   key: string;
@@ -34,14 +50,21 @@ export interface GalleryImage {
   size?: number;
 }
 
-export async function listGalleryImages(): Promise<{ images: GalleryImage[], folders: string[] }> {
+export async function listGalleryImages(): Promise<{
+  images: GalleryImage[];
+  folders: string[];
+}> {
   const s3 = getS3Client();
-  
+
   const [galleryResponse, videosResponse] = await Promise.all([
-    s3.send(new ListObjectsV2Command({ Bucket: getBucket(), Prefix: "gallery/" })),
-    s3.send(new ListObjectsV2Command({ Bucket: getBucket(), Prefix: "videos/" }))
+    s3.send(
+      new ListObjectsV2Command({ Bucket: getBucket(), Prefix: "gallery/" }),
+    ),
+    s3.send(
+      new ListObjectsV2Command({ Bucket: getBucket(), Prefix: "videos/" }),
+    ),
   ]);
-  
+
   const galleryContents = galleryResponse.Contents ?? [];
   const videosContents = videosResponse.Contents ?? [];
   const contents = [...galleryContents, ...videosContents];
@@ -83,7 +106,7 @@ export async function listGalleryImages(): Promise<{ images: GalleryImage[], fol
       if (folderPath) {
         folders.add(folderPath);
       }
-      
+
       return {
         key,
         url: `/api/images/${key}`,
@@ -93,7 +116,10 @@ export async function listGalleryImages(): Promise<{ images: GalleryImage[], fol
     })
     .sort((a, b) => {
       if (a.lastModified && b.lastModified) {
-        return new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime();
+        return (
+          new Date(b.lastModified).getTime() -
+          new Date(a.lastModified).getTime()
+        );
       }
       return 0;
     });
@@ -106,22 +132,30 @@ export async function listGalleryImages(): Promise<{ images: GalleryImage[], fol
   return { images, folders: Array.from(folders).sort() };
 }
 
-export async function findImageByFilename(filename: string): Promise<string | null> {
+export async function findImageByFilename(
+  filename: string,
+): Promise<string | null> {
   const s3 = getS3Client();
   const [galleryResponse, videosResponse] = await Promise.all([
-    s3.send(new ListObjectsV2Command({ Bucket: getBucket(), Prefix: "gallery/" })),
-    s3.send(new ListObjectsV2Command({ Bucket: getBucket(), Prefix: "videos/" }))
+    s3.send(
+      new ListObjectsV2Command({ Bucket: getBucket(), Prefix: "gallery/" }),
+    ),
+    s3.send(
+      new ListObjectsV2Command({ Bucket: getBucket(), Prefix: "videos/" }),
+    ),
   ]);
-  
+
   const contents = [
     ...(galleryResponse.Contents ?? []),
-    ...(videosResponse.Contents ?? [])
+    ...(videosResponse.Contents ?? []),
   ];
 
   // Sort newest first by LastModified
   contents.sort((a, b) => {
     if (a.LastModified && b.LastModified) {
-      return new Date(b.LastModified).getTime() - new Date(a.LastModified).getTime();
+      return (
+        new Date(b.LastModified).getTime() - new Date(a.LastModified).getTime()
+      );
     }
     return 0;
   });
@@ -150,13 +184,20 @@ export async function findImageByFilename(filename: string): Promise<string | nu
   }
 
   // 3. Special handling for notification social posts index (e.g. social_posts_1, social_posts_2)
-  if (searchClean.startsWith("social_posts_") || searchClean.startsWith("notification_")) {
+  if (
+    searchClean.startsWith("social_posts_") ||
+    searchClean.startsWith("notification_")
+  ) {
     const indexMatch = /\d+$/.exec(searchClean);
     const index = indexMatch ? parseInt(indexMatch[0], 10) - 1 : 0;
     const matchingObjs = contents.filter((obj) => {
       if (!obj.Key || obj.Key.endsWith("/")) return false;
       const lower = obj.Key.toLowerCase();
-      return lower.includes("social_posts") || lower.includes("notifications") || lower.includes("notification");
+      return (
+        lower.includes("social_posts") ||
+        lower.includes("notifications") ||
+        lower.includes("notification")
+      );
     });
     if (matchingObjs[index]?.Key) {
       return matchingObjs[index].Key;
@@ -178,7 +219,7 @@ export async function findImageByFilename(filename: string): Promise<string | nu
 export async function uploadToS3(
   key: string,
   body: Buffer | Uint8Array,
-  contentType: string
+  contentType: string,
 ): Promise<string> {
   const s3 = getS3Client();
   const command = new PutObjectCommand({
@@ -211,7 +252,10 @@ export async function getFromS3(key: string) {
   return s3.send(command);
 }
 
-export async function copyS3Object(sourceKey: string, destinationKey: string): Promise<void> {
+export async function copyS3Object(
+  sourceKey: string,
+  destinationKey: string,
+): Promise<void> {
   const s3 = getS3Client();
   const command = new CopyObjectCommand({
     Bucket: getBucket(),
@@ -221,7 +265,10 @@ export async function copyS3Object(sourceKey: string, destinationKey: string): P
   await s3.send(command);
 }
 
-export async function moveS3Object(sourceKey: string, destinationKey: string): Promise<void> {
+export async function moveS3Object(
+  sourceKey: string,
+  destinationKey: string,
+): Promise<void> {
   await copyS3Object(sourceKey, destinationKey);
   await deleteFromS3(sourceKey);
 }
@@ -231,9 +278,9 @@ export async function createS3Folder(folderName: string): Promise<void> {
   // Ensure folder name ends with /
   let key = "";
   if (folderName === "videos" || folderName.startsWith("videos/")) {
-    key = folderName.endsWith('/') ? folderName : folderName + '/';
+    key = folderName.endsWith("/") ? folderName : folderName + "/";
   } else {
-    key = `gallery/${folderName.endsWith('/') ? folderName : folderName + '/'}`;
+    key = `gallery/${folderName.endsWith("/") ? folderName : folderName + "/"}`;
   }
   const command = new PutObjectCommand({
     Bucket: getBucket(),
@@ -247,9 +294,9 @@ export async function deleteS3Folder(folderName: string): Promise<void> {
   const s3 = getS3Client();
   let prefix = "";
   if (folderName === "videos" || folderName.startsWith("videos/")) {
-    prefix = folderName.endsWith('/') ? folderName : folderName + '/';
+    prefix = folderName.endsWith("/") ? folderName : folderName + "/";
   } else {
-    prefix = `gallery/${folderName.endsWith('/') ? folderName : folderName + '/'}`;
+    prefix = `gallery/${folderName.endsWith("/") ? folderName : folderName + "/"}`;
   }
 
   let isTruncated = true;
@@ -282,13 +329,16 @@ export async function deleteS3Folder(folderName: string): Promise<void> {
 
 function getFolderPrefix(folderName: string): string {
   if (folderName === "videos" || folderName.startsWith("videos/")) {
-    return folderName.endsWith('/') ? folderName : folderName + '/';
+    return folderName.endsWith("/") ? folderName : folderName + "/";
   } else {
-    return `gallery/${folderName.endsWith('/') ? folderName : folderName + '/'}`;
+    return `gallery/${folderName.endsWith("/") ? folderName : folderName + "/"}`;
   }
 }
 
-export async function renameS3Folder(oldFolder: string, newFolder: string): Promise<void> {
+export async function renameS3Folder(
+  oldFolder: string,
+  newFolder: string,
+): Promise<void> {
   const oldPrefix = getFolderPrefix(oldFolder);
   const newPrefix = getFolderPrefix(newFolder);
   if (oldPrefix === newPrefix) return;
@@ -314,11 +364,13 @@ export async function renameS3Folder(oldFolder: string, newFolder: string): Prom
       const newKey = newPrefix + relativePart;
 
       // Copy
-      await s3.send(new CopyObjectCommand({
-        Bucket: bucket,
-        CopySource: `${bucket}/${encodeURI(obj.Key)}`,
-        Key: newKey,
-      }));
+      await s3.send(
+        new CopyObjectCommand({
+          Bucket: bucket,
+          CopySource: `${bucket}/${encodeURI(obj.Key)}`,
+          Key: newKey,
+        }),
+      );
     }
 
     // Delete original objects
@@ -335,4 +387,3 @@ export async function renameS3Folder(oldFolder: string, newFolder: string): Prom
     continuationToken = listResponse.NextContinuationToken;
   }
 }
-

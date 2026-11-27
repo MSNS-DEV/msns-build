@@ -1,11 +1,11 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, financeProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
 export const pettyCashRouter = createTRPCRouter({
   // FR-ERP-30: Initialize petty cash register for a session
-  initRegister: protectedProcedure
+  initRegister: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),
@@ -34,7 +34,7 @@ export const pettyCashRouter = createTRPCRouter({
     }),
 
   // FR-ERP-31: Record disbursement
-  recordDisbursement: protectedProcedure
+  recordDisbursement: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),
@@ -48,12 +48,20 @@ export const pettyCashRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       const register = await ctx.db.pettyCashRegister.findUnique({
         where: { sessionId: input.sessionId },
       });
-      if (!register) throw new TRPCError({ code: "NOT_FOUND", message: "Petty cash register not found" });
+      if (!register)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Petty cash register not found",
+        });
       if (register.currentBalance < input.amount) {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -61,8 +69,24 @@ export const pettyCashRouter = createTRPCRouter({
         });
       }
 
-      await ctx.db.$transaction([
-        ctx.db.pettyCashDisbursement.create({
+      const newBalance = await ctx.db.$transaction(async (tx) => {
+        // Conditional decrement: only succeeds if the balance still covers the amount,
+        // so two disbursements at once cannot overdraw the register.
+        const debited = await tx.pettyCashRegister.updateMany({
+          where: {
+            registerId: register.registerId,
+            currentBalance: { gte: input.amount },
+          },
+          data: { currentBalance: { decrement: input.amount } },
+        });
+        if (debited.count === 0) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              "Insufficient petty cash: the balance changed while this was being recorded. Refresh and try again.",
+          });
+        }
+        await tx.pettyCashDisbursement.create({
           data: {
             registerId: register.registerId,
             amount: input.amount,
@@ -73,18 +97,19 @@ export const pettyCashRouter = createTRPCRouter({
             voucherRef: input.voucherRef,
             recordedBy: employeeRecord.employeeId,
           },
-        }),
-        ctx.db.pettyCashRegister.update({
+        });
+        const after = await tx.pettyCashRegister.findUniqueOrThrow({
           where: { registerId: register.registerId },
-          data: { currentBalance: { decrement: input.amount } },
-        }),
-      ]);
+          select: { currentBalance: true },
+        });
+        return after.currentBalance;
+      });
 
-      return { success: true, newBalance: register.currentBalance - input.amount };
+      return { success: true, newBalance };
     }),
 
   // FR-ERP-32: Replenishment
-  recordReplenishment: protectedProcedure
+  recordReplenishment: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),
@@ -96,18 +121,23 @@ export const pettyCashRouter = createTRPCRouter({
       const register = await ctx.db.pettyCashRegister.findUnique({
         where: { sessionId: input.sessionId },
       });
-      if (!register) throw new TRPCError({ code: "NOT_FOUND", message: "Petty cash register not found" });
+      if (!register)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Petty cash register not found",
+        });
 
-      await ctx.db.pettyCashRegister.update({
+      const updated = await ctx.db.pettyCashRegister.update({
         where: { registerId: register.registerId },
         data: { currentBalance: { increment: input.amount } },
+        select: { currentBalance: true },
       });
 
-      return { success: true, newBalance: register.currentBalance + input.amount };
+      return { success: true, newBalance: updated.currentBalance };
     }),
 
   // FR-ERP-33: Reconciliation
-  recordReconciliation: protectedProcedure
+  recordReconciliation: financeProcedure
     .input(
       z.object({
         sessionId: z.string().cuid(),
@@ -117,12 +147,20 @@ export const pettyCashRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
       const register = await ctx.db.pettyCashRegister.findUnique({
         where: { sessionId: input.sessionId },
       });
-      if (!register) throw new TRPCError({ code: "NOT_FOUND", message: "Register not found" });
+      if (!register)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Register not found",
+        });
 
       const variance = input.physicalCount - register.currentBalance;
 
@@ -146,7 +184,7 @@ export const pettyCashRouter = createTRPCRouter({
       return { success: true, variance };
     }),
 
-  getRegister: protectedProcedure
+  getRegister: financeProcedure
     .input(z.object({ sessionId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
       const register = await ctx.db.pettyCashRegister.findUnique({
@@ -165,7 +203,8 @@ export const pettyCashRouter = createTRPCRouter({
 
       if (!register) return null;
 
-      const needsReplenishment = register.currentBalance <= register.minimumBalance;
+      const needsReplenishment =
+        register.currentBalance <= register.minimumBalance;
       return { ...register, needsReplenishment };
     }),
 });

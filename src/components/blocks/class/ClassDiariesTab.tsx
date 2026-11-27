@@ -1,7 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { BookOpen, CalendarIcon, Loader2, User, Plus, Pencil, Trash2 } from "lucide-react";
+import {
+  BookOpen,
+  CalendarIcon,
+  Loader2,
+  User,
+  Plus,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { format } from "date-fns";
 import { api } from "~/trpc/react";
 import {
@@ -55,9 +63,13 @@ export function ClassDiariesTab({
   sessionId: string;
 }) {
   const { data: session } = useSession();
-  const isTeacherOrAdmin = ["ADMIN", "HEAD", "PRINCIPAL", "CLERK", "TEACHER"].includes(
-    session?.user?.accountType ?? ""
-  );
+  const isTeacherOrAdmin = [
+    "ADMIN",
+    "HEAD",
+    "PRINCIPAL",
+    "CLERK",
+    "TEACHER",
+  ].includes(session?.user?.accountType ?? "");
 
   const [filterDate, setFilterDate] = useState<string>("");
   const [open, setOpen] = useState(false);
@@ -69,17 +81,18 @@ export function ClassDiariesTab({
 
   const utils = api.useUtils();
 
-  const { data: diaries, isLoading } = api.subjectDiary.getClassDiaries.useQuery({
-    classId,
-    sessionId,
-    ...(filterDate ? { date: new Date(filterDate) } : {}),
-  });
+  const { data: diaries, isLoading } =
+    api.subjectDiary.getClassDiaries.useQuery({
+      classId,
+      sessionId,
+      ...(filterDate ? { date: new Date(filterDate) } : {}),
+    });
 
   // Fetch assigned subjects for this class/session for the form
   const { data: classSubjects = [], isLoading: subjectsLoading } =
     api.class.getAssignedSubjects.useQuery(
       { classId, sessionId },
-      { enabled: open && !!classId && !!sessionId }
+      { enabled: open && !!classId && !!sessionId },
     );
 
   const createDiary = api.subjectDiary.createDiary.useMutation({
@@ -105,7 +118,9 @@ export function ClassDiariesTab({
   });
 
   // Find teacher from selected class subject
-  const selectedCs = (classSubjects as ClassSubject[]).find((cs) => cs.csId === selectedCsId);
+  const selectedCs = (classSubjects as ClassSubject[]).find(
+    (cs) => cs.csId === selectedCsId,
+  );
 
   const handleCreate = () => {
     if (!selectedCsId || !content.trim() || !selectedCs) return;
@@ -184,14 +199,18 @@ export function ClassDiariesTab({
                       </Label>
                       {subjectsLoading ? (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Loader2 className="h-4 w-4 animate-spin" /> Loading subjects…
+                          <Loader2 className="h-4 w-4 animate-spin" /> Loading
+                          subjects…
                         </div>
                       ) : (classSubjects as ClassSubject[]).length === 0 ? (
                         <p className="text-sm text-muted-foreground">
                           No subjects assigned to this class yet.
                         </p>
                       ) : (
-                        <Select value={selectedCsId} onValueChange={setSelectedCsId}>
+                        <Select
+                          value={selectedCsId}
+                          onValueChange={setSelectedCsId}
+                        >
                           <SelectTrigger>
                             <SelectValue placeholder="Select subject" />
                           </SelectTrigger>
@@ -199,7 +218,7 @@ export function ClassDiariesTab({
                             {(classSubjects as ClassSubject[]).map((cs) => (
                               <SelectItem key={cs.csId} value={cs.csId}>
                                 {cs.Subject.subjectName}{" "}
-                                <span className="text-muted-foreground text-xs">
+                                <span className="text-xs text-muted-foreground">
                                   — {cs.Employees.employeeName}
                                 </span>
                               </SelectItem>

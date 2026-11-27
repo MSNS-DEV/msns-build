@@ -22,7 +22,11 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { api } from "~/trpc/react";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "~/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "~/components/ui/collapsible";
 import { Button } from "~/components/ui/button";
 import { cn } from "~/lib/utils";
 
@@ -36,7 +40,7 @@ export function RevenueAnalyticsChart() {
       sessionId: activeSession?.sessionId ?? "",
       year: currentYear,
     },
-    { enabled: !!activeSession?.sessionId }
+    { enabled: !!activeSession?.sessionId },
   );
 
   // monthlyTrend already has { month, collected, outstanding } for 12 months
@@ -53,12 +57,18 @@ export function RevenueAnalyticsChart() {
           <div className="space-y-1.5">
             <CardTitle>Revenue Analytics</CardTitle>
             <CardDescription>
-              {activeSession?.sessionName ?? "Current Session"} · {currentYear} fee collection
+              {activeSession?.sessionName ?? "Current Session"} · {currentYear}{" "}
+              fee collection
             </CardDescription>
           </div>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="w-9 p-0">
-              <ChevronDown className={cn("h-4 w-4 transition-all duration-200", isOpen ? "rotate-180" : "")} />
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-all duration-200",
+                  isOpen ? "rotate-180" : "",
+                )}
+              />
               <span className="sr-only">Toggle</span>
             </Button>
           </CollapsibleTrigger>
@@ -77,16 +87,49 @@ export function RevenueAnalyticsChart() {
                     margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                   >
                     <defs>
-                      <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      <linearGradient
+                        id="colorCollected"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#10b981"
+                          stopOpacity={0.3}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#10b981"
+                          stopOpacity={0}
+                        />
                       </linearGradient>
-                      <linearGradient id="colorOutstanding" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                      <linearGradient
+                        id="colorOutstanding"
+                        x1="0"
+                        y1="0"
+                        x2="0"
+                        y2="1"
+                      >
+                        <stop
+                          offset="5%"
+                          stopColor="#f43f5e"
+                          stopOpacity={0.3}
+                        />
+                        <stop
+                          offset="95%"
+                          stopColor="#f43f5e"
+                          stopOpacity={0}
+                        />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" opacity={0.2} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke="#334155"
+                      opacity={0.2}
+                    />
                     <XAxis
                       dataKey="month"
                       axisLine={false}
@@ -96,7 +139,9 @@ export function RevenueAnalyticsChart() {
                     />
                     <YAxis hide />
                     <Tooltip
-                      formatter={(value: number) => `PKR ${value.toLocaleString()}`}
+                      formatter={(value: number) =>
+                        `PKR ${value.toLocaleString()}`
+                      }
                       contentStyle={{
                         borderRadius: "8px",
                         border: "none",
@@ -134,9 +179,11 @@ export function RevenueAnalyticsChart() {
                   {collectionRate.toFixed(1)}% collection rate this year{" "}
                   <TrendingUp className="h-4 w-4" />
                 </div>
-                <div className="flex gap-4 leading-none text-muted-foreground text-xs mt-1">
+                <div className="mt-1 flex gap-4 text-xs leading-none text-muted-foreground">
                   <span>Collected: PKR {totalCollected.toLocaleString()}</span>
-                  <span>Outstanding: PKR {totalOutstanding.toLocaleString()}</span>
+                  <span>
+                    Outstanding: PKR {totalOutstanding.toLocaleString()}
+                  </span>
                 </div>
               </div>
             </div>

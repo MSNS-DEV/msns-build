@@ -1,13 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowRight, MessageSquare, Pin, Loader2, ChevronDown } from "lucide-react";
+import {
+  ArrowRight,
+  MessageSquare,
+  Pin,
+  Loader2,
+  ChevronDown,
+} from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { api } from "~/trpc/react";
 import { format } from "date-fns";
 import Link from "next/link";
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "~/components/ui/collapsible";
+import {
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "~/components/ui/collapsible";
 import { cn } from "~/lib/utils";
 
 export function BroadcastBoard() {
@@ -17,8 +27,12 @@ export function BroadcastBoard() {
   const announcements = data?.events ?? [];
 
   return (
-    <Card className="card-enhanced h-full flex flex-col">
-      <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full flex flex-col flex-1">
+    <Card className="card-enhanced flex h-full flex-col">
+      <Collapsible
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        className="flex w-full flex-1 flex-col"
+      >
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <div className="flex items-center gap-2">
             <div className="rounded-lg bg-orange-500/10 p-2 text-orange-400">
@@ -28,26 +42,34 @@ export function BroadcastBoard() {
           </div>
           <CollapsibleTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              <ChevronDown className={cn("h-4 w-4 transition-all duration-200", isOpen ? "rotate-180" : "")} />
+              <ChevronDown
+                className={cn(
+                  "h-4 w-4 transition-all duration-200",
+                  isOpen ? "rotate-180" : "",
+                )}
+              />
               <span className="sr-only">Toggle</span>
             </Button>
           </CollapsibleTrigger>
         </CardHeader>
         <CollapsibleContent className="flex-1">
-          <CardContent className="space-y-4 h-full flex flex-col">
+          <CardContent className="flex h-full flex-col space-y-4">
             {isLoading ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : announcements.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">No announcements yet.</div>
+              <div className="py-12 text-center text-sm text-muted-foreground">
+                No announcements yet.
+              </div>
             ) : (
               announcements.map((event) => {
-                const isUrgent = event.priority === "URGENT" || event.priority === "HIGH";
+                const isUrgent =
+                  event.priority === "URGENT" || event.priority === "HIGH";
                 return (
                   <div
                     key={event.id}
-                    className="group relative flex flex-col gap-2 rounded-xl border border-border bg-black/5 dark:bg-black/20 p-4 transition-all hover:bg-black/10 dark:hover:bg-black/40"
+                    className="group relative flex flex-col gap-2 rounded-xl border border-border bg-black/5 p-4 transition-all hover:bg-black/10 dark:bg-black/20 dark:hover:bg-black/40"
                   >
                     {isUrgent && (
                       <Pin className="absolute right-4 top-4 h-4 w-4 text-red-500 opacity-50 transition-opacity group-hover:opacity-100" />
@@ -62,14 +84,18 @@ export function BroadcastBoard() {
                         )}
                       </h4>
                       {event.description && (
-                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground line-clamp-2">
+                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-muted-foreground">
                           {event.description}
                         </p>
                       )}
                     </div>
-                    <div className="mt-2 flex items-center justify-between text-[10px] text-muted-foreground font-medium">
-                      <span className="capitalize">{event.type?.toLowerCase().replace("_", " ")}</span>
-                      <span>{format(new Date(event.startDateTime), "MMM d, yyyy")}</span>
+                    <div className="mt-2 flex items-center justify-between text-[10px] font-medium text-muted-foreground">
+                      <span className="capitalize">
+                        {event.type?.toLowerCase().replace("_", " ")}
+                      </span>
+                      <span>
+                        {format(new Date(event.startDateTime), "MMM d, yyyy")}
+                      </span>
                     </div>
                   </div>
                 );
@@ -77,7 +103,10 @@ export function BroadcastBoard() {
             )}
             <div className="mt-auto pt-2">
               <Link href="/admin/events">
-                <Button variant="ghost" className="w-full text-xs text-muted-foreground hover:text-foreground">
+                <Button
+                  variant="ghost"
+                  className="w-full text-xs text-muted-foreground hover:text-foreground"
+                >
                   View All Events <ArrowRight className="ml-1 h-3 w-3" />
                 </Button>
               </Link>

@@ -1,12 +1,52 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { Designation, NotificationCategory } from "@prisma/client";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  leadershipProcedure,
+} from "../trpc";
+import { Designation, NotificationCategory, type Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
+
+type NotifCtx = {
+  session: { user: { id: string; accountType: string } };
+};
+
+/** Shared rows visible to the caller: their role's broadcasts and global broadcasts. */
+function sharedVisibilityFilter(
+  ctx: NotifCtx,
+): Prisma.NotificationWhereInput[] {
+  const role = ctx.session.user.accountType;
+  const filters: Prisma.NotificationWhereInput[] = [
+    { AND: [{ userId: null }, { targetRole: null }] },
+  ];
+  // PARENT is not a Designation value; only filter by role when it is one.
+  if ((Object.values(Designation) as string[]).includes(role)) {
+    filters.push({ userId: null, targetRole: role as Designation });
+  }
+  return filters;
+}
+
+/** Everything visible to the caller that they haven't dismissed. */
+function visibleFilter(ctx: NotifCtx): Prisma.NotificationWhereInput {
+  const userId = ctx.session.user.id;
+  return {
+    OR: [
+      { userId },
+      {
+        AND: [
+          { OR: sharedVisibilityFilter(ctx) },
+          { Receipts: { none: { userId, dismissedAt: { not: null } } } },
+        ],
+      },
+    ],
+  };
+}
 
 export const notificationRouter = createTRPCRouter({
   /**
-   * Fetch recent notifications for the authenticated user, including
-   * direct personal notifications, role-specific broadcasts, and global broadcasts.
+   * Fetch recent notifications for the authenticated user: personal
+   * notifications plus role-specific and global broadcasts. Read/dismissed
+   * state for broadcasts is tracked per user in NotificationReceipt.
    */
   getAll: protectedProcedure
     .input(
@@ -15,29 +55,17 @@ export const notificationRouter = createTRPCRouter({
           category: z.nativeEnum(NotificationCategory).optional(),
           limit: z.number().min(1).max(100).default(50),
         })
-        .optional()
+        .optional(),
     )
     .query(async ({ ctx, input }) => {
-      const user = ctx.session.user;
-      const categoryFilter = input?.category;
-      const limit = input?.limit ?? 50;
-
-      const whereClause: Record<string, unknown> = {
-        OR: [
-          { userId: user.id },
-          { targetRole: user.accountType as Designation },
-          { AND: [{ userId: null }, { targetRole: null }] },
-        ],
-      };
-
-      if (categoryFilter) {
-        whereClause.category = categoryFilter;
-      }
-
-      return await ctx.db.notification.findMany({
-        where: whereClause,
+      const userId = ctx.session.user.id;
+      const rows = await ctx.db.notification.findMany({
+        where: {
+          ...visibleFilter(ctx),
+          ...(input?.category && { category: input.category }),
+        },
         orderBy: { createdAt: "desc" },
-        take: limit,
+        take: input?.limit ?? 50,
         select: {
           id: true,
           userId: true,
@@ -49,116 +77,172 @@ export const notificationRouter = createTRPCRouter({
           read: true,
           data: true,
           createdAt: true,
+          Receipts: { where: { userId }, select: { readAt: true } },
         },
       });
+      return rows.map(({ Receipts, ...n }) => ({
+        ...n,
+        read: n.userId === userId ? n.read : Boolean(Receipts[0]?.readAt),
+      }));
     }),
 
   /**
    * Fast unread notification counter for the navbar/bell badge.
    */
   getUnreadCount: protectedProcedure.query(async ({ ctx }) => {
-    const user = ctx.session.user;
-
-    return await ctx.db.notification.count({
-      where: {
-        read: false,
-        OR: [
-          { userId: user.id },
-          { targetRole: user.accountType as Designation },
-          { AND: [{ userId: null }, { targetRole: null }] },
-        ],
-      },
-    });
+    const userId = ctx.session.user.id;
+    const [own, shared] = await Promise.all([
+      ctx.db.notification.count({ where: { userId, read: false } }),
+      ctx.db.notification.count({
+        where: {
+          OR: sharedVisibilityFilter(ctx),
+          Receipts: {
+            none: {
+              userId,
+              OR: [{ readAt: { not: null } }, { dismissedAt: { not: null } }],
+            },
+          },
+        },
+      }),
+    ]);
+    return own + shared;
   }),
 
   /**
-   * Mark an individual notification as read.
+   * Mark an individual notification as read (for the caller only).
    */
   markAsRead: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.notification.update({
-        where: { id: input.id },
-        data: { read: true },
-        select: {
-          id: true,
-          read: true,
-        },
+      const userId = ctx.session.user.id;
+      const n = await ctx.db.notification.findFirst({
+        where: { id: input.id, ...visibleFilter(ctx) },
+        select: { id: true, userId: true },
       });
+      if (!n)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Notification not found",
+        });
+      if (n.userId === userId) {
+        return ctx.db.notification.update({
+          where: { id: n.id },
+          data: { read: true },
+          select: { id: true, read: true },
+        });
+      }
+      await ctx.db.notificationReceipt.upsert({
+        where: { notificationId_userId: { notificationId: n.id, userId } },
+        create: { notificationId: n.id, userId, readAt: new Date() },
+        update: { readAt: new Date() },
+      });
+      return { id: n.id, read: true };
     }),
 
   /**
-   * Mark all unread notifications visible to the user as read.
+   * Mark all notifications visible to the caller as read (for the caller only).
    */
   markAllAsRead: protectedProcedure.mutation(async ({ ctx }) => {
-    const user = ctx.session.user;
-
-    return await ctx.db.notification.updateMany({
-      where: {
-        read: false,
-        OR: [
-          { userId: user.id },
-          { targetRole: user.accountType as Designation },
-          { AND: [{ userId: null }, { targetRole: null }] },
-        ],
-      },
+    const userId = ctx.session.user.id;
+    const own = await ctx.db.notification.updateMany({
+      where: { userId, read: false },
       data: { read: true },
     });
+    const shared = await ctx.db.notification.findMany({
+      where: {
+        OR: sharedVisibilityFilter(ctx),
+        Receipts: { none: { userId, readAt: { not: null } } },
+      },
+      select: { id: true },
+    });
+    const now = new Date();
+    await ctx.db.$transaction(
+      shared.map((n) =>
+        ctx.db.notificationReceipt.upsert({
+          where: { notificationId_userId: { notificationId: n.id, userId } },
+          create: { notificationId: n.id, userId, readAt: now },
+          update: { readAt: now },
+        }),
+      ),
+    );
+    return { count: own.count + shared.length };
   }),
 
   /**
-   * Delete a single notification.
+   * Delete a personal notification, or hide a broadcast for the caller only.
    */
   delete: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ ctx, input }) => {
-      return await ctx.db.notification.delete({
-        where: { id: input.id },
-        select: { id: true },
+      const userId = ctx.session.user.id;
+      const n = await ctx.db.notification.findFirst({
+        where: { id: input.id, ...visibleFilter(ctx) },
+        select: { id: true, userId: true },
       });
+      if (!n)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Notification not found",
+        });
+      if (n.userId === userId) {
+        return ctx.db.notification.delete({
+          where: { id: n.id },
+          select: { id: true },
+        });
+      }
+      await ctx.db.notificationReceipt.upsert({
+        where: { notificationId_userId: { notificationId: n.id, userId } },
+        create: { notificationId: n.id, userId, dismissedAt: new Date() },
+        update: { dismissedAt: new Date() },
+      });
+      return { id: n.id };
     }),
 
   /**
-   * Clear all notifications for the current user.
+   * Clear the caller's notifications. Personal rows are deleted; broadcasts
+   * are only hidden for the caller and stay visible to everyone else.
    */
   clearAll: protectedProcedure.mutation(async ({ ctx }) => {
-    const user = ctx.session.user;
-
-    return await ctx.db.notification.deleteMany({
+    const userId = ctx.session.user.id;
+    const own = await ctx.db.notification.deleteMany({ where: { userId } });
+    const shared = await ctx.db.notification.findMany({
       where: {
-        OR: [
-          { userId: user.id },
-          { targetRole: user.accountType as Designation },
-          { AND: [{ userId: null }, { targetRole: null }] },
-        ],
+        OR: sharedVisibilityFilter(ctx),
+        Receipts: { none: { userId, dismissedAt: { not: null } } },
       },
+      select: { id: true },
     });
+    const now = new Date();
+    await ctx.db.$transaction(
+      shared.map((n) =>
+        ctx.db.notificationReceipt.upsert({
+          where: { notificationId_userId: { notificationId: n.id, userId } },
+          create: { notificationId: n.id, userId, dismissedAt: now },
+          update: { dismissedAt: now },
+        }),
+      ),
+    );
+    return { count: own.count + shared.length };
   }),
 
   /**
    * Dispatch a notification (restricted to ADMIN, HEAD, PRINCIPAL).
    */
-  send: protectedProcedure
+  send: leadershipProcedure
     .input(
       z.object({
         title: z.string().min(1),
         body: z.string().min(1),
-        category: z.nativeEnum(NotificationCategory).default(NotificationCategory.SYSTEM),
+        category: z
+          .nativeEnum(NotificationCategory)
+          .default(NotificationCategory.SYSTEM),
         actionUrl: z.string().optional(),
         userId: z.string().optional(),
         targetRole: z.nativeEnum(Designation).optional(),
         data: z.record(z.unknown()).optional(),
-      })
+      }),
     )
     .mutation(async ({ ctx, input }) => {
-      const allowedRoles = ["ADMIN", "HEAD", "PRINCIPAL"];
-      if (!allowedRoles.includes(ctx.session.user.accountType)) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Only administrators and school leadership can dispatch system notifications.",
-        });
-      }
-
       return await ctx.db.notification.create({
         data: {
           title: input.title,
@@ -167,7 +251,7 @@ export const notificationRouter = createTRPCRouter({
           actionUrl: input.actionUrl,
           userId: input.userId,
           targetRole: input.targetRole,
-          data: (input.data ?? undefined) as any,
+          data: input.data as Prisma.InputJsonValue | undefined,
         },
         select: {
           id: true,

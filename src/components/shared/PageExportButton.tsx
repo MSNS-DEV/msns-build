@@ -10,8 +10,10 @@ import {
 } from "~/components/ui/dropdown-menu";
 import { Download, FileSpreadsheet, FileText } from "lucide-react";
 import { exportToCSV, type ExportData } from "~/lib/export-utils";
-import { exportToPDF } from "~/lib/pdf-reports";
-import { DownloadPdfButton, type ReportType } from "~/components/ui/DownloadPdfButton";
+import {
+  DownloadPdfButton,
+  type ReportType,
+} from "~/components/ui/DownloadPdfButton";
 import { toast } from "sonner";
 
 export interface PageExportButtonProps {
@@ -48,6 +50,7 @@ export function PageExportButton({
       return;
     }
     try {
+      const { exportToPDF } = await import("~/lib/pdf-reports");
       await exportToPDF(exportData);
       toast.success("PDF exported successfully");
     } catch (err) {
@@ -64,7 +67,10 @@ export function PageExportButton({
           {buttonLabel}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 p-1.5 shadow-xl rounded-xl">
+      <DropdownMenuContent
+        align="end"
+        className="w-56 rounded-xl p-1.5 shadow-xl"
+      >
         <DropdownMenuItem
           onClick={handleExportCSV}
           className="cursor-pointer gap-2 text-xs font-medium"
@@ -87,7 +93,7 @@ export function PageExportButton({
         {pdfReportType && (
           <>
             <DropdownMenuSeparator className="my-1.5" />
-            <div className="px-2 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+            <div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               Periodic PDF Reports
             </div>
             <div className="flex flex-col gap-0.5">
@@ -97,7 +103,7 @@ export function PageExportButton({
                 sessionId={sessionId}
                 classId={classId}
                 variant="ghost"
-                className="w-full justify-start h-8 px-2 text-xs font-normal hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="h-8 w-full justify-start px-2 text-xs font-normal hover:bg-slate-100 dark:hover:bg-slate-800"
                 label="Daily PDF Report"
               />
               <DownloadPdfButton
@@ -106,7 +112,7 @@ export function PageExportButton({
                 sessionId={sessionId}
                 classId={classId}
                 variant="ghost"
-                className="w-full justify-start h-8 px-2 text-xs font-normal hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="h-8 w-full justify-start px-2 text-xs font-normal hover:bg-slate-100 dark:hover:bg-slate-800"
                 label="Weekly PDF Report"
               />
               <DownloadPdfButton
@@ -115,7 +121,7 @@ export function PageExportButton({
                 sessionId={sessionId}
                 classId={classId}
                 variant="ghost"
-                className="w-full justify-start h-8 px-2 text-xs font-normal hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="h-8 w-full justify-start px-2 text-xs font-normal hover:bg-slate-100 dark:hover:bg-slate-800"
                 label="Monthly PDF Report"
               />
               <DownloadPdfButton
@@ -124,7 +130,7 @@ export function PageExportButton({
                 sessionId={sessionId}
                 classId={classId}
                 variant="ghost"
-                className="w-full justify-start h-8 px-2 text-xs font-normal hover:bg-slate-100 dark:hover:bg-slate-800"
+                className="h-8 w-full justify-start px-2 text-xs font-normal hover:bg-slate-100 dark:hover:bg-slate-800"
                 label="Annual PDF Report"
               />
             </div>

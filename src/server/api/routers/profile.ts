@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { z } from "zod";
 import { hash, compare } from "bcryptjs";
+import { revokeSessions } from "~/server/security/sessions";
 
 const updateProfileSchema = z.object({
   username: z.string().min(2).max(100),
@@ -9,7 +10,7 @@ const updateProfileSchema = z.object({
   bio: z.string().max(500).optional(),
   profilePic: z.string().optional(),
   currentPassword: z.string().optional(),
-  newPassword: z.string().min(6).max(100).optional(),
+  newPassword: z.string().min(8).max(100).optional(),
 });
 
 const updateBioSchema = z.object({
@@ -19,7 +20,6 @@ const updateBioSchema = z.object({
 const updateSettingsSchema = z.object({
   emailNotifications: z.boolean().optional(),
   profileVisibility: z.boolean().optional(),
-  twoFactorAuth: z.boolean().optional(),
   marketingEmails: z.boolean().optional(),
   pushNotifications: z.boolean().optional(),
 });
@@ -44,6 +44,7 @@ export const ProfileRouter = createTRPCRouter({
           profileVisibility: true,
           pushNotifications: true,
           twoFactorAuth: true,
+          mustChangePassword: true,
         },
       });
 
@@ -73,7 +74,14 @@ export const ProfileRouter = createTRPCRouter({
     .input(updateProfileSchema)
     .mutation(async ({ ctx, input }) => {
       try {
-        const { username, email, bio, profilePic, currentPassword, newPassword } = input;
+        const {
+          username,
+          email,
+          bio,
+          profilePic,
+          currentPassword,
+          newPassword,
+        } = input;
 
         const updateData: {
           username: string;
@@ -81,6 +89,7 @@ export const ProfileRouter = createTRPCRouter({
           bio?: string;
           profilePic?: string;
           password?: string;
+          mustChangePassword?: boolean;
         } = {
           username,
           email: email.toLowerCase(),
@@ -117,7 +126,16 @@ export const ProfileRouter = createTRPCRouter({
             });
           }
 
-          updateData.password = await hash(newPassword, 10);
+          if (newPassword === currentPassword) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message:
+                "New password must be different from the current password",
+            });
+          }
+
+          updateData.password = await hash(newPassword, 12);
+          updateData.mustChangePassword = false;
         }
 
         const updatedUser = await ctx.db.user.update({
@@ -133,6 +151,14 @@ export const ProfileRouter = createTRPCRouter({
             profilePic: true,
           },
         });
+
+        if (newPassword) {
+          // Same rules as security.changePassword: other devices sign in again.
+          await revokeSessions(
+            { id: ctx.session.user.id, type: "USER" },
+            { exceptId: ctx.session.sessionId },
+          );
+        }
 
         // Sync profilePic to linked Employee or Student record
         if (profilePic && (updatedUser.accountId || ctx.session.user.id)) {

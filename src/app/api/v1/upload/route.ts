@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { randomUUID } from "crypto";
 import { uploadToS3 } from "~/lib/s3";
 import { auth } from "~/server/auth";
 import { optimizeImageForUpload } from "~/lib/image-optimizer";
@@ -51,8 +52,7 @@ export async function POST(request: Request) {
     if (!ALLOWED_TYPES.includes(file.type)) {
       return NextResponse.json(
         {
-          error:
-            "Invalid file type. Allowed: JPEG, PNG, WebP, GIF, AVIF, PDF",
+          error: "Invalid file type. Allowed: JPEG, PNG, WebP, GIF, AVIF, PDF",
         },
         { status: 400 },
       );
@@ -70,9 +70,12 @@ export async function POST(request: Request) {
     const optimized = await optimizeImageForUpload(rawBuffer, file.type);
 
     // Sanitize filename — remove path traversal and special characters
-    const baseName = file.name ? file.name.split("/").pop()?.split("\\").pop() ?? "file" : "file";
+    const baseName = file.name
+      ? (file.name.split("/").pop()?.split("\\").pop() ?? "file")
+      : "file";
     const sanitizedName = baseName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const key = `uploads/${Date.now()}_${sanitizedName}`;
+    // Unguessable key: uploads are private (photos, CVs) and must not be enumerable.
+    const key = `uploads/${randomUUID()}_${sanitizedName.slice(-80)}`;
 
     // Upload to Cloudflare R2 bucket
     await uploadToS3(key, optimized.buffer, optimized.contentType);

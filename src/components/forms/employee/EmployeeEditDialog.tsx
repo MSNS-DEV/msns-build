@@ -108,10 +108,18 @@ function SectionHeader({
 }
 
 // --- Styled FormField Wrapper ---
-function ThemedField({ label, children }: { label: string; children: React.ReactNode }) {
+function ThemedField({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <FormItem>
-      <FormLabel className="text-xs font-medium text-slate-400">{label}</FormLabel>
+      <FormLabel className="text-xs font-medium text-slate-400">
+        {label}
+      </FormLabel>
       <FormControl>{children}</FormControl>
       <FormMessage className="text-xs text-red-400" />
     </FormItem>
@@ -124,8 +132,7 @@ const inputCls =
 const selectTriggerCls =
   "border-slate-700 bg-slate-800/70 text-slate-100 focus:ring-emerald-500/40 h-9";
 
-const selectContentCls =
-  "border-slate-700 bg-slate-900 text-slate-100";
+const selectContentCls = "border-slate-700 bg-slate-900 text-slate-100";
 
 // --- Main Component ---
 export function EmployeeEditDialog({
@@ -144,11 +151,10 @@ export function EmployeeEditDialog({
   const [uploadingPic, setUploadingPic] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { data: employeeData } =
-    api.employee.getEmployeeWithUser.useQuery(
-      { employeeId: employee.employeeId },
-      { enabled: !!employee.employeeId }
-    );
+  const { data: employeeData } = api.employee.getEmployeeWithUser.useQuery(
+    { employeeId: employee.employeeId },
+    { enabled: !!employee.employeeId },
+  );
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -189,14 +195,23 @@ export function EmployeeEditDialog({
         form.setValue(
           "status",
           (employeeData.status as "Active" | "Retired" | "Left") || "Active",
-          { shouldDirty: false }
+          { shouldDirty: false },
         );
       }
       if (employeeData.profilePic) {
-        form.setValue("profilePic", employeeData.profilePic, { shouldDirty: false });
+        form.setValue("profilePic", employeeData.profilePic, {
+          shouldDirty: false,
+        });
       }
     }
-  }, [initialUsername, initialEmail, employeeData, fallbackUsername, fallbackEmail, form]);
+  }, [
+    initialUsername,
+    initialEmail,
+    employeeData,
+    fallbackUsername,
+    fallbackEmail,
+    form,
+  ]);
 
   const handlePicUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -264,7 +279,11 @@ export function EmployeeEditDialog({
   };
 
   const currentProfilePic = form.watch("profilePic");
-  const employeeInitials = (form.watch("employeeName") || employee.employeeName || "E")
+  const employeeInitials = (
+    form.watch("employeeName") ||
+    employee.employeeName ||
+    "E"
+  )
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -289,8 +308,12 @@ export function EmployeeEditDialog({
               <Briefcase className="h-4 w-4 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-slate-100">Edit Employee</h2>
-              <p className="text-xs text-slate-500">{employee.registrationNumber}</p>
+              <h2 className="text-base font-bold text-slate-100">
+                Edit Employee
+              </h2>
+              <p className="text-xs text-slate-500">
+                {employee.registrationNumber}
+              </p>
             </div>
           </div>
           <Button
@@ -307,23 +330,32 @@ export function EmployeeEditDialog({
         <div className="flex-1 overflow-y-auto px-6 py-5">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-
               {/* Profile Photo & Personal Info */}
               <div className="space-y-4">
-                <SectionHeader icon={User} label="Personal Information & Photo" />
+                <SectionHeader
+                  icon={User}
+                  label="Personal Information & Photo"
+                />
 
                 {/* Avatar Uploader Row */}
                 <div className="flex items-center gap-4 rounded-xl border border-slate-800 bg-slate-950/40 p-3">
                   <div className="relative">
                     <Avatar className="h-16 w-16 border-2 border-emerald-500/30">
-                      {currentProfilePic && <AvatarImage src={currentProfilePic} className="object-cover" />}
-                      <AvatarFallback className="bg-emerald-950 text-emerald-400 font-bold text-lg">
+                      {currentProfilePic && (
+                        <AvatarImage
+                          src={currentProfilePic}
+                          className="object-cover"
+                        />
+                      )}
+                      <AvatarFallback className="bg-emerald-950 text-lg font-bold text-emerald-400">
                         {employeeInitials}
                       </AvatarFallback>
                     </Avatar>
                   </div>
                   <div className="flex-1 space-y-1">
-                    <p className="text-xs font-semibold text-slate-200">Profile Photo</p>
+                    <p className="text-xs font-semibold text-slate-200">
+                      Profile Photo
+                    </p>
                     <p className="text-[11px] text-slate-400">
                       Upload photo to Cloudflare R2 bucket (JPEG, PNG, WebP)
                     </p>
@@ -360,7 +392,11 @@ export function EmployeeEditDialog({
                     name="employeeName"
                     render={({ field }) => (
                       <ThemedField label="Full Name">
-                        <Input {...field} placeholder="Employee name" className={inputCls} />
+                        <Input
+                          {...field}
+                          placeholder="Employee name"
+                          className={inputCls}
+                        />
                       </ThemedField>
                     )}
                   />
@@ -369,7 +405,11 @@ export function EmployeeEditDialog({
                     name="fatherName"
                     render={({ field }) => (
                       <ThemedField label="Father Name">
-                        <Input {...field} placeholder="Father name" className={inputCls} />
+                        <Input
+                          {...field}
+                          placeholder="Father name"
+                          className={inputCls}
+                        />
                       </ThemedField>
                     )}
                   />
@@ -378,13 +418,20 @@ export function EmployeeEditDialog({
                     name="gender"
                     render={({ field }) => (
                       <ThemedField label="Gender">
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <SelectTrigger className={selectTriggerCls}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className={selectContentCls}>
                             {["MALE", "FEMALE", "CUSTOM"].map((r) => (
-                              <SelectItem key={r} value={r} className="hover:bg-slate-800">
+                              <SelectItem
+                                key={r}
+                                value={r}
+                                className="hover:bg-slate-800"
+                              >
                                 {r}
                               </SelectItem>
                             ))}
@@ -398,16 +445,25 @@ export function EmployeeEditDialog({
                     name="maritalStatus"
                     render={({ field }) => (
                       <ThemedField label="Marital Status">
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <SelectTrigger className={selectTriggerCls}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className={selectContentCls}>
-                            {["Married", "Unmarried", "Widow", "Divorced"].map((r) => (
-                              <SelectItem key={r} value={r} className="hover:bg-slate-800">
-                                {r}
-                              </SelectItem>
-                            ))}
+                            {["Married", "Unmarried", "Widow", "Divorced"].map(
+                              (r) => (
+                                <SelectItem
+                                  key={r}
+                                  value={r}
+                                  className="hover:bg-slate-800"
+                                >
+                                  {r}
+                                </SelectItem>
+                              ),
+                            )}
                           </SelectContent>
                         </Select>
                       </ThemedField>
@@ -420,7 +476,11 @@ export function EmployeeEditDialog({
                       <ThemedField label="Date of Birth">
                         <div className="relative">
                           <Calendar className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-                          <Input type="date" {...field} className={`${inputCls} pl-8`} />
+                          <Input
+                            type="date"
+                            {...field}
+                            className={`${inputCls} pl-8`}
+                          />
                         </div>
                       </ThemedField>
                     )}
@@ -432,7 +492,11 @@ export function EmployeeEditDialog({
                       <ThemedField label="CNIC">
                         <div className="relative">
                           <CreditCard className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-                          <Input {...field} placeholder="XXXXX-XXXXXXX-X" className={`${inputCls} pl-8`} />
+                          <Input
+                            {...field}
+                            placeholder="XXXXX-XXXXXXX-X"
+                            className={`${inputCls} pl-8`}
+                          />
                         </div>
                       </ThemedField>
                     )}
@@ -451,7 +515,10 @@ export function EmployeeEditDialog({
                     name="designation"
                     render={({ field }) => (
                       <ThemedField label="Designation">
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <SelectTrigger className={selectTriggerCls}>
                             <SelectValue />
                           </SelectTrigger>
@@ -464,7 +531,11 @@ export function EmployeeEditDialog({
                               "TEACHER",
                               "WORKER",
                             ].map((r) => (
-                              <SelectItem key={r} value={r} className="hover:bg-slate-800">
+                              <SelectItem
+                                key={r}
+                                value={r}
+                                className="hover:bg-slate-800"
+                              >
                                 {r}
                               </SelectItem>
                             ))}
@@ -478,13 +549,20 @@ export function EmployeeEditDialog({
                     name="status"
                     render={({ field }) => (
                       <ThemedField label="Employment Status">
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
                           <SelectTrigger className={selectTriggerCls}>
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent className={selectContentCls}>
                             {["Active", "Retired", "Left"].map((s) => (
-                              <SelectItem key={s} value={s} className="hover:bg-slate-800">
+                              <SelectItem
+                                key={s}
+                                value={s}
+                                className="hover:bg-slate-800"
+                              >
                                 {s}
                               </SelectItem>
                             ))}
@@ -500,7 +578,11 @@ export function EmployeeEditDialog({
                       <ThemedField label="Education">
                         <div className="relative">
                           <GraduationCap className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-                          <Input {...field} placeholder="Qualification" className={`${inputCls} pl-8`} />
+                          <Input
+                            {...field}
+                            placeholder="Qualification"
+                            className={`${inputCls} pl-8`}
+                          />
                         </div>
                       </ThemedField>
                     )}
@@ -512,7 +594,11 @@ export function EmployeeEditDialog({
                       <ThemedField label="Date of Joining">
                         <div className="relative">
                           <Calendar className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-                          <Input type="date" {...field} className={`${inputCls} pl-8`} />
+                          <Input
+                            type="date"
+                            {...field}
+                            className={`${inputCls} pl-8`}
+                          />
                         </div>
                       </ThemedField>
                     )}
@@ -524,7 +610,11 @@ export function EmployeeEditDialog({
                       <ThemedField label="Mobile No.">
                         <div className="relative">
                           <Phone className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-                          <Input {...field} placeholder="+92..." className={`${inputCls} pl-8`} />
+                          <Input
+                            {...field}
+                            placeholder="+92..."
+                            className={`${inputCls} pl-8`}
+                          />
                         </div>
                       </ThemedField>
                     )}
@@ -536,7 +626,11 @@ export function EmployeeEditDialog({
                       <ThemedField label="Additional Contact (optional)">
                         <div className="relative">
                           <Phone className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-                          <Input {...field} placeholder="Alternate number" className={`${inputCls} pl-8`} />
+                          <Input
+                            {...field}
+                            placeholder="Alternate number"
+                            className={`${inputCls} pl-8`}
+                          />
                         </div>
                       </ThemedField>
                     )}
@@ -548,7 +642,11 @@ export function EmployeeEditDialog({
                       <ThemedField label="Residential Address">
                         <div className="relative">
                           <MapPin className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-500" />
-                          <Input {...field} placeholder="City, District" className={`${inputCls} pl-8`} />
+                          <Input
+                            {...field}
+                            placeholder="City, District"
+                            className={`${inputCls} pl-8`}
+                          />
                         </div>
                       </ThemedField>
                     )}
@@ -563,8 +661,8 @@ export function EmployeeEditDialog({
                 <SectionHeader icon={ShieldCheck} label="Account Credentials" />
                 <div className="rounded-xl border border-emerald-500/10 bg-emerald-950/20 p-3">
                   <p className="mb-3 text-xs text-emerald-300/60">
-                    Changes here update the employee&apos;s login credentials. Changing designation
-                    will also sync their account type.
+                    Changes here update the employee&apos;s login credentials.
+                    Changing designation will also sync their account type.
                   </p>
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                     <FormField

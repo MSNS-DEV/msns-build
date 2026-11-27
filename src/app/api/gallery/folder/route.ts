@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createS3Folder, deleteS3Folder, renameS3Folder } from "~/lib/s3";
 import { auth } from "~/server/auth";
+import { isSafeKey } from "~/server/storage-access";
 
 const ALLOWED_ROLES = ["ADMIN", "PRINCIPAL", "HEAD", "CLERK", "TEACHER"];
 const DELETE_ALLOWED_ROLES = ["ADMIN", "PRINCIPAL", "HEAD", "CLERK"];
@@ -25,8 +26,11 @@ export async function POST(req: Request) {
     const body = (await req.json()) as { folderName?: string };
     const folderName = body.folderName;
 
-    if (!folderName) {
-      return NextResponse.json({ error: "Folder name is required" }, { status: 400 });
+    if (!folderName || !isSafeKey(folderName)) {
+      return NextResponse.json(
+        { error: "A valid folder name is required" },
+        { status: 400 },
+      );
     }
 
     await createS3Folder(folderName);
@@ -34,7 +38,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error creating folder:", error);
-    return NextResponse.json({ error: "Failed to create folder" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create folder" },
+      { status: 500 },
+    );
   }
 }
 
@@ -49,7 +56,7 @@ export async function DELETE(req: Request) {
     if (!DELETE_ALLOWED_ROLES.includes(userRole)) {
       return NextResponse.json(
         { error: "You do not have permission to delete gallery folders" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -57,7 +64,16 @@ export async function DELETE(req: Request) {
     const folders = body.folders;
 
     if (!folders || !Array.isArray(folders) || folders.length === 0) {
-      return NextResponse.json({ error: "Folders array is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Folders array is required" },
+        { status: 400 },
+      );
+    }
+    if (!folders.every((f) => typeof f === "string" && isSafeKey(f))) {
+      return NextResponse.json(
+        { error: "Invalid folder name" },
+        { status: 400 },
+      );
     }
 
     for (const folder of folders) {
@@ -67,7 +83,10 @@ export async function DELETE(req: Request) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting folders:", error);
-    return NextResponse.json({ error: "Failed to delete folders" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete folders" },
+      { status: 500 },
+    );
   }
 }
 
@@ -86,7 +105,10 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const body = (await req.json()) as { folderPath?: string; newFolderPath?: string };
+    const body = (await req.json()) as {
+      folderPath?: string;
+      newFolderPath?: string;
+    };
     const folderPath = body.folderPath;
     const newFolderPath = body.newFolderPath;
 
@@ -96,12 +118,21 @@ export async function PATCH(req: Request) {
         { status: 400 },
       );
     }
+    if (!isSafeKey(folderPath) || !isSafeKey(newFolderPath)) {
+      return NextResponse.json(
+        { error: "Invalid folder path" },
+        { status: 400 },
+      );
+    }
 
     await renameS3Folder(folderPath, newFolderPath);
 
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error renaming/moving folder:", error);
-    return NextResponse.json({ error: "Failed to rename/move folder" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to rename/move folder" },
+      { status: 500 },
+    );
   }
 }

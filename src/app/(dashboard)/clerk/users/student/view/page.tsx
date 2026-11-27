@@ -21,7 +21,7 @@ export default function StudentsTablePage() {
         {/* PageHeader in layout */}
 
         <div className="flex-1 p-4">
-          <div className="w-full flex flex-col gap-8 duration-700 animate-in fade-in slide-in-from-bottom-4">
+          <div className="flex w-full flex-col gap-8 duration-700 animate-in fade-in slide-in-from-bottom-4">
             {/* Header Section */}
             <div className="space-y-2">
               <h1 className="font-serif text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

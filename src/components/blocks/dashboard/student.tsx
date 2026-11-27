@@ -1,8 +1,22 @@
 "use client";
 
 import React, { useState } from "react";
-import { BookOpen, Calendar, Clock, Sparkles, FileText, CheckCircle2, ChevronRight } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import {
+  BookOpen,
+  Calendar,
+  Clock,
+  Sparkles,
+  FileText,
+  CheckCircle2,
+  ChevronRight,
+} from "lucide-react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -11,12 +25,36 @@ import Link from "next/link";
 import { cn } from "~/lib/utils";
 
 const SUBJECT_ACCENTS = [
-  { bg: "from-blue-500/10 to-indigo-500/10", border: "border-blue-200 dark:border-blue-900/40", icon: "text-blue-600 dark:text-blue-400" },
-  { bg: "from-emerald-500/10 to-teal-500/10", border: "border-emerald-200 dark:border-emerald-900/40", icon: "text-emerald-600 dark:text-emerald-400" },
-  { bg: "from-purple-500/10 to-pink-500/10", border: "border-purple-200 dark:border-purple-900/40", icon: "text-purple-600 dark:text-purple-400" },
-  { bg: "from-amber-500/10 to-orange-500/10", border: "border-amber-200 dark:border-amber-900/40", icon: "text-amber-600 dark:text-amber-400" },
-  { bg: "from-rose-500/10 to-red-500/10", border: "border-rose-200 dark:border-rose-900/40", icon: "text-rose-600 dark:text-rose-400" },
-  { bg: "from-cyan-500/10 to-sky-500/10", border: "border-cyan-200 dark:border-cyan-900/40", icon: "text-cyan-600 dark:text-cyan-400" },
+  {
+    bg: "from-blue-500/10 to-indigo-500/10",
+    border: "border-blue-200 dark:border-blue-900/40",
+    icon: "text-blue-600 dark:text-blue-400",
+  },
+  {
+    bg: "from-emerald-500/10 to-teal-500/10",
+    border: "border-emerald-200 dark:border-emerald-900/40",
+    icon: "text-emerald-600 dark:text-emerald-400",
+  },
+  {
+    bg: "from-purple-500/10 to-pink-500/10",
+    border: "border-purple-200 dark:border-purple-900/40",
+    icon: "text-purple-600 dark:text-purple-400",
+  },
+  {
+    bg: "from-amber-500/10 to-orange-500/10",
+    border: "border-amber-200 dark:border-amber-900/40",
+    icon: "text-amber-600 dark:text-amber-400",
+  },
+  {
+    bg: "from-rose-500/10 to-red-500/10",
+    border: "border-rose-200 dark:border-rose-900/40",
+    icon: "text-rose-600 dark:text-rose-400",
+  },
+  {
+    bg: "from-cyan-500/10 to-sky-500/10",
+    border: "border-cyan-200 dark:border-cyan-900/40",
+    icon: "text-cyan-600 dark:text-cyan-400",
+  },
 ];
 
 export const StudentSection = () => {
@@ -38,13 +76,17 @@ export const StudentSection = () => {
               Your Enrolled Courses
             </h2>
             <p className="text-xs text-muted-foreground">
-              Access your subjects, daily homework diaries, and weekly timetables
+              Access your subjects, daily homework diaries, and weekly
+              timetables
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200 text-xs font-semibold px-2.5 py-1">
+          <Badge
+            variant="outline"
+            className="border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300"
+          >
             Active Term: 2026
           </Badge>
         </div>
@@ -55,8 +97,8 @@ export const StudentSection = () => {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="rounded-3xl p-6">
-              <Skeleton className="h-6 w-1/2 mb-3" />
-              <Skeleton className="h-4 w-3/4 mb-4" />
+              <Skeleton className="mb-3 h-6 w-1/2" />
+              <Skeleton className="mb-4 h-4 w-3/4" />
               <Skeleton className="h-9 w-full" />
             </Card>
           ))}
@@ -79,16 +121,19 @@ export const StudentSection = () => {
                   <div className="rounded-2xl bg-white p-3 shadow-sm dark:bg-muted">
                     <BookOpen className={cn("h-6 w-6", accent.icon)} />
                   </div>
-                  <Badge variant="secondary" className="rounded-lg text-[10px] font-semibold">
+                  <Badge
+                    variant="secondary"
+                    className="rounded-lg text-[10px] font-semibold"
+                  >
                     Core Course
                   </Badge>
                 </div>
 
                 <div className="mt-4">
-                  <h3 className="text-lg font-bold text-foreground group-hover:text-emerald-600 transition-colors">
+                  <h3 className="text-lg font-bold text-foreground transition-colors group-hover:text-emerald-600">
                     {subject.subjectName}
                   </h3>
-                  <p className="text-xs text-muted-foreground mt-1">
+                  <p className="mt-1 text-xs text-muted-foreground">
                     Structured syllabus and daily class activities
                   </p>
                 </div>
@@ -123,7 +168,8 @@ export const StudentSection = () => {
             No Enrolled Courses Found
           </h3>
           <p className="text-xs text-muted-foreground">
-            Course allotments will appear here once your class registration is active.
+            Course allotments will appear here once your class registration is
+            active.
           </p>
         </div>
       )}

@@ -1,20 +1,25 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../../trpc";
+import { createTRPCRouter, financeProcedure } from "../../trpc";
 import { TRPCError } from "@trpc/server";
 import { getSessionEmployee } from "~/server/utils/credential-generator";
 
 export const assetsRouter = createTRPCRouter({
   // Asset Category management
-  createCategory: protectedProcedure
-    .input(z.object({ name: z.string().min(1).max(100), description: z.string().optional() }))
+  createCategory: financeProcedure
+    .input(
+      z.object({
+        name: z.string().min(1).max(100),
+        description: z.string().optional(),
+      }),
+    )
     .mutation(({ ctx, input }) => ctx.db.assetCategory.create({ data: input })),
 
-  getAllCategories: protectedProcedure.query(({ ctx }) =>
+  getAllCategories: financeProcedure.query(({ ctx }) =>
     ctx.db.assetCategory.findMany({ orderBy: { name: "asc" } }),
   ),
 
   // FR-ERP-24: Create Asset
-  createAsset: protectedProcedure
+  createAsset: financeProcedure
     .input(
       z.object({
         serialNumber: z.string().optional(),
@@ -23,12 +28,16 @@ export const assetsRouter = createTRPCRouter({
         purchaseDate: z.date().optional(),
         purchaseCost: z.number().min(0).default(0),
         supplier: z.string().optional(),
-        condition: z.enum(["New", "Good", "Fair", "Poor", "UnderMaintenance"]).default("New"),
+        condition: z
+          .enum(["New", "Good", "Fair", "Poor", "UnderMaintenance"])
+          .default("New"),
         location: z.string().optional(),
         assignedToId: z.string().cuid().optional(),
         warrantyExpiry: z.date().optional(),
         photoUrl: z.string().optional(),
-        depreciationMethod: z.enum(["StraightLine", "DecliningBalance"]).default("StraightLine"),
+        depreciationMethod: z
+          .enum(["StraightLine", "DecliningBalance"])
+          .default("StraightLine"),
         usefulLifeYears: z.number().int().min(1).default(5),
       }),
     )
@@ -38,11 +47,13 @@ export const assetsRouter = createTRPCRouter({
       return ctx.db.asset.create({ data: { ...input, assetTag } });
     }),
 
-  updateAsset: protectedProcedure
+  updateAsset: financeProcedure
     .input(
       z.object({
         assetId: z.string().cuid(),
-        condition: z.enum(["New", "Good", "Fair", "Poor", "UnderMaintenance"]).optional(),
+        condition: z
+          .enum(["New", "Good", "Fair", "Poor", "UnderMaintenance"])
+          .optional(),
         location: z.string().optional(),
         assignedToId: z.string().optional(),
         photoUrl: z.string().optional(),
@@ -54,13 +65,19 @@ export const assetsRouter = createTRPCRouter({
     }),
 
   // FR-ERP-25: Compute depreciation
-  computeDepreciation: protectedProcedure
+  computeDepreciation: financeProcedure
     .input(z.object({ assetId: z.string().cuid(), period: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const asset = await ctx.db.asset.findUnique({ where: { assetId: input.assetId } });
-      if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Asset not found" });
+      const asset = await ctx.db.asset.findUnique({
+        where: { assetId: input.assetId },
+      });
+      if (!asset)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Asset not found" });
       if (asset.isDisposed) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot depreciate a disposed asset" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot depreciate a disposed asset",
+        });
       }
 
       const totalDepreciation = await ctx.db.assetDepreciation.aggregate({
@@ -68,7 +85,8 @@ export const assetsRouter = createTRPCRouter({
         _sum: { depreciationAmount: true },
       });
 
-      const cumulativeDepreciation = totalDepreciation._sum.depreciationAmount ?? 0;
+      const cumulativeDepreciation =
+        totalDepreciation._sum.depreciationAmount ?? 0;
       const currentBookValue = asset.purchaseCost - cumulativeDepreciation;
 
       let depreciationAmount = 0;
@@ -95,7 +113,7 @@ export const assetsRouter = createTRPCRouter({
     }),
 
   // FR-ERP-26: Schedule/record maintenance
-  recordMaintenance: protectedProcedure
+  recordMaintenance: financeProcedure
     .input(
       z.object({
         assetId: z.string().cuid(),
@@ -108,17 +126,23 @@ export const assetsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const asset = await ctx.db.asset.findUnique({ where: { assetId: input.assetId } });
-      if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Asset not found" });
+      const asset = await ctx.db.asset.findUnique({
+        where: { assetId: input.assetId },
+      });
+      if (!asset)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Asset not found" });
       // DR-08: Cannot record maintenance on disposed asset
       if (asset.isDisposed) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot maintain a disposed asset" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot maintain a disposed asset",
+        });
       }
       return ctx.db.assetMaintenance.create({ data: input });
     }),
 
   // FR-ERP-27: Asset transfer
-  recordTransfer: protectedProcedure
+  recordTransfer: financeProcedure
     .input(
       z.object({
         assetId: z.string().cuid(),
@@ -131,13 +155,23 @@ export const assetsRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const employeeRecord = await getSessionEmployee(ctx);
-      if (!employeeRecord) throw new TRPCError({ code: "UNAUTHORIZED", message: "Employee not found" });
+      if (!employeeRecord)
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "Employee not found",
+        });
 
-      const asset = await ctx.db.asset.findUnique({ where: { assetId: input.assetId } });
-      if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Asset not found" });
+      const asset = await ctx.db.asset.findUnique({
+        where: { assetId: input.assetId },
+      });
+      if (!asset)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Asset not found" });
       // DR-08: Cannot transfer disposed asset
       if (asset.isDisposed) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot transfer a disposed asset" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Cannot transfer a disposed asset",
+        });
       }
 
       await ctx.db.$transaction([
@@ -157,7 +191,7 @@ export const assetsRouter = createTRPCRouter({
     }),
 
   // FR-ERP-28: Dispose asset
-  disposeAsset: protectedProcedure
+  disposeAsset: financeProcedure
     .input(
       z.object({
         assetId: z.string().cuid(),
@@ -169,10 +203,16 @@ export const assetsRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const asset = await ctx.db.asset.findUnique({ where: { assetId: input.assetId } });
-      if (!asset) throw new TRPCError({ code: "NOT_FOUND", message: "Asset not found" });
+      const asset = await ctx.db.asset.findUnique({
+        where: { assetId: input.assetId },
+      });
+      if (!asset)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Asset not found" });
       if (asset.isDisposed) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Asset already disposed" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Asset already disposed",
+        });
       }
 
       await ctx.db.$transaction([
@@ -188,18 +228,22 @@ export const assetsRouter = createTRPCRouter({
     }),
 
   // FR-ERP-29: Asset utilisation report
-  getAssetRegister: protectedProcedure
+  getAssetRegister: financeProcedure
     .input(
       z.object({
         assetCategoryId: z.string().optional(),
-        condition: z.enum(["New", "Good", "Fair", "Poor", "UnderMaintenance", "Disposed"]).optional(),
+        condition: z
+          .enum(["New", "Good", "Fair", "Poor", "UnderMaintenance", "Disposed"])
+          .optional(),
         includeDisposed: z.boolean().default(false),
       }),
     )
     .query(async ({ ctx, input }) => {
       const assets = await ctx.db.asset.findMany({
         where: {
-          ...(input.assetCategoryId && { assetCategoryId: input.assetCategoryId }),
+          ...(input.assetCategoryId && {
+            assetCategoryId: input.assetCategoryId,
+          }),
           ...(input.condition && { condition: input.condition }),
           ...(!input.includeDisposed && { isDisposed: false }),
         },
@@ -221,17 +265,23 @@ export const assetsRouter = createTRPCRouter({
         {} as Record<string, number>,
       );
 
-      return { assets, categoryDistribution: summary, totalAssets: assets.length };
+      return {
+        assets,
+        categoryDistribution: summary,
+        totalAssets: assets.length,
+      };
     }),
 
-  getOverdueMaintenance: protectedProcedure.query(({ ctx }) =>
+  getOverdueMaintenance: financeProcedure.query(({ ctx }) =>
     ctx.db.assetMaintenance.findMany({
       where: {
         scheduledDate: { lt: new Date() },
         completedDate: null,
         Asset: { isDisposed: false },
       },
-      include: { Asset: { select: { assetName: true, assetTag: true, location: true } } },
+      include: {
+        Asset: { select: { assetName: true, assetTag: true, location: true } },
+      },
       orderBy: { scheduledDate: "asc" },
     }),
   ),

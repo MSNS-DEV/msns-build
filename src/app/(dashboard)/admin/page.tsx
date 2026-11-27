@@ -4,7 +4,5 @@ import { SharedAdminDashboard } from "~/components/blocks/dashboard/SharedAdminD
 import { AdminSection } from "~/components/blocks/dashboard/admin";
 
 export default function DashboardPage() {
-  return (
-    <SharedAdminDashboard role="admin" ManagementSection={AdminSection} />
-  );
+  return <SharedAdminDashboard role="admin" ManagementSection={AdminSection} />;
 }

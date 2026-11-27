@@ -83,9 +83,7 @@ export const ClassesCard = () => {
       {classes.map((classItem: ClassProps) => (
         <Card
           key={classItem.classId}
-          className={cn(
-            "card-enhanced group flex flex-col justify-between",
-          )}
+          className={cn("card-enhanced group flex flex-col justify-between")}
         >
           {/* Decorative Gradient Line */}
           <div className="absolute left-0 top-0 h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 transition-opacity group-hover:opacity-100" />
@@ -135,9 +133,7 @@ export const ClassesCard = () => {
               className="h-9 w-full gap-2 border-slate-200 bg-white text-xs text-slate-600 hover:bg-slate-50 hover:text-slate-900 dark:border-border dark:bg-white/5 dark:text-foreground dark:hover:bg-white/10 dark:hover:text-foreground"
               asChild
             >
-              <Link
-                href={`/admin/sessions/class?classId=${classItem.classId}`}
-              >
+              <Link href={`/admin/sessions/class?classId=${classItem.classId}`}>
                 <Settings className="h-3.5 w-3.5" />
                 Manage
               </Link>
@@ -147,9 +143,7 @@ export const ClassesCard = () => {
               className="h-9 w-full gap-2 border-0 bg-emerald-600 text-xs text-foreground shadow-md shadow-emerald-200 hover:bg-emerald-700 dark:shadow-emerald-900/20 dark:hover:bg-emerald-500"
               asChild
             >
-              <Link
-                href="/admin/users/student/create"
-              >
+              <Link href="/admin/users/student/create">
                 <UserPlus className="h-3.5 w-3.5" />
                 Enroll
               </Link>

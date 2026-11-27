@@ -15,7 +15,7 @@ function getAudioContext(): AudioContext | null {
         audioContext = new AudioContextClass();
       }
     }
-    if (audioContext && audioContext.state === "suspended") {
+    if (audioContext?.state === "suspended") {
       void audioContext.resume();
     }
     return audioContext;

@@ -145,24 +145,30 @@ export function getGenderTheme(gender: string): GenderTheme {
     case "FEMALE":
       return {
         label: "Female",
-        avatarRing: "border-pink-500/50 ring-2 ring-pink-500/30 shadow-pink-500/15",
-        avatarFallback: "bg-gradient-to-br from-pink-950 via-rose-900 to-slate-950 text-pink-300",
+        avatarRing:
+          "border-pink-500/50 ring-2 ring-pink-500/30 shadow-pink-500/15",
+        avatarFallback:
+          "bg-gradient-to-br from-pink-950 via-rose-900 to-slate-950 text-pink-300",
         genderChip: "bg-pink-500/10 text-pink-400 border-pink-500/30",
         indicatorColor: "bg-pink-400 shadow-pink-400/50",
       };
     case "MALE":
       return {
         label: "Male",
-        avatarRing: "border-sky-500/50 ring-2 ring-sky-500/30 shadow-sky-500/15",
-        avatarFallback: "bg-gradient-to-br from-sky-950 via-blue-900 to-slate-950 text-sky-300",
+        avatarRing:
+          "border-sky-500/50 ring-2 ring-sky-500/30 shadow-sky-500/15",
+        avatarFallback:
+          "bg-gradient-to-br from-sky-950 via-blue-900 to-slate-950 text-sky-300",
         genderChip: "bg-sky-500/10 text-sky-400 border-sky-500/30",
         indicatorColor: "bg-sky-400 shadow-sky-400/50",
       };
     default:
       return {
         label: gender || "Custom",
-        avatarRing: "border-teal-500/50 ring-2 ring-teal-500/30 shadow-teal-500/15",
-        avatarFallback: "bg-gradient-to-br from-teal-950 via-emerald-900 to-slate-950 text-teal-300",
+        avatarRing:
+          "border-teal-500/50 ring-2 ring-teal-500/30 shadow-teal-500/15",
+        avatarFallback:
+          "bg-gradient-to-br from-teal-950 via-emerald-900 to-slate-950 text-teal-300",
         genderChip: "bg-teal-500/10 text-teal-400 border-teal-500/30",
         indicatorColor: "bg-teal-400 shadow-teal-400/50",
       };
@@ -178,10 +184,16 @@ export default function EmployeeCredDetails() {
   const [viewMode, setViewMode] = useState<"active" | "inactive">("active");
 
   // Dialog states
-  const [editingEmployee, setEditingEmployee] = useState<Employees | null>(null);
-  const [previewPhoto, setPreviewPhoto] = useState<{ src: string; name: string } | null>(null);
+  const [editingEmployee, setEditingEmployee] = useState<Employees | null>(
+    null,
+  );
+  const [previewPhoto, setPreviewPhoto] = useState<{
+    src: string;
+    name: string;
+  } | null>(null);
 
-  const { data, isLoading, isError, refetch } = api.employee.getEmployees.useQuery();
+  const { data, isLoading, isError, refetch } =
+    api.employee.getEmployees.useQuery();
 
   useEffect(() => {
     if (data) {
@@ -190,11 +202,17 @@ export default function EmployeeCredDetails() {
   }, [data]);
 
   const activeCount = useMemo(() => {
-    return employees.filter((e) => e.status === "Active" || (!e.status && e.status !== "Left" && e.status !== "Retired")).length;
+    return employees.filter(
+      (e) =>
+        e.status === "Active" ||
+        (!e.status && e.status !== "Left" && e.status !== "Retired"),
+    ).length;
   }, [employees]);
 
   const inactiveCount = useMemo(() => {
-    return employees.filter((e) => e.status === "Left" || e.status === "Retired").length;
+    return employees.filter(
+      (e) => e.status === "Left" || e.status === "Retired",
+    ).length;
   }, [employees]);
 
   const filteredEmployees = useMemo(() => {
@@ -231,9 +249,18 @@ export default function EmployeeCredDetails() {
         (selectedStatus === "LEFT" && status === "Left") ||
         (selectedStatus === "RETIRED" && status === "Retired");
 
-      return matchesSearch && matchesDesignation && matchesGender && matchesStatus;
+      return (
+        matchesSearch && matchesDesignation && matchesGender && matchesStatus
+      );
     });
-  }, [employees, searchQuery, selectedDesignation, selectedGender, selectedStatus, viewMode]);
+  }, [
+    employees,
+    searchQuery,
+    selectedDesignation,
+    selectedGender,
+    selectedStatus,
+    viewMode,
+  ]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -256,7 +283,7 @@ export default function EmployeeCredDetails() {
           <div className="absolute inset-0 bg-gradient-to-br from-emerald-950/40 via-black to-slate-950" />
         </div>
         <Loader2 className="relative z-10 h-10 w-10 animate-spin text-emerald-500" />
-        <p className="relative z-10 animate-pulse text-sm text-emerald-400 font-medium">
+        <p className="relative z-10 animate-pulse text-sm font-medium text-emerald-400">
           Loading faculty & staff directory...
         </p>
       </div>
@@ -287,7 +314,7 @@ export default function EmployeeCredDetails() {
               className={cn(
                 "h-9 gap-2 rounded-xl text-xs font-semibold shadow-sm transition-all",
                 viewMode === "active"
-                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-emerald-900/20"
+                  ? "bg-emerald-600 text-white shadow-emerald-900/20 hover:bg-emerald-700"
                   : "border-slate-200 bg-muted/30 text-muted-foreground hover:bg-muted dark:border-slate-800",
               )}
             >
@@ -302,7 +329,7 @@ export default function EmployeeCredDetails() {
               className={cn(
                 "h-9 gap-2 rounded-xl text-xs font-semibold shadow-sm transition-all",
                 viewMode === "inactive"
-                  ? "bg-amber-600 text-white hover:bg-amber-700 shadow-amber-900/20"
+                  ? "bg-amber-600 text-white shadow-amber-900/20 hover:bg-amber-700"
                   : "border-slate-200 bg-muted/30 text-muted-foreground hover:bg-muted dark:border-slate-800",
               )}
             >
@@ -311,7 +338,7 @@ export default function EmployeeCredDetails() {
             </Button>
           </div>
 
-          <div className="text-[11px] text-muted-foreground font-medium hidden sm:block">
+          <div className="hidden text-[11px] font-medium text-muted-foreground sm:block">
             {viewMode === "active"
               ? "Showing current active faculty profiles"
               : "Showing archived past/retired personnel"}
@@ -378,20 +405,28 @@ export default function EmployeeCredDetails() {
         </div>
 
         {/* Filter Pills */}
-        <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-emerald-500/10 text-xs">
-          <span className="flex items-center gap-1 text-muted-foreground font-semibold uppercase tracking-wider text-[10px] mr-1">
+        <div className="flex flex-wrap items-center gap-2 border-t border-emerald-500/10 pt-1 text-xs">
+          <span className="mr-1 flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             <SlidersHorizontal className="h-3 w-3" /> Filters:
           </span>
 
           {/* Designation Filter Pills */}
           <div className="flex flex-wrap items-center gap-1.5">
-            {["ALL", "ADMIN", "PRINCIPAL", "HEAD", "TEACHER", "CLERK", "WORKER"].map((desig) => (
+            {[
+              "ALL",
+              "ADMIN",
+              "PRINCIPAL",
+              "HEAD",
+              "TEACHER",
+              "CLERK",
+              "WORKER",
+            ].map((desig) => (
               <button
                 key={desig}
                 onClick={() => setSelectedDesignation(desig)}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all ${
                   selectedDesignation === desig
-                    ? "bg-emerald-500 text-white shadow-xs"
+                    ? "shadow-xs bg-emerald-500 text-white"
                     : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
@@ -400,7 +435,7 @@ export default function EmployeeCredDetails() {
             ))}
           </div>
 
-          <div className="h-4 w-px bg-border mx-1 hidden sm:block" />
+          <div className="mx-1 hidden h-4 w-px bg-border sm:block" />
 
           {/* Gender Filter Pills */}
           <div className="flex items-center gap-1.5">
@@ -414,7 +449,7 @@ export default function EmployeeCredDetails() {
                 onClick={() => setSelectedGender(g.key)}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all ${
                   selectedGender === g.key
-                    ? "bg-sky-600 text-white shadow-xs"
+                    ? "shadow-xs bg-sky-600 text-white"
                     : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
@@ -423,7 +458,7 @@ export default function EmployeeCredDetails() {
             ))}
           </div>
 
-          <div className="h-4 w-px bg-border mx-1 hidden sm:block" />
+          <div className="mx-1 hidden h-4 w-px bg-border sm:block" />
 
           {/* Status Filter Pills */}
           <div className="flex items-center gap-1.5">
@@ -438,7 +473,7 @@ export default function EmployeeCredDetails() {
                 onClick={() => setSelectedStatus(st.key)}
                 className={`rounded-lg px-2.5 py-1 text-[11px] font-bold transition-all ${
                   selectedStatus === st.key
-                    ? "bg-purple-600 text-white shadow-xs"
+                    ? "shadow-xs bg-purple-600 text-white"
                     : "bg-muted/60 text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
@@ -452,8 +487,12 @@ export default function EmployeeCredDetails() {
       {/* === Results Count Meta === */}
       <div className="flex items-center justify-between px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
         <span>
-          Showing <span className="text-emerald-400 font-bold">{filteredEmployees.length}</span> of{" "}
-          <span className="text-slate-300">{employees.length}</span> Employees
+          Showing{" "}
+          <span className="font-bold text-emerald-400">
+            {filteredEmployees.length}
+          </span>{" "}
+          of <span className="text-slate-300">{employees.length}</span>{" "}
+          Employees
         </span>
         <div className="flex items-center gap-2">
           <span>Sort: Alphabetical</span>
@@ -478,8 +517,12 @@ export default function EmployeeCredDetails() {
               <div className="mb-4 flex h-20 w-20 items-center justify-center rounded-3xl border border-emerald-500/15 bg-card/60">
                 <Search className="h-8 w-8 text-emerald-500 opacity-40" />
               </div>
-              <p className="text-lg font-semibold text-foreground">No employees found</p>
-              <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters or search keyword</p>
+              <p className="text-lg font-semibold text-foreground">
+                No employees found
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Try adjusting your filters or search keyword
+              </p>
             </motion.div>
           ) : (
             filteredEmployees.map((employee) => {
@@ -506,7 +549,7 @@ export default function EmployeeCredDetails() {
                   className="h-full w-full"
                 >
                   <Card
-                    className={`group relative h-full flex flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-xl backdrop-blur-md transition-all duration-300 ${desigTheme.cardGlow} hover:shadow-2xl hover:-translate-y-1`}
+                    className={`group relative flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-card shadow-xl backdrop-blur-md transition-all duration-300 ${desigTheme.cardGlow} hover:-translate-y-1 hover:shadow-2xl`}
                   >
                     {/* Dynamic Designation Gradient Ribbon */}
                     <div
@@ -518,7 +561,7 @@ export default function EmployeeCredDetails() {
                       <div className="mb-4 flex items-start gap-4">
                         {/* Avatar with Dynamic Gender Ring */}
                         <div
-                          className="relative shrink-0 cursor-pointer group/avatar"
+                          className="group/avatar relative shrink-0 cursor-pointer"
                           onClick={() => {
                             if (isValidImageSrc(employee.profilePic)) {
                               setPreviewPhoto({
@@ -529,7 +572,7 @@ export default function EmployeeCredDetails() {
                           }}
                         >
                           <Avatar
-                            className={`h-16 w-16 rounded-2xl border-2 transition-all duration-300 group-hover/avatar:scale-105 sm:h-18 sm:w-18 ${genderTheme.avatarRing}`}
+                            className={`sm:h-18 sm:w-18 h-16 w-16 rounded-2xl border-2 transition-all duration-300 group-hover/avatar:scale-105 ${genderTheme.avatarRing}`}
                           >
                             {isValidImageSrc(employee.profilePic) && (
                               <AvatarImage
@@ -539,7 +582,7 @@ export default function EmployeeCredDetails() {
                               />
                             )}
                             <AvatarFallback
-                              className={`rounded-2xl font-black text-lg ${genderTheme.avatarFallback}`}
+                              className={`rounded-2xl text-lg font-black ${genderTheme.avatarFallback}`}
                             >
                               {initials}
                             </AvatarFallback>
@@ -547,7 +590,7 @@ export default function EmployeeCredDetails() {
 
                           {/* Gender Indicator Badge on Avatar */}
                           <div
-                            className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-card ${genderTheme.indicatorColor} flex items-center justify-center shadow-xs`}
+                            className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-card ${genderTheme.indicatorColor} shadow-xs flex items-center justify-center`}
                             title={`Gender: ${genderTheme.label}`}
                           />
                         </div>
@@ -592,16 +635,17 @@ export default function EmployeeCredDetails() {
                       <div className="mb-4 grid flex-1 grid-cols-2 content-start gap-2.5 text-xs">
                         {/* Father Name */}
                         <div className="col-span-2 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 p-2 text-muted-foreground">
-                          <User className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
-                          <span className="truncate text-foreground font-medium">
-                            {getParentagePrefix(employee.gender)}: {employee.fatherName}
+                          <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" />
+                          <span className="truncate font-medium text-foreground">
+                            {getParentagePrefix(employee.gender)}:{" "}
+                            {employee.fatherName}
                           </span>
                         </div>
 
                         {/* Education */}
                         <div className="col-span-2 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 p-2 text-muted-foreground">
-                          <GraduationCap className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                          <span className="truncate text-foreground font-medium">
+                          <GraduationCap className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
+                          <span className="truncate font-medium text-foreground">
                             {employee.education && employee.education !== "none"
                               ? employee.education
                               : "Qualification: N/A"}
@@ -610,15 +654,29 @@ export default function EmployeeCredDetails() {
 
                         {/* Joining / Left Date */}
                         <div className="col-span-1 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 p-2 text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5 text-sky-400 shrink-0" />
-                          <span className="truncate text-foreground text-[11px]">
+                          <Clock className="h-3.5 w-3.5 shrink-0 text-sky-400" />
+                          <span className="truncate text-[11px] text-foreground">
                             {status === "Left" ? (
-                              <span className="text-red-400 font-semibold">
-                                Left: {employee.leftDate ? new Date(employee.leftDate).toLocaleDateString("en-PK", { month: "short", year: "numeric" }) : "Left"}
+                              <span className="font-semibold text-red-400">
+                                Left:{" "}
+                                {employee.leftDate
+                                  ? new Date(
+                                      employee.leftDate,
+                                    ).toLocaleDateString("en-PK", {
+                                      month: "short",
+                                      year: "numeric",
+                                    })
+                                  : "Left"}
                               </span>
                             ) : (
                               <>
-                                Joined: {employee.doj && employee.doj !== "none" ? new Date(employee.doj).toLocaleDateString("en-PK", { month: "short", year: "numeric" }) : "N/A"}
+                                Joined:{" "}
+                                {employee.doj && employee.doj !== "none"
+                                  ? new Date(employee.doj).toLocaleDateString(
+                                      "en-PK",
+                                      { month: "short", year: "numeric" },
+                                    )
+                                  : "N/A"}
                               </>
                             )}
                           </span>
@@ -627,20 +685,24 @@ export default function EmployeeCredDetails() {
                         {/* Status Chip */}
                         <div className="col-span-1 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 p-2 text-muted-foreground">
                           {status === "Active" ? (
-                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                            <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-400" />
                           ) : (
-                            <XCircle className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                            <XCircle className="h-3.5 w-3.5 shrink-0 text-rose-400" />
                           )}
-                          <span className="truncate font-semibold text-foreground text-[11px]">
+                          <span className="truncate text-[11px] font-semibold text-foreground">
                             {status}
                           </span>
                         </div>
 
                         {/* Address */}
                         <div className="col-span-2 flex items-center gap-2 rounded-xl border border-border/60 bg-muted/30 p-2 text-muted-foreground">
-                          <MapPin className="h-3.5 w-3.5 text-amber-400 shrink-0" />
-                          <span className="truncate text-foreground text-[11px]" title={employee.residentialAddress}>
-                            {employee.residentialAddress || "Address not provided"}
+                          <MapPin className="h-3.5 w-3.5 shrink-0 text-amber-400" />
+                          <span
+                            className="truncate text-[11px] text-foreground"
+                            title={employee.residentialAddress}
+                          >
+                            {employee.residentialAddress ||
+                              "Address not provided"}
                           </span>
                         </div>
                       </div>
@@ -648,22 +710,27 @@ export default function EmployeeCredDetails() {
                       {/* Footer: Contacts & Action Menu */}
                       <div className="mt-auto flex items-center justify-between border-t border-border/60 pt-3">
                         <div className="flex flex-col gap-1 text-[11px] text-muted-foreground">
-                          {employee.mobileNo && employee.mobileNo !== "none" && (
-                            <a
-                              href={`tel:${employee.mobileNo}`}
-                              className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors"
-                            >
-                              <Phone className="h-3 w-3 text-emerald-400" />
-                              <span className="font-mono">{employee.mobileNo}</span>
-                            </a>
-                          )}
+                          {employee.mobileNo &&
+                            employee.mobileNo !== "none" && (
+                              <a
+                                href={`tel:${employee.mobileNo}`}
+                                className="flex items-center gap-1.5 transition-colors hover:text-emerald-400"
+                              >
+                                <Phone className="h-3 w-3 text-emerald-400" />
+                                <span className="font-mono">
+                                  {employee.mobileNo}
+                                </span>
+                              </a>
+                            )}
                           <a
                             href={`mailto:${employee.admissionNumber ? employee.admissionNumber.toLowerCase() : "user"}@msns.edu.pk`}
-                            className="flex items-center gap-1.5 hover:text-emerald-400 transition-colors"
+                            className="flex items-center gap-1.5 transition-colors hover:text-emerald-400"
                           >
                             <Mail className="h-3 w-3 text-sky-400" />
-                            <span className="max-w-[140px] truncate sm:max-w-none font-mono">
-                              {employee.admissionNumber ? `${employee.admissionNumber.toLowerCase()}@msns.edu.pk` : "N/A"}
+                            <span className="max-w-[140px] truncate font-mono sm:max-w-none">
+                              {employee.admissionNumber
+                                ? `${employee.admissionNumber.toLowerCase()}@msns.edu.pk`
+                                : "N/A"}
                             </span>
                           </a>
                         </div>
@@ -674,7 +741,7 @@ export default function EmployeeCredDetails() {
                             size="icon"
                             variant="ghost"
                             onClick={() => setEditingEmployee(employee)}
-                            className="h-9 w-9 rounded-xl border border-border hover:border-emerald-500/40 hover:bg-emerald-950/30 text-muted-foreground hover:text-emerald-300"
+                            className="h-9 w-9 rounded-xl border border-border text-muted-foreground hover:border-emerald-500/40 hover:bg-emerald-950/30 hover:text-emerald-300"
                             title="Edit Employee Profile & Photo"
                           >
                             <Edit className="h-4 w-4" />
@@ -686,18 +753,26 @@ export default function EmployeeCredDetails() {
                               <Button
                                 size="icon"
                                 variant="ghost"
-                                className="h-9 w-9 rounded-xl border border-border hover:border-emerald-500/40 hover:bg-emerald-950/30 text-muted-foreground hover:text-foreground"
+                                className="h-9 w-9 rounded-xl border border-border text-muted-foreground hover:border-emerald-500/40 hover:bg-emerald-950/30 hover:text-foreground"
                               >
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-52 rounded-2xl p-1.5 border-border bg-popover">
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-52 rounded-2xl border-border bg-popover p-1.5"
+                            >
                               <DropdownMenuLabel className="text-xs text-muted-foreground">
                                 Employee Management
                               </DropdownMenuLabel>
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem asChild className="cursor-pointer rounded-xl">
-                                <Link href={`/admin/users/faculty/${employee.employeeId}/profile`}>
+                              <DropdownMenuItem
+                                asChild
+                                className="cursor-pointer rounded-xl"
+                              >
+                                <Link
+                                  href={`/admin/users/faculty/${employee.employeeId}/profile`}
+                                >
                                   <UserCircle className="mr-2 h-4 w-4 text-emerald-400" />
                                   <span>View Full Profile</span>
                                 </Link>
@@ -709,8 +784,13 @@ export default function EmployeeCredDetails() {
                                 <Edit className="mr-2 h-4 w-4 text-amber-400" />
                                 <span>Edit Information & Photo</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem asChild className="cursor-pointer rounded-xl">
-                                <Link href={`/admin/users/faculty/${employee.employeeId}`}>
+                              <DropdownMenuItem
+                                asChild
+                                className="cursor-pointer rounded-xl"
+                              >
+                                <Link
+                                  href={`/admin/users/faculty/${employee.employeeId}`}
+                                >
                                   <Clock className="mr-2 h-4 w-4 text-sky-400" />
                                   <span>Attendance Record</span>
                                 </Link>
@@ -741,10 +821,13 @@ export default function EmployeeCredDetails() {
 
       {/* Photo Full Preview Modal */}
       {previewPhoto && (
-        <Dialog open={!!previewPhoto} onOpenChange={() => setPreviewPhoto(null)}>
-          <DialogContent className="max-w-md p-4 bg-slate-950 border-slate-800 text-white rounded-3xl">
+        <Dialog
+          open={!!previewPhoto}
+          onOpenChange={() => setPreviewPhoto(null)}
+        >
+          <DialogContent className="max-w-md rounded-3xl border-slate-800 bg-slate-950 p-4 text-white">
             <DialogHeader>
-              <DialogTitle className="text-base font-bold text-center text-emerald-400">
+              <DialogTitle className="text-center text-base font-bold text-emerald-400">
                 {previewPhoto.name}
               </DialogTitle>
             </DialogHeader>

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "~/server/api/trpc";
 import { TRPCError } from "@trpc/server";
+import { assertCanReadStudent } from "~/server/api/access";
 
 export const parentRouter = createTRPCRouter({
   getLinkedStudents: protectedProcedure.query(async ({ ctx }) => {
@@ -9,7 +10,10 @@ export const parentRouter = createTRPCRouter({
       where: { guardentId: parentId },
     });
     if (!parent) {
-      throw new TRPCError({ code: "NOT_FOUND", message: "Parent profile not found" });
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "Parent profile not found",
+      });
     }
 
     return await ctx.db.students.findMany({
@@ -28,10 +32,15 @@ export const parentRouter = createTRPCRouter({
   getStudentDashboardData: protectedProcedure
     .input(z.object({ studentId: z.string().cuid() }))
     .query(async ({ ctx, input }) => {
+      await assertCanReadStudent(ctx, input.studentId);
       const student = await ctx.db.students.findUnique({
         where: { studentId: input.studentId },
       });
-      if (!student) throw new TRPCError({ code: "NOT_FOUND", message: "Student not found" });
+      if (!student)
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Student not found",
+        });
 
       const attendance = await ctx.db.studentAttendance.findMany({
         where: { studentId: input.studentId },
@@ -42,9 +51,10 @@ export const parentRouter = createTRPCRouter({
       const totalPresent = attendance.filter((a) => a.status === "P").length;
       const totalAbsent = attendance.filter((a) => a.status === "A").length;
       const totalLeaves = attendance.filter((a) => a.status === "L").length;
-      const attendanceRate = attendance.length > 0 
-        ? Math.round((totalPresent / (totalPresent + totalAbsent)) * 100) 
-        : 100;
+      const attendanceRate =
+        attendance.length > 0
+          ? Math.round((totalPresent / (totalPresent + totalAbsent)) * 100)
+          : 100;
 
       const reportCards = await ctx.db.reportCard.findMany({
         where: { studentId: input.studentId },

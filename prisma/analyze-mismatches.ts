@@ -1,6 +1,6 @@
-import { PrismaClient } from '@prisma/client';
-import fs from 'fs';
-import path from 'path';
+import { PrismaClient } from "@prisma/client";
+import fs from "fs";
+import path from "path";
 
 const prisma = new PrismaClient();
 
@@ -31,7 +31,7 @@ function getLevenshteinDistance(a: string, b: string): number {
       tmp[i][j] = Math.min(
         tmp[i - 1][j] + 1,
         tmp[i][j - 1] + 1,
-        tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        tmp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
       );
     }
   }
@@ -45,12 +45,17 @@ function getSimilarity(a: string, b: string): number {
 }
 
 async function main() {
-  const jsonPath = path.join(process.cwd(), 'prisma', 'fee-collections-2025.json');
-  const rawData = fs.readFileSync(jsonPath, 'utf8');
+  const jsonPath = path.join(
+    process.cwd(),
+    "prisma",
+    "private",
+    "fee-collections-2025.json",
+  );
+  const rawData = fs.readFileSync(jsonPath, "utf8");
   const data = JSON.parse(rawData);
 
   const activeSession = await prisma.sessions.findFirst({
-    where: { isActive: true }
+    where: { isActive: true },
   });
 
   if (!activeSession) {
@@ -61,7 +66,7 @@ async function main() {
   const allStudents = await prisma.students.findMany();
   const allStudentClasses = await prisma.studentClass.findMany({
     where: { sessionId: activeSession.sessionId },
-    include: { Grades: true }
+    include: { Grades: true },
   });
 
   // Collect all unique unmatched student names from the JSON
@@ -69,10 +74,10 @@ async function main() {
 
   for (const monthData of data.months) {
     for (const student of monthData.students) {
-      const studentName = student.name || '';
+      const studentName = student.name || "";
       const targetBases = [getBaseName(studentName)];
-      
-      const matches = allStudents.filter(s => {
+
+      const matches = allStudents.filter((s) => {
         const sBase = getBaseName(s.studentName);
         return targetBases.includes(sBase);
       });
@@ -80,14 +85,25 @@ async function main() {
       let matched = matches.length > 0;
       if (matched) {
         let targetStudent = matches[0];
-        let studentClass = allStudentClasses.find(sc => sc.studentId === targetStudent.studentId);
+        let studentClass = allStudentClasses.find(
+          (sc) => sc.studentId === targetStudent.studentId,
+        );
         if (matches.length > 1) {
-          const classMatch = matches.find(m => {
-            const sc = allStudentClasses.find(c => c.studentId === m.studentId);
-            return sc && sc.Grades.grade.toUpperCase().includes(student.class.toUpperCase());
+          const classMatch = matches.find((m) => {
+            const sc = allStudentClasses.find(
+              (c) => c.studentId === m.studentId,
+            );
+            return (
+              sc &&
+              sc.Grades.grade
+                .toUpperCase()
+                .includes(student.class.toUpperCase())
+            );
           });
           if (classMatch) {
-            studentClass = allStudentClasses.find(sc => sc.studentId === classMatch.studentId);
+            studentClass = allStudentClasses.find(
+              (sc) => sc.studentId === classMatch.studentId,
+            );
           }
         }
         if (!studentClass) {
@@ -101,21 +117,25 @@ async function main() {
     }
   }
 
-  console.log(`Found ${unmatchedJsonNames.size} unique unmatched names in the JSON.`);
+  console.log(
+    `Found ${unmatchedJsonNames.size} unique unmatched names in the JSON.`,
+  );
 
   const mappingsProposed: any[] = [];
 
   for (const [jsonName, jsonClass] of unmatchedJsonNames.entries()) {
     // Find students in the DB with high similarity
-    const candidates = allStudents.map(s => {
-      const dbClass = allStudentClasses.find(sc => sc.studentId === s.studentId);
-      const dbClassName = dbClass ? dbClass.Grades.grade : '';
-      
+    const candidates = allStudents.map((s) => {
+      const dbClass = allStudentClasses.find(
+        (sc) => sc.studentId === s.studentId,
+      );
+      const dbClassName = dbClass ? dbClass.Grades.grade : "";
+
       const sim = getSimilarity(cleanName(jsonName), cleanName(s.studentName));
       return {
         student: s,
         className: dbClassName,
-        similarity: sim
+        similarity: sim,
       };
     });
 
@@ -128,7 +148,7 @@ async function main() {
         jsonClass,
         dbName: best.student.studentName,
         dbClass: best.className,
-        similarity: best.similarity
+        similarity: best.similarity,
       });
     }
   }
@@ -136,7 +156,9 @@ async function main() {
   console.log(`Proposed matches: ${mappingsProposed.length}`);
   console.log("Samples of proposed matches:");
   for (const match of mappingsProposed.slice(0, 50)) {
-    console.log(`JSON: "${match.jsonName}" (${match.jsonClass}) -> DB: "${match.dbName}" (${match.dbClass}) [Sim: ${(match.similarity * 100).toFixed(0)}%]`);
+    console.log(
+      `JSON: "${match.jsonName}" (${match.jsonClass}) -> DB: "${match.dbName}" (${match.dbClass}) [Sim: ${(match.similarity * 100).toFixed(0)}%]`,
+    );
   }
 }
 

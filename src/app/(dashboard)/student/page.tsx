@@ -1,7 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { TrendingUp, AlertCircle, Calendar, GraduationCap, ArrowRight, Loader2 } from "lucide-react";
+import {
+  TrendingUp,
+  AlertCircle,
+  Calendar,
+  GraduationCap,
+  ArrowRight,
+  Loader2,
+} from "lucide-react";
 import { useSession } from "next-auth/react";
 import { api } from "~/trpc/react";
 
@@ -26,15 +33,20 @@ export default function StudentDashboard() {
   const { data: session } = useSession();
   const breadcrumbs = [{ href: "/student", label: "Dashboard", current: true }];
 
-  const { data: profile, isLoading: isProfileLoading } = api.student.getProfileByUserId.useQuery(
-    undefined, 
-    { enabled: !!session?.user }
-  );
+  const { data: profile, isLoading: isProfileLoading } =
+    api.student.getProfileByUserId.useQuery(undefined, {
+      enabled: !!session?.user,
+    });
 
-  const { data: eventsData, isLoading: isEventsLoading } = api.event.getAll.useQuery({ limit: 5 });
+  const { data: eventsData, isLoading: isEventsLoading } =
+    api.event.getAll.useQuery({ limit: 5 });
 
   if (isProfileLoading) {
-     return <div className="flex h-[50vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-blue-500" /></div>;
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+      </div>
+    );
   }
 
   const currentClassInfo = profile?.StudentClass?.[0];
@@ -63,9 +75,12 @@ export default function StudentDashboard() {
               <Card className="border-blue-500/20 bg-blue-500/5 shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <div className="space-y-1">
-                    <CardTitle className="text-xl text-blue-500">My Class</CardTitle>
+                    <CardTitle className="text-xl text-blue-500">
+                      My Class
+                    </CardTitle>
                     <CardDescription>
-                      Grade {currentClassInfo.Grades.grade} ({currentClassInfo.Grades.section})
+                      Grade {currentClassInfo.Grades.grade} (
+                      {currentClassInfo.Grades.section})
                     </CardDescription>
                   </div>
                   <div className="rounded-full bg-blue-500/10 p-3">
@@ -73,8 +88,13 @@ export default function StudentDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Link href={`/student/sessions/class?sessionId=${currentClassInfo.sessionId}&classId=${currentClassInfo.classId}`}>
-                    <Button variant="default" className="mt-2 w-full sm:w-auto bg-blue-600 hover:bg-blue-700">
+                  <Link
+                    href={`/student/sessions/class?sessionId=${currentClassInfo.sessionId}&classId=${currentClassInfo.classId}`}
+                  >
+                    <Button
+                      variant="default"
+                      className="mt-2 w-full bg-blue-600 hover:bg-blue-700 sm:w-auto"
+                    >
                       View Class Details <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </Link>
@@ -136,14 +156,16 @@ export default function StudentDashboard() {
             </CardHeader>
             <CardContent className="space-y-6">
               {recentReportCards.length === 0 ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">
+                <div className="py-6 text-center text-sm text-muted-foreground">
                   No recent report cards available.
                 </div>
               ) : (
                 recentReportCards.map((rc, index) => (
                   <div key={index} className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-foreground">Total Score ({(rc.percentage).toFixed(1)}%)</span>
+                      <span className="text-foreground">
+                        Total Score ({rc.percentage.toFixed(1)}%)
+                      </span>
                       <span className="font-mono text-emerald-500">
                         {rc.totalObtainedMarks} / {rc.totalMaxMarks}
                       </span>
@@ -177,14 +199,14 @@ export default function StudentDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               {upcomingEvents.length === 0 && !isEventsLoading ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">
+                <div className="py-6 text-center text-sm text-muted-foreground">
                   No upcoming events.
                 </div>
               ) : (
                 upcomingEvents.map((task) => (
                   <div
                     key={task.id}
-                    className="flex items-start gap-4 rounded-lg border border-border bg-black/5 dark:bg-black/20 p-3 transition-colors hover:bg-black/10 dark:hover:bg-black/30"
+                    className="flex items-start gap-4 rounded-lg border border-border bg-black/5 p-3 transition-colors hover:bg-black/10 dark:bg-black/20 dark:hover:bg-black/30"
                   >
                     <div className="mt-1 h-2 w-2 rounded-full bg-blue-400" />
                     <div>
@@ -192,13 +214,18 @@ export default function StudentDashboard() {
                         {task.title}
                       </h4>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {format(new Date(task.startDateTime), "MMM d, yyyy h:mm a")}
+                        {format(
+                          new Date(task.startDateTime),
+                          "MMM d, yyyy h:mm a",
+                        )}
                       </p>
                     </div>
                   </div>
                 ))
               )}
-              {isEventsLoading && <Loader2 className="h-5 w-5 animate-spin text-center mx-auto" />}
+              {isEventsLoading && (
+                <Loader2 className="mx-auto h-5 w-5 animate-spin text-center" />
+              )}
             </CardContent>
           </Card>
         </motion.div>

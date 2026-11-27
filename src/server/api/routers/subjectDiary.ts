@@ -1,24 +1,52 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { pkDayEnd, pkDayStart } from "~/server/utils/pk-time";
+import { TRPCError } from "@trpc/server";
+import {
+  createTRPCRouter,
+  protectedProcedure,
+  teacherProcedure,
+} from "../trpc";
+import {
+  assertCanTeachClassSubject,
+  requireSessionEmployee,
+  roleOf,
+} from "~/server/api/access";
 import type { Prisma } from "@prisma/client";
 
 export const subjectDiaryRouter = createTRPCRouter({
-  createDiary: protectedProcedure
+  createDiary: teacherProcedure
     .input(
       z.object({
         classSubjectId: z.string(),
-        teacherId: z.string(),
+        // Ignored for teachers (taken from the session); office staff may set it.
+        teacherId: z.string().optional(),
         date: z.date(),
         content: z.string(),
         attachments: z.array(z.string()).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertCanTeachClassSubject(ctx, input.classSubjectId);
+      let teacherId: string;
+      if (roleOf(ctx) === "TEACHER") {
+        teacherId = (await requireSessionEmployee(ctx)).employeeId;
+      } else {
+        const cs = await ctx.db.classSubject.findUnique({
+          where: { csId: input.classSubjectId },
+          select: { employeeId: true },
+        });
+        if (!cs)
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Class subject not found",
+          });
+        teacherId = input.teacherId ?? cs.employeeId;
+      }
       try {
         const diary = await ctx.db.subjectDiary.create({
           data: {
             classSubjectId: input.classSubjectId,
-            teacherId: input.teacherId,
+            teacherId,
             date: input.date,
             content: input.content,
             attachments: input.attachments ?? [],
@@ -30,11 +58,18 @@ export const subjectDiaryRouter = createTRPCRouter({
           try {
             const classSub = await ctx.db.classSubject.findUnique({
               where: { csId: input.classSubjectId },
-              select: { classId: true, sessionId: true, Subject: { select: { subjectName: true } } },
+              select: {
+                classId: true,
+                sessionId: true,
+                Subject: { select: { subjectName: true } },
+              },
             });
             if (classSub) {
               const students = await ctx.db.studentClass.findMany({
-                where: { classId: classSub.classId, sessionId: classSub.sessionId },
+                where: {
+                  classId: classSub.classId,
+                  sessionId: classSub.sessionId,
+                },
                 select: { studentId: true },
               });
               const studentIds = students.map((s) => s.studentId);
@@ -44,12 +79,13 @@ export const subjectDiaryRouter = createTRPCRouter({
               });
               const parentIds = parents.map((p) => p.guardentId);
               if (parentIds.length > 0) {
-                const { sendPushNotification } = await import("~/server/mobile/fcm");
+                const { sendPushNotification } =
+                  await import("~/server/mobile/fcm");
                 await sendPushNotification(
                   [],
                   parentIds,
                   "New Diary Published",
-                  `A new diary entry has been published for ${classSub.Subject.subjectName}.`
+                  `A new diary entry has been published for ${classSub.Subject.subjectName}.`,
                 );
               }
             }
@@ -65,7 +101,7 @@ export const subjectDiaryRouter = createTRPCRouter({
       }
     }),
 
-  updateDiary: protectedProcedure
+  updateDiary: teacherProcedure
     .input(
       z.object({
         subjectDiaryId: z.string(),
@@ -74,6 +110,13 @@ export const subjectDiaryRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.subjectDiary.findUnique({
+        where: { subjectDiaryId: input.subjectDiaryId },
+        select: { classSubjectId: true },
+      });
+      if (!existing)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Diary not found" });
+      await assertCanTeachClassSubject(ctx, existing.classSubjectId);
       try {
         return await ctx.db.subjectDiary.update({
           where: { subjectDiaryId: input.subjectDiaryId },
@@ -88,9 +131,16 @@ export const subjectDiaryRouter = createTRPCRouter({
       }
     }),
 
-  deleteDiary: protectedProcedure
+  deleteDiary: teacherProcedure
     .input(z.object({ subjectDiaryId: z.string() }))
     .mutation(async ({ ctx, input }) => {
+      const existing = await ctx.db.subjectDiary.findUnique({
+        where: { subjectDiaryId: input.subjectDiaryId },
+        select: { classSubjectId: true },
+      });
+      if (!existing)
+        throw new TRPCError({ code: "NOT_FOUND", message: "Diary not found" });
+      await assertCanTeachClassSubject(ctx, existing.classSubjectId);
       try {
         await ctx.db.subjectDiary.delete({
           where: { subjectDiaryId: input.subjectDiaryId },
@@ -102,7 +152,7 @@ export const subjectDiaryRouter = createTRPCRouter({
       }
     }),
 
-  getTeacherDiaries: protectedProcedure
+  getTeacherDiaries: teacherProcedure
     .input(
       z.object({
         teacherId: z.string(),
@@ -111,14 +161,15 @@ export const subjectDiaryRouter = createTRPCRouter({
     )
     .query(async ({ ctx, input }) => {
       try {
-        const whereClause: Prisma.SubjectDiaryWhereInput = { teacherId: input.teacherId };
+        const whereClause: Prisma.SubjectDiaryWhereInput = {
+          teacherId: input.teacherId,
+        };
 
         // If date is provided, match exactly by day
         if (input.date) {
-          const startDate = new Date(input.date);
-          startDate.setHours(0, 0, 0, 0);
-          const endDate = new Date(input.date);
-          endDate.setHours(23, 59, 59, 999);
+          // School-time day (the server runs in UTC).
+          const startDate = pkDayStart(input.date);
+          const endDate = pkDayEnd(input.date);
 
           whereClause.date = {
             gte: startDate,
@@ -162,10 +213,9 @@ export const subjectDiaryRouter = createTRPCRouter({
         };
 
         if (input.date) {
-          const startDate = new Date(input.date);
-          startDate.setHours(0, 0, 0, 0);
-          const endDate = new Date(input.date);
-          endDate.setHours(23, 59, 59, 999);
+          // School-time day (the server runs in UTC).
+          const startDate = pkDayStart(input.date);
+          const endDate = pkDayEnd(input.date);
 
           whereClause.date = {
             gte: startDate,

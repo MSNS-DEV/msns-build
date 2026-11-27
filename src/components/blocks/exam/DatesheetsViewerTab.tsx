@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "~/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "~/components/ui/card";
 import { Button } from "~/components/ui/button";
 import { Badge } from "~/components/ui/badge";
 import { Skeleton } from "~/components/ui/skeleton";
@@ -94,7 +100,7 @@ export function DatesheetsViewerTab({
       </div>
 
       {/* Class Pills Filter */}
-      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-slate-200/80 bg-white/70 p-2 shadow-sm backdrop-blur print:hidden dark:border-border dark:bg-card">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-slate-200/80 bg-white/70 p-2 shadow-sm backdrop-blur dark:border-border dark:bg-card print:hidden">
         <Button
           size="sm"
           variant={activeFilterClass === "all" ? "default" : "ghost"}
@@ -140,10 +146,13 @@ export function DatesheetsViewerTab({
       {isLoading && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {[1, 2].map((i) => (
-            <Card key={i} className="rounded-2xl border border-slate-200 dark:border-border">
+            <Card
+              key={i}
+              className="rounded-2xl border border-slate-200 dark:border-border"
+            >
               <CardHeader>
                 <Skeleton className="h-6 w-1/3" />
-                <Skeleton className="h-4 w-1/2 mt-1" />
+                <Skeleton className="mt-1 h-4 w-1/2" />
               </CardHeader>
               <CardContent className="space-y-3">
                 <Skeleton className="h-10 w-full" />
@@ -165,7 +174,8 @@ export function DatesheetsViewerTab({
             No Datesheets Found
           </h3>
           <p className="mx-auto mt-1 max-w-sm text-xs text-muted-foreground">
-            No scheduled exams with datesheet papers were found for the selected session and class filter.
+            No scheduled exams with datesheet papers were found for the selected
+            session and class filter.
           </p>
         </Card>
       )}
@@ -174,7 +184,8 @@ export function DatesheetsViewerTab({
       {!isLoading && filteredDatesheets.length > 0 && (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {filteredDatesheets.map((exam) => {
-            const hasPapers = exam.ExamDatesheet && exam.ExamDatesheet.length > 0;
+            const hasPapers =
+              exam.ExamDatesheet && exam.ExamDatesheet.length > 0;
 
             return (
               <Card
@@ -191,20 +202,21 @@ export function DatesheetsViewerTab({
                           {exam.Grades.grade} - {exam.Grades.section}
                         </CardTitle>
                       </div>
-                      <CardDescription className="text-xs font-medium text-muted-foreground mt-0.5">
-                        {exam.ExamType?.name ?? "Examination"} • Total Marks: {exam.totalMarks}
+                      <CardDescription className="mt-0.5 text-xs font-medium text-muted-foreground">
+                        {exam.ExamType?.name ?? "Examination"} • Total Marks:{" "}
+                        {exam.totalMarks}
                       </CardDescription>
                     </div>
 
                     <Badge
                       variant="outline"
                       className={cn(
-                        "rounded-lg text-[10px] font-semibold px-2 py-0.5",
+                        "rounded-lg px-2 py-0.5 text-[10px] font-semibold",
                         exam.status === "COMPLETED"
                           ? "bg-slate-100 text-slate-700 dark:bg-muted"
                           : exam.status === "ONGOING"
-                          ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40"
-                          : "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40",
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40"
+                            : "border-blue-200 bg-blue-50 text-blue-700 dark:bg-blue-950/40",
                       )}
                     >
                       {exam.status}
@@ -229,7 +241,7 @@ export function DatesheetsViewerTab({
                               <p className="text-xs font-bold text-slate-900 dark:text-foreground">
                                 {paper.Subject?.subjectName ?? "Subject"}
                               </p>
-                              <div className="flex items-center gap-2 text-[11px] text-muted-foreground mt-0.5">
+                              <div className="mt-0.5 flex items-center gap-2 text-[11px] text-muted-foreground">
                                 <span className="flex items-center gap-1 font-medium text-slate-700 dark:text-muted-foreground">
                                   <CalendarDays className="h-3 w-3 text-emerald-600 opacity-70" />
                                   {formatPaperDate(paper.date)}

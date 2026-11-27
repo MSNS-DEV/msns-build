@@ -221,8 +221,12 @@ export function MonthlyReportTab({
       const dayStatuses = Array.from({ length: daysInMonth }, (_, i) =>
         getAttendanceStatus(emp.id, i + 1),
       );
-      const empName = (emp as any).name || emp.username;
-      const empDesig = (emp as any).designation || emp.accountType;
+      const extra = emp as {
+        name?: string | null;
+        designation?: string | null;
+      };
+      const empName = extra.name ?? emp.username;
+      const empDesig = extra.designation ?? emp.accountType;
       return [
         `"${empName.replace(/"/g, '""')}"`,
         `"${empDesig}"`,

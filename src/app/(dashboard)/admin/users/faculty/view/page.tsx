@@ -3,15 +3,31 @@
 import { useState, useMemo, useEffect } from "react";
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import { EmployeeTable } from "~/components/tables/EmployeeTable";
-import { SalaryContent } from "../../../erp/revenue/salary/SalaryContent";
-import { EmployeeAttendanceContent } from "../../../sessions/attendance/employees/EmployeeAttendanceContent";
+import {
+  LazySalaryContent as SalaryContent,
+  LazyEmployeeAttendanceContent as EmployeeAttendanceContent,
+} from "~/components/shared/lazy-staff-panels";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
-import { Users, UserCog, DollarSign, CheckCircle2Icon, ShieldCheck, Calendar, BookOpen } from "lucide-react";
+import {
+  Users,
+  UserCog,
+  DollarSign,
+  CheckCircle2Icon,
+  ShieldCheck,
+  Calendar,
+  BookOpen,
+} from "lucide-react";
 import { api } from "~/trpc/react";
 import { GradientStatCard } from "~/components/shared/GradientStatCard";
 import { PageExportButton } from "~/components/shared/PageExportButton";
 import { Separator } from "~/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "~/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 
 const MONTHS = [
   { value: "1", label: "January" },
@@ -33,8 +49,12 @@ export default function EmployeesDashboard() {
   const { data: activeSession } = api.session.getActiveSession.useQuery();
   const { data: sessions } = api.session.getSessions.useQuery();
 
-  const [selectedMonth, setSelectedMonth] = useState<string>(String(new Date().getMonth() + 1));
-  const [selectedYear, setSelectedYear] = useState<string>(String(new Date().getFullYear()));
+  const [selectedMonth, setSelectedMonth] = useState<string>(
+    String(new Date().getMonth() + 1),
+  );
+  const [selectedYear, setSelectedYear] = useState<string>(
+    String(new Date().getFullYear()),
+  );
   const [selectedSession, setSelectedSession] = useState<string>("");
 
   useEffect(() => {
@@ -56,9 +76,9 @@ export default function EmployeesDashboard() {
   const stats = useMemo(() => {
     if (!employees) return { total: 0, active: 0, assigned: 0, biometric: 0 };
     const total = employees.length;
-    const active = employees.filter(e => e.status === "Active").length;
-    const assigned = employees.filter(e => e.isAssign).length;
-    const biometric = employees.filter(e => e.BioMetric).length;
+    const active = employees.filter((e) => e.status === "Active").length;
+    const assigned = employees.filter((e) => e.isAssign).length;
+    const biometric = employees.filter((e) => e.BioMetric).length;
     return { total, active, assigned, biometric };
   }, [employees]);
 
@@ -76,7 +96,7 @@ export default function EmployeesDashboard() {
         { key: "education", label: "Education" },
         { key: "status", label: "Status" },
       ],
-      rows: employees.map(e => ({
+      rows: employees.map((e) => ({
         registrationNumber: e.registrationNumber,
         employeeName: e.employeeName,
         fatherName: e.fatherName,
@@ -96,7 +116,7 @@ export default function EmployeesDashboard() {
       <div className="relative z-10 flex min-h-screen w-full flex-col">
         {/* PageHeader in layout */}
 
-        <div className="container mx-auto flex-1 px-4 py-6 sm:px-6 lg:px-8 space-y-6">
+        <div className="container mx-auto flex-1 space-y-6 px-4 py-6 sm:px-6 lg:px-8">
           {/* Header Section */}
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div className="space-y-2">
@@ -107,12 +127,16 @@ export default function EmployeesDashboard() {
                 Employee Management
               </h1>
               <p className="max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
-                Centralized hub for managing faculty credentials, processing salaries, and tracking daily attendance records.
+                Centralized hub for managing faculty credentials, processing
+                salaries, and tracking daily attendance records.
               </p>
             </div>
             <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
               <div className="flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-1.5 shadow-inner dark:border-emerald-500/20 dark:bg-card">
-                <Select value={selectedSession} onValueChange={setSelectedSession}>
+                <Select
+                  value={selectedSession}
+                  onValueChange={setSelectedSession}
+                >
                   <SelectTrigger className="w-[160px] border-slate-200 bg-white text-slate-700 dark:border-emerald-500/20 dark:bg-card dark:text-foreground">
                     <BookOpen className="mr-2 h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                     <SelectValue placeholder="Session" />
@@ -165,7 +189,7 @@ export default function EmployeesDashboard() {
           <Separator className="bg-emerald-500/20" />
 
           {/* Stats Cards */}
-          <div className="grid grid-cols-4 gap-1.5 sm:gap-4 w-full">
+          <div className="grid w-full grid-cols-4 gap-1.5 sm:gap-4">
             <GradientStatCard
               title="Total Employees"
               value={isLoading ? "..." : stats.total}
@@ -234,11 +258,11 @@ export default function EmployeesDashboard() {
                 value="salaries"
                 className="mt-0 duration-500 animate-in fade-in slide-in-from-bottom-4 focus-visible:outline-none"
               >
-                <div className="rounded-xl border border-emerald-500/20 bg-card p-4 shadow-xl backdrop-blur-md sm:p-6 overflow-hidden">
-                  <SalaryContent 
-                    externalMonth={selectedMonth} 
-                    externalYear={selectedYear} 
-                    externalSessionId={selectedSession} 
+                <div className="overflow-hidden rounded-xl border border-emerald-500/20 bg-card p-4 shadow-xl backdrop-blur-md sm:p-6">
+                  <SalaryContent
+                    externalMonth={selectedMonth}
+                    externalYear={selectedYear}
+                    externalSessionId={selectedSession}
                   />
                 </div>
               </TabsContent>
@@ -247,11 +271,11 @@ export default function EmployeesDashboard() {
                 value="attendance"
                 className="mt-0 duration-500 animate-in fade-in slide-in-from-bottom-4 focus-visible:outline-none"
               >
-                <div className="rounded-xl border border-emerald-500/20 bg-card p-4 shadow-xl backdrop-blur-md sm:p-6 overflow-hidden">
-                  <EmployeeAttendanceContent 
-                    externalMonth={selectedMonth} 
-                    externalYear={selectedYear} 
-                    externalSessionId={selectedSession} 
+                <div className="overflow-hidden rounded-xl border border-emerald-500/20 bg-card p-4 shadow-xl backdrop-blur-md sm:p-6">
+                  <EmployeeAttendanceContent
+                    externalMonth={selectedMonth}
+                    externalYear={selectedYear}
+                    externalSessionId={selectedSession}
                   />
                 </div>
               </TabsContent>

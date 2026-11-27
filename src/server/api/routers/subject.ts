@@ -1,4 +1,4 @@
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, officeProcedure } from "../trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import type { Prisma } from "@prisma/client";
@@ -123,7 +123,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  assignSubjectToClass: protectedProcedure
+  assignSubjectToClass: officeProcedure
     .input(classAssignmentSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -154,13 +154,17 @@ export const subjectRouter = createTRPCRouter({
           });
         }
 
-        return await ctx.db.classSubject.create({
-          data: {
-            classId: input.classId,
-            subjectId: input.subjectId,
-            employeeId: input.employeeId,
-            sessionId: input.sessionId,
-          },
+        const key = {
+          classId: input.classId,
+          subjectId: input.subjectId,
+          employeeId: input.employeeId,
+          sessionId: input.sessionId,
+        };
+        // Re-assigning the same teacher to the same class subject is a no-op, not an error.
+        return await ctx.db.classSubject.upsert({
+          where: { classId_subjectId_employeeId_sessionId: key },
+          update: {},
+          create: key,
           include: {
             Subject: true,
             Employees: true,
@@ -178,7 +182,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  createSubject: protectedProcedure
+  createSubject: officeProcedure
     .input(createSubjectSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -222,7 +226,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  updateSubject: protectedProcedure
+  updateSubject: officeProcedure
     .input(updateSubjectSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -285,7 +289,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  deleteSubject: protectedProcedure
+  deleteSubject: officeProcedure
     .input(deleteSubjectSchema)
     .mutation(async ({ ctx, input }) => {
       try {
@@ -326,7 +330,11 @@ export const subjectRouter = createTRPCRouter({
           });
         }
 
-        if (existingSubject.Marks.length > 0 || existingSubject.ReportCardDetail.length > 0 || existingSubject.ExamDatesheet.length > 0) {
+        if (
+          existingSubject.Marks.length > 0 ||
+          existingSubject.ReportCardDetail.length > 0 ||
+          existingSubject.ExamDatesheet.length > 0
+        ) {
           throw new TRPCError({
             code: "CONFLICT",
             message:
@@ -406,7 +414,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  updateClassAssignment: protectedProcedure
+  updateClassAssignment: officeProcedure
     .input(
       classAssignmentSchema.extend({
         csId: z.string().cuid("Invalid assignment ID"),
@@ -446,7 +454,7 @@ export const subjectRouter = createTRPCRouter({
       }
     }),
 
-  removeSubjectFromClass: protectedProcedure
+  removeSubjectFromClass: officeProcedure
     .input(
       z.object({
         csId: z.string().cuid("Invalid assignment ID"),

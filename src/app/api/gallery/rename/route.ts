@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { moveS3Object } from "~/lib/s3";
 import { auth } from "~/server/auth";
+import { isGalleryKey, isSafeKey } from "~/server/storage-access";
 
 const ALLOWED_ROLES = ["ADMIN", "PRINCIPAL", "HEAD", "CLERK", "TEACHER"];
 
@@ -17,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (!ALLOWED_ROLES.includes(userRole)) {
       return NextResponse.json(
         { error: "You do not have permission to rename gallery media" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -28,7 +29,14 @@ export async function POST(request: NextRequest) {
     if (!key || !newName) {
       return NextResponse.json(
         { error: "Original key and new name are required" },
-        { status: 400 }
+        { status: 400 },
+      );
+    }
+
+    if (!isGalleryKey(key)) {
+      return NextResponse.json(
+        { error: "Only gallery items can be renamed here" },
+        { status: 400 },
       );
     }
 
@@ -36,7 +44,10 @@ export async function POST(request: NextRequest) {
     const parts = key.split("/");
     const filename = parts.pop();
     if (!filename) {
-      return NextResponse.json({ error: "Invalid original key" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid original key" },
+        { status: 400 },
+      );
     }
     const folder = parts.join("/");
 
@@ -46,15 +57,20 @@ export async function POST(request: NextRequest) {
     const oldFilename = match ? match[2]! : filename;
 
     // Get extension
-    const originalExt = oldFilename.split('.').pop()?.toLowerCase();
-    
+    const originalExt = oldFilename.split(".").pop()?.toLowerCase();
+
     // Sanitize new name
     const sanitizedNewName = newName.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const hasExt = sanitizedNewName.includes('.');
-    const finalFilename = !hasExt && originalExt ? `${sanitizedNewName}.${originalExt}` : sanitizedNewName;
+    const hasExt = sanitizedNewName.includes(".");
+    const finalFilename =
+      !hasExt && originalExt
+        ? `${sanitizedNewName}.${originalExt}`
+        : sanitizedNewName;
 
     // Construct destination key
-    const destinationKey = folder ? `${folder}/${timestamp}_${finalFilename}` : `${timestamp}_${finalFilename}`;
+    const destinationKey = folder
+      ? `${folder}/${timestamp}_${finalFilename}`
+      : `${timestamp}_${finalFilename}`;
 
     // Don't rename to the exact same path
     if (key === destinationKey) {
@@ -67,13 +83,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       key: destinationKey,
-      url: `/api/images/${destinationKey}`
+      url: `/api/images/${destinationKey}`,
     });
   } catch (error) {
     console.error("Error renaming media:", error);
     return NextResponse.json(
       { error: "Failed to rename media" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

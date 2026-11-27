@@ -1,8 +1,6 @@
 // src/app/layout.tsx
 import "~/styles/globals.css";
 
-export const dynamic = "force-dynamic";
-
 import { Geist_Mono, Inter } from "next/font/google";
 import { type Metadata, type Viewport } from "next";
 import Script from "next/script";
@@ -31,8 +29,6 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
 };
 
 export const metadata: Metadata = {
@@ -41,17 +37,27 @@ export const metadata: Metadata = {
     default: "MSNS-LMS Portal | M. S. Naz High School®",
     template: "%s | MSNS-LMS",
   },
-  description: "Official MSNS Learning Management System portal. Secure dashboard for students, parents, and faculty to access attendance records, homework, and fee vouchers.",
+  description:
+    "Official MSNS Learning Management System portal. Secure dashboard for students, parents, and faculty to access attendance records, homework, and fee vouchers.",
   verification: {
     google: "UEssQjRtMsHt_ioT8H5RUA2Rnl0_9QEl0d8tL6JBi1E",
   },
   keywords: [
-    "msns", "m s naz", "m s naz high school", "msnaz", "lms", "portal",
-    "ghakkhar", "wazirabad", "gujranwala", "msns-dev"
+    "msns",
+    "m s naz",
+    "m s naz high school",
+    "msnaz",
+    "lms",
+    "portal",
+    "ghakkhar",
+    "wazirabad",
+    "gujranwala",
+    "msns-dev",
   ].join(", "),
   openGraph: {
     title: "MSNS-LMS Portal | M. S. Naz High School®",
-    description: "Official MSNS Learning Management System portal. Secure dashboard for students, parents, and faculty to access attendance records, homework, and fee vouchers.",
+    description:
+      "Official MSNS Learning Management System portal. Secure dashboard for students, parents, and faculty to access attendance records, homework, and fee vouchers.",
     url: "https://lms.msns.edu.pk/",
     siteName: "M.S. Naz High School® LMS",
     images: [
@@ -59,8 +65,8 @@ export const metadata: Metadata = {
         url: "/api/images/logos/Official_LOGO_grn_ic9ldd.png",
         width: 1200,
         height: 630,
-        alt: "M.S. Naz High School® Logo"
-      }
+        alt: "M.S. Naz High School® Logo",
+      },
     ],
     type: "website",
   },

@@ -2,12 +2,7 @@
 
 import { lazy, Suspense } from "react";
 import { motion } from "framer-motion";
-import {
-  Calendar,
-  GraduationCap,
-  Sparkles,
-  BookOpen,
-} from "lucide-react";
+import { Calendar, GraduationCap, Sparkles, BookOpen } from "lucide-react";
 
 import { PageHeader } from "~/components/blocks/nav/PageHeader";
 import { WelcomeSection } from "~/components/blocks/dashboard/welcome";
@@ -39,8 +34,6 @@ export default function TeacherDashboard() {
       >
         <WelcomeSection />
       </motion.div>
-
-
 
       {/* Main Content Tabs */}
       <motion.section

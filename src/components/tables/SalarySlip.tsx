@@ -9,9 +9,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "~/components/ui/dialog";
-import { Download, Loader2, FileText, Printer, Building2, Phone, Mail, Globe } from "lucide-react";
-import * as jsPDF from "jspdf";
-import * as html2canvas from "html2canvas-pro";
+import {
+  Download,
+  Loader2,
+  FileText,
+  Printer,
+  Building2,
+  Phone,
+  Mail,
+  Globe,
+} from "lucide-react";
 
 type SalaryData = {
   id: string;
@@ -38,10 +45,15 @@ interface SalarySlipProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-export function SalarySlip({ salary, trigger, open, onOpenChange }: SalarySlipProps) {
+export function SalarySlip({
+  salary,
+  trigger,
+  open,
+  onOpenChange,
+}: SalarySlipProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const slipRef = useRef<HTMLDivElement>(null);
-  
+
   // Internal state if not controlled
   const [internalOpen, setInternalOpen] = useState(false);
   const isControlled = open !== undefined && onOpenChange !== undefined;
@@ -83,6 +95,11 @@ export function SalarySlip({ salary, trigger, open, onOpenChange }: SalarySlipPr
       setIsGenerating(true);
       const element = slipRef.current;
 
+      // Loaded on demand so PDF libraries stay out of the page bundle.
+      const [jsPDF, html2canvas] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas-pro"),
+      ]);
       const canvas = await html2canvas.default(element, {
         scale: 2,
         useCORS: true,
@@ -115,7 +132,11 @@ export function SalarySlip({ salary, trigger, open, onOpenChange }: SalarySlipPr
         <DialogTrigger asChild>
           {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
           {trigger ?? (
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-blue-600"
+            >
               <FileText className="h-4 w-4" />
             </Button>
           )}
@@ -145,12 +166,11 @@ export function SalarySlip({ salary, trigger, open, onOpenChange }: SalarySlipPr
                   <h1 className="text-2xl font-bold tracking-tight text-indigo-950">
                     M. S. NAZ HIGH SCHOOL®
                   </h1>
-                  <p className="font-medium text-indigo-600">
-                    Salary Slip
-                  </p>
+                  <p className="font-medium text-indigo-600">Salary Slip</p>
                   <div className="mt-2 space-y-0.5 text-xs text-gray-500">
                     <p className="flex items-center gap-1">
-                      <Building2 className="h-3 w-3" /> G.T. Road, Ghakhar, Pakistan
+                      <Building2 className="h-3 w-3" /> G.T. Road, Ghakhar,
+                      Pakistan
                     </p>
                     <p className="flex items-center gap-1">
                       <Phone className="h-3 w-3" /> +92 (318) 7625415
@@ -268,9 +288,11 @@ export function SalarySlip({ salary, trigger, open, onOpenChange }: SalarySlipPr
 
             {/* Footer */}
             <div className="mt-8 pt-8">
-
               <div className="flex items-center justify-between border-t border-gray-100 pt-4 text-[10px] text-gray-400">
-                <p>This document is computer generated and does not require signature.</p>
+                <p>
+                  This document is computer generated and does not require
+                  signature.
+                </p>
                 <div className="flex items-center gap-1">
                   <Globe className="h-3 w-3" /> www.msns.edu.pk
                 </div>

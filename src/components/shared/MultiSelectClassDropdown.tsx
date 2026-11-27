@@ -1,11 +1,22 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "~/components/ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import { Badge } from "~/components/ui/badge";
-import { Check, ChevronsUpDown, Search, CheckSquare, Square, X } from "lucide-react";
+import {
+  Check,
+  ChevronsUpDown,
+  Search,
+  CheckSquare,
+  Square,
+  X,
+} from "lucide-react";
 import { cn } from "~/lib/utils";
 
 export interface ClassOption {
@@ -41,7 +52,7 @@ export function MultiSelectClassDropdown({
       (c) =>
         c.grade.toLowerCase().includes(query) ||
         c.section.toLowerCase().includes(query) ||
-        `grade ${c.grade} ${c.section}`.toLowerCase().includes(query)
+        `grade ${c.grade} ${c.section}`.toLowerCase().includes(query),
     );
   }, [classes, search]);
 
@@ -96,37 +107,39 @@ export function MultiSelectClassDropdown({
           aria-expanded={open}
           disabled={disabled}
           className={cn(
-            "w-full justify-between border-slate-200 bg-white font-normal text-slate-900 hover:bg-slate-50 dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-white/5 h-9 px-3 text-sm transition-all focus:ring-1 focus:ring-emerald-500",
-            selectedClassIds.length === 0 && "text-muted-foreground dark:text-muted-foreground",
-            className
+            "h-9 w-full justify-between border-slate-200 bg-white px-3 text-sm font-normal text-slate-900 transition-all hover:bg-slate-50 focus:ring-1 focus:ring-emerald-500 dark:border-border dark:bg-card dark:text-foreground dark:hover:bg-white/5",
+            selectedClassIds.length === 0 &&
+              "text-muted-foreground dark:text-muted-foreground",
+            className,
           )}
         >
           <div className="flex items-center gap-2 truncate">
             <span className="truncate">{labelText}</span>
-            {selectedClassIds.length > 0 && selectedClassIds.length < classes.length && (
-              <Badge
-                variant="secondary"
-                className="ml-1 h-5 rounded-full px-1.5 text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border-none font-bold"
-              >
-                {selectedClassIds.length}
-              </Badge>
-            )}
+            {selectedClassIds.length > 0 &&
+              selectedClassIds.length < classes.length && (
+                <Badge
+                  variant="secondary"
+                  className="ml-1 h-5 rounded-full border-none bg-emerald-100 px-1.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300"
+                >
+                  {selectedClassIds.length}
+                </Badge>
+              )}
           </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50 text-slate-500 dark:text-slate-400" />
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-500 opacity-50 dark:text-slate-400" />
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-[300px] p-0 border border-slate-200 bg-white shadow-lg dark:border-border dark:bg-slate-900 text-slate-900 dark:text-foreground z-50 rounded-lg overflow-hidden"
+        className="z-50 w-[300px] overflow-hidden rounded-lg border border-slate-200 bg-white p-0 text-slate-900 shadow-lg dark:border-border dark:bg-slate-900 dark:text-foreground"
         align="start"
       >
         {/* Search Bar */}
-        <div className="flex items-center border-b border-slate-100 dark:border-border px-3 py-2 bg-slate-50/50 dark:bg-black/20">
+        <div className="flex items-center border-b border-slate-100 bg-slate-50/50 px-3 py-2 dark:border-border dark:bg-black/20">
           <Search className="mr-2 h-4 w-4 shrink-0 text-muted-foreground" />
           <Input
             placeholder="Search class..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 border-none bg-transparent p-0 text-xs focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-foreground placeholder:text-muted-foreground"
+            className="h-8 border-none bg-transparent p-0 text-xs placeholder:text-muted-foreground focus-visible:ring-0 focus-visible:ring-offset-0 dark:text-foreground"
           />
           {search && (
             <button
@@ -139,11 +152,11 @@ export function MultiSelectClassDropdown({
         </div>
 
         {/* Quick Actions Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-border px-3 py-2 bg-slate-50 dark:bg-white/5 text-xs font-medium">
+        <div className="flex items-center justify-between border-b border-slate-100 bg-slate-50 px-3 py-2 text-xs font-medium dark:border-border dark:bg-white/5">
           <button
             type="button"
             onClick={toggleSelectAll}
-            className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 hover:underline font-semibold"
+            className="flex items-center gap-1.5 font-semibold text-emerald-600 hover:underline dark:text-emerald-400"
           >
             {allSelected ? (
               <>
@@ -161,7 +174,7 @@ export function MultiSelectClassDropdown({
         </div>
 
         {/* Class Items List */}
-        <div className="max-h-60 overflow-y-auto p-1 space-y-0.5">
+        <div className="max-h-60 space-y-0.5 overflow-y-auto p-1">
           {filteredClasses.length === 0 ? (
             <div className="py-6 text-center text-xs text-muted-foreground">
               No classes found.
@@ -174,20 +187,20 @@ export function MultiSelectClassDropdown({
                   key={cls.classId}
                   onClick={() => toggleClass(cls.classId)}
                   className={cn(
-                    "flex items-center justify-between px-2.5 py-2 text-xs rounded-md cursor-pointer select-none transition-colors",
+                    "flex cursor-pointer select-none items-center justify-between rounded-md px-2.5 py-2 text-xs transition-colors",
                     isSelected
-                      ? "bg-emerald-50 text-emerald-900 font-medium dark:bg-emerald-500/15 dark:text-emerald-200"
-                      : "hover:bg-slate-100 text-slate-700 dark:text-slate-300 dark:hover:bg-white/5"
+                      ? "bg-emerald-50 font-medium text-emerald-900 dark:bg-emerald-500/15 dark:text-emerald-200"
+                      : "text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/5",
                   )}
                 >
                   <div className="flex items-center gap-2.5">
                     {/* Checkmark Box */}
                     <div
                       className={cn(
-                        "flex h-4 w-4 items-center justify-center rounded border transition-colors shrink-0",
+                        "flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors",
                         isSelected
                           ? "border-emerald-600 bg-emerald-600 text-white dark:border-emerald-500 dark:bg-emerald-500"
-                          : "border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800"
+                          : "border-slate-300 bg-white dark:border-slate-600 dark:bg-slate-800",
                       )}
                     >
                       {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
@@ -199,7 +212,7 @@ export function MultiSelectClassDropdown({
                   {isSelected && (
                     <Badge
                       variant="outline"
-                      className="text-[9px] border-emerald-300 bg-emerald-100/50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 py-0 h-4 px-1"
+                      className="h-4 border-emerald-300 bg-emerald-100/50 px-1 py-0 text-[9px] text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
                     >
                       Selected
                     </Badge>

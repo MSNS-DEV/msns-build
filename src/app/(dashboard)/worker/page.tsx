@@ -20,7 +20,8 @@ import { format } from "date-fns";
 export default function WorkerDashboard() {
   const breadcrumbs = [{ href: "/worker", label: "Dashboard", current: true }];
 
-  const { data: eventsData, isLoading: isEventsLoading } = api.event.getAll.useQuery({ limit: 5 });
+  const { data: eventsData, isLoading: isEventsLoading } =
+    api.event.getAll.useQuery({ limit: 5 });
 
   const upcomingEvents = eventsData?.events.slice(0, 3) ?? [];
 
@@ -36,7 +37,7 @@ export default function WorkerDashboard() {
           className="space-y-6 lg:col-span-8"
         >
           <WelcomeSection />
-          
+
           <Card className="border-slate-200 bg-white/50 shadow-sm backdrop-blur-md dark:border-border dark:bg-card">
             <CardHeader>
               <div className="flex items-center gap-2">
@@ -45,12 +46,15 @@ export default function WorkerDashboard() {
                 </div>
                 <CardTitle>Overview</CardTitle>
               </div>
-              <CardDescription>Welcome to your employee portal.</CardDescription>
+              <CardDescription>
+                Welcome to your employee portal.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-slate-600 dark:text-slate-400">
-                Here you can view the latest school announcements and your profile information. 
-                Use the sidebar to navigate to other available sections.
+                Here you can view the latest school announcements and your
+                profile information. Use the sidebar to navigate to other
+                available sections.
               </p>
             </CardContent>
           </Card>
@@ -88,14 +92,14 @@ export default function WorkerDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               {upcomingEvents.length === 0 && !isEventsLoading ? (
-                <div className="text-center py-6 text-sm text-muted-foreground">
+                <div className="py-6 text-center text-sm text-muted-foreground">
                   No upcoming events.
                 </div>
               ) : (
                 upcomingEvents.map((task) => (
                   <div
                     key={task.id}
-                    className="flex items-start gap-4 rounded-lg border border-border bg-black/5 dark:bg-black/20 p-3 transition-colors hover:bg-black/10 dark:hover:bg-black/30"
+                    className="flex items-start gap-4 rounded-lg border border-border bg-black/5 p-3 transition-colors hover:bg-black/10 dark:bg-black/20 dark:hover:bg-black/30"
                   >
                     <div className="mt-1 h-2 w-2 rounded-full bg-blue-400" />
                     <div>
@@ -103,13 +107,18 @@ export default function WorkerDashboard() {
                         {task.title}
                       </h4>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {format(new Date(task.startDateTime), "MMM d, yyyy h:mm a")}
+                        {format(
+                          new Date(task.startDateTime),
+                          "MMM d, yyyy h:mm a",
+                        )}
                       </p>
                     </div>
                   </div>
                 ))
               )}
-              {isEventsLoading && <Loader2 className="h-5 w-5 animate-spin text-center mx-auto" />}
+              {isEventsLoading && (
+                <Loader2 className="mx-auto h-5 w-5 animate-spin text-center" />
+              )}
             </CardContent>
           </Card>
         </motion.div>
